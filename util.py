@@ -182,6 +182,7 @@ def glidein_parser():
         'memory':2000,
         'disk':10000,
         'gpus':0,
+        'walltime':14
     }
 
     parser = OptionParser()
@@ -195,6 +196,8 @@ def glidein_parser():
                       help='number of gpus (default: 0)')
     parser.add_option('--cvmfs',type='string',default='True',
                       help='require cvmfs (default: True)')
+    parser.add_option('--walltime', type='float', default=defaults["walltime"],
+                      help="walltime desired (default: 14)")
     parser.add_option('--os',type='string',default=None,
                       help='OS requirement')
     parser.add_option('--glidein-loc',dest='glidein_loc',type='string',
