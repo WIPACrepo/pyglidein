@@ -99,11 +99,11 @@ class SubmitParallel(SubmitPBS):
         return """#PBS -q gpu\n\n"""
     def get_custom_middle(self):
         first_line = "export " + self.get_local_dir().lstrip("$") + "=/global/scratch/briedel/iceprod/scratch/${PBS_JOBID}\n\n"
-        second_line = "mkdir $" + self.get_local_dir() + "\n\n"
-        return first_line
+        second_line = "mkdir " + self.get_local_dir() + "\n\n"
+        return first_line + second_line
     def get_custom_end(self):
         return "rm -rf " + self.get_local_dir() + "\n"
 
 if __name__ == '__main__':
-    SubmitGuillimin().submit()
-    # SubmitParallel().submit()
+    # SubmitGuillimin().submit()
+    SubmitParallel().submit()
