@@ -176,36 +176,49 @@ def json_decode(value):
 def glidein_parser():
     """Make a glidein option parser, and run it."""
     from optparse import OptionParser
-    
+
+    defaults = {
+        'cpus':1,
+        'memory':2000,
+        'disk':10000,
+        'gpus':0,
+        'walltime':14
+    }
+
     parser = OptionParser()
-    parser.add_option('--cpus',type='float',default=1,
+    parser.add_option('--cpus',type='float',default=defaults['cpus'],
                       help='number of cpus (default: 1)')
-    parser.add_option('--memory',type='float',default=2000,
+    parser.add_option('--memory',type='float',default=defaults['memory'],
                       help='amount of memory in MB (default: 2000)')
-    parser.add_option('--disk',type='float',default=10000,
+    parser.add_option('--disk',type='float',default=defaults['disk'],
                       help='amount of disk in MB (default: 10000)')
-    parser.add_option('--gpus',type='float',default=0,
+    parser.add_option('--gpus',type='float',default=defaults['gpus'],
                       help='number of gpus (default: 0)')
-    parser.add_option('--cvmfs',type='string',default='False',
-                      help='require cvmfs (default: False)')
+    parser.add_option('--cvmfs',type='string',default='True',
+                      help='require cvmfs (default: True)')
+    parser.add_option('--walltime', type='float', default=defaults["walltime"],
+                      help="walltime desired (default: 14)")
     parser.add_option('--os',type='string',default=None,
                       help='OS requirement')
     parser.add_option('--glidein-loc',dest='glidein_loc',type='string',
                       default='$HOME/glidein',
                       help='glidein tarball directory')
+    parser.add_option("--cluster", dest="cluster",type="string",
+                      default="", 
+                      help="what cluster we are running on.")
     (options,args) = parser.parse_args()
-    
-    if options.cvmfs.lower() == 'true' or options.cvmfs == '1':
-        options.cvmfs = True
-    else:
-        options.cvmfs = False
 
-    for o in ('cpus','memory','disk','gpus'):
+#    if options.cvmfs.lower() == 'true' or options.cvmfs == '1':
+    options.cvmfs = True
+#    else:
+#        options.cvmfs = False
+
+    for o in defaults:
         try:
-            setattr(options,o,int(getattr(options,o)))
+            setattr(options,o,max(int(getattr(options,o)),defaults[o]))
         except Exception:
             continue
-    
+
     options.glidein_loc = os.path.expandvars(options.glidein_loc)
 
     return (options,args)
