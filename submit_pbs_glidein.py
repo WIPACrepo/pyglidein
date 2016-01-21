@@ -26,9 +26,16 @@ class SubmitPBS(object):
     
     def get_local_dir(self):
         return ""
+
+    def get_custom_num_cpus(self):
+        return 1
     
     def write_general_header(self, file, mem = 3000, wall_time_hours = 14, 
                              num_nodes = 1, num_cpus = 2, num_gpus = 0):
+        
+        # Super evil hack to get around lack of correct json state for queue
+        if self.get_custom_num_cpus() != 1:
+            num_cpus = self.get_custom_num_cpus()
         file.write("#!/bin/bash\n")
         if num_gpus == 0:
             file.write("#PBS -l nodes=%d:ppn=%d\n" %\
@@ -48,7 +55,8 @@ class SubmitPBS(object):
         file.write("export MEMORY=%d\n" % mem)
         file.write("export CPUS=%d\n" % num_cpus)
         if num_gpus != 0:
-            file.write("export GPU=$CUDA_VISIBLE_DEVICES\n")
+            file.write("export GPUS=$CUDA_VISIBLE_DEVICES\n")
+            file.write("export GPUS=\"CUDA$GPUS\"\n")
         file.write("export CVMFS=%s\n\n" % has_cvmfs)
         
     def write_glidin_part(self, file, local_dir, glidein_loc, glidein_tarball, glidein_script):
@@ -60,7 +68,7 @@ class SubmitPBS(object):
     def write_submit_file(self, filename, options):
         with open(filename,'w') as f:
             self.write_general_header(f, mem = options.memory, wall_time_hours = options.walltime,
-                                 num_cpus = options.cpus, num_gpus = options.gpus)
+                                      num_cpus = options.cpus, num_gpus = options.gpus)
             self.write_cluster_specific(f, self.get_custom_header())
             self.write_cluster_specific(f, self.get_custom_middle())
             self.write_glidein_variables(f, mem = options.cpus*options.memory,
@@ -91,6 +99,8 @@ class SubmitGuillimin(SubmitPBS):
         first_line = "#PBS -A ngw-282-ac\n"
         second_line = "#PBS -V\n"
         return first_line + second_line
+    def get_custom_num_cpus(self):
+        return 2
         
 class SubmitParallel(SubmitPBS):
     def get_local_dir(self):
@@ -101,8 +111,8 @@ class SubmitParallel(SubmitPBS):
         first_line = "export " + self.get_local_dir().lstrip("$") + "=/global/scratch/briedel/iceprod/scratch/${PBS_JOBID}\n\n"
         second_line = "mkdir " + self.get_local_dir() + "\n\n"
         return first_line + second_line
-    def get_custom_end(self):
-        return "rm -rf " + self.get_local_dir() + "\n"
+    # def get_custom_end(self):
+    #     return "rm -rf " + self.get_local_dir() + "\n"
 
 if __name__ == '__main__':
     # SubmitGuillimin().submit()

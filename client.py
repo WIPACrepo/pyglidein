@@ -108,8 +108,8 @@ def get_running(cmd):
 
 def main():
     parser = OptionParser()
-    parser.add_option('--address',type='string',default='http://bosco.icecube.wisc.edu:9070',
-                      help='Address to connect to (default: http://bosco.icecube.wisc.edu:9070)')
+    parser.add_option('--address',type='string',default='http://glidein-simprod.icecube.wisc.edu:11001/jsonrpc',
+                      help='Address to connect to (default: http://glidein-simprod.icecube.wisc.edu:11001/jsonrpc)')
     parser.add_option('--ssh',action='store_true',default=False,
                       help='Use ssh file for state')
     parser.add_option('--limit',type='int',default=10,
