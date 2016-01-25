@@ -30,12 +30,11 @@ class SubmitPBS(object):
     def get_custom_num_cpus(self):
         return 1
     
+    def get_mem_per_core(self):
+        return 1
+    
     def write_general_header(self, file, mem = 3000, wall_time_hours = 14, 
                              num_nodes = 1, num_cpus = 2, num_gpus = 0):
-        
-        # Super evil hack to get around lack of correct json state for queue
-        if self.get_custom_num_cpus() != 1:
-            num_cpus = self.get_custom_num_cpus()
         file.write("#!/bin/bash\n")
         if num_gpus == 0:
             file.write("#PBS -l nodes=%d:ppn=%d\n" %\
@@ -43,7 +42,7 @@ class SubmitPBS(object):
         else:
             file.write("#PBS -l nodes=%d:ppn=%d:gpus=%d\n" %\
                        (num_nodes, num_cpus, num_gpus))
-        file.write("#PBS -l mem=%dmb,pmem=%dmb\n" % (mem, mem))
+        file.write("#PBS -l mem=%dmb,pmem=%dmb\n" % (mem / num_cpus, mem / num_cpus))
         file.write("#PBS -l walltime=%d:00:00\n" % wall_time_hours)
         file.write("#PBS -o $HOME/glidein/out/${PBS_JOBID}.out\n")
         file.write("#PBS -e $HOME/glidein/out/${PBS_JOBID}.err\n")
@@ -67,11 +66,18 @@ class SubmitPBS(object):
 
     def write_submit_file(self, filename, options):
         with open(filename,'w') as f:
-            self.write_general_header(f, mem = options.memory, wall_time_hours = options.walltime,
-                                      num_cpus = options.cpus, num_gpus = options.gpus)
+            num_cpus = options.cpus
+            if self.get_custom_num_cpus() > options.cpus and options.gpus == 0:
+                num_cpus = self.get_custom_num_cpus()
+            mem = options.memory
+            if num_cpus*self.get_mem_per_core() >= mem:
+                mem = num_cpus*self.get_mem_per_core()
+                # Super evil hack to get around lack of correct json state for queue
+            self.write_general_header(f, mem = mem, wall_time_hours = options.walltime,
+                                      num_cpus = num_cpus, num_gpus = options.gpus)
             self.write_cluster_specific(f, self.get_custom_header())
             self.write_cluster_specific(f, self.get_custom_middle())
-            self.write_glidein_variables(f, mem = options.cpus*options.memory,
+            self.write_glidein_variables(f, mem = mem,
                                          num_cpus = options.cpus, has_cvmfs = options.cvmfs, 
                                          num_gpus = options.gpus)
             
@@ -101,6 +107,8 @@ class SubmitGuillimin(SubmitPBS):
         return first_line + second_line
     def get_custom_num_cpus(self):
         return 2
+    def get_mem_per_core(self):
+        return 2700
         
 class SubmitParallel(SubmitPBS):
     def get_local_dir(self):
@@ -115,5 +123,5 @@ class SubmitParallel(SubmitPBS):
     #     return "rm -rf " + self.get_local_dir() + "\n"
 
 if __name__ == '__main__':
-    # SubmitGuillimin().submit()
-    SubmitParallel().submit()
+    SubmitGuillimin().submit()
+    # SubmitParallel().submit()
