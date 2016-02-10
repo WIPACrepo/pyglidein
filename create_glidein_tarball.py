@@ -1,0 +1,188 @@
+"""
+Create a glidein tarball by downloading the source, building it, then
+copying what is needed into the tarball.
+"""
+
+import os
+import shutil
+import subprocess
+import tarfile
+import tempfile
+
+def libuuid_download(version='1.0.3'):
+    url = 'http://downloads.sourceforge.net/project/libuuid/libuuid-'+version+'.tar.gz'
+    subprocess.check_call(['wget',url])
+    subprocess.check_call(['tar','-zxf','libuuid-'+version+'.tar.gz'])
+    return 'libuuid-'+version
+
+def libuuid_build():
+    """Build uuid statically"""
+    dirname = libuuid_download()
+    initial_dir = os.getcwd()
+    os.chdir(dirname)
+    try:
+        if os.path.exists('release_dir'):
+            shutil.rmtree('release_dir')
+        os.mkdir('release_dir')
+        options = ['--enable-static',
+                   '--disable-shared',
+                   '--prefix',os.path.join(os.getcwd(),'release_dir'),
+                  ]
+        subprocess.check_call(['./configure']+options)
+        subprocess.check_call(['make'])
+        subprocess.check_call(['make','install'])
+        return os.path.join(initial_dir,dirname,'release_dir')
+    finally:
+        os.chdir(initial_dir)
+
+def cvmfs_download():
+    url = 'https://github.com/cvmfs/cvmfs/archive/libcvmfs-stable.tar.gz'
+    subprocess.check_call(['wget',url])
+    subprocess.check_call(['tar','-zxf','libcvmfs-stable.tar.gz'])
+    return 'cvmfs-libcvmfs-stable'
+
+def cvmfs_build():
+    libuuid = libuuid_build()
+    dirname = cvmfs_download()
+    initial_dir = os.getcwd()
+    os.chdir(dirname)
+    try:
+        if os.path.exists('release_dir'):
+            shutil.rmtree('release_dir')
+        os.mkdir('release_dir')
+        options = ['-Wno-dev',
+                   '-DINSTALL_MOUNT_SCRIPTS=OFF',
+                   '-DBUILD_SERVER=OFF',
+                   '-DBUILD_CVMFS=OFF',
+                   '-DBUILD_LIBCVMFS=ON',
+                   '-DINSTALL_BASH_COMPLETION=OFF',
+                   '-DUUID_LIBRARY:FILE='+os.path.join(libuuid,'lib','libuuid.a'),
+                   '-DUUID_INCLUDE_DIR:PATH='+os.path.join(libuuid,'include'),
+                   '-DCMAKE_INSTALL_PREFIX='+os.path.join(os.getcwd(),'release_dir'),
+                  ]
+        subprocess.check_call(['cmake']+options)
+        subprocess.check_call(['make','libpacparser'])
+        os.chdir('cvmfs')
+        subprocess.check_call(['make'])
+        subprocess.check_call(['make','install'])
+        return os.path.join(initial_dir,dirname,'release_dir')
+    finally:
+        os.chdir(initial_dir)
+
+def parrot_download(version='5.3.4'):
+    url = 'http://ccl.cse.nd.edu/software/files/cctools-'+version+'-source.tar.gz'
+    subprocess.check_call(['wget',url])
+    subprocess.check_call(['tar','-zxf','cctools-'+version+'-source.tar.gz'])
+    return 'cctools-'+version+'-source'
+
+def parrot_build(version=None):
+    cvmfs = cvmfs_build()
+    dirname = parrot_download(version)
+    initial_dir = os.getcwd()
+    os.chdir(dirname)
+    try:
+        if os.path.exists('release_dir'):
+            shutil.rmtree('release_dir')
+        os.mkdir('release_dir')
+        options = ['--without-system-sand',
+                   '--without-system-allpairs',
+                   '--without-system-wavefront',
+                   '--without-system-makeflow',
+#                   '--without-system-ftp-lite',
+#                   '--without-system-chirp',
+                   '--without-system-umbrella',
+                   '--without-system-resource_monitor',
+                   '--without-system-doc',
+                   '--with-cvmfs-path',cvmfs,
+                   '--prefix',os.path.join(os.getcwd(),'release_dir'),
+                  ]
+        subprocess.check_call(['./configure']+options)
+        subprocess.check_call(['make'])
+        subprocess.check_call(['make','install'])
+        return os.path.join(initial_dir,dirname,'release_dir')
+    finally:
+        os.chdir(initial_dir)
+
+def condor_download(version='8.4.3'):
+    version = version.replace('.','_')
+    url = 'https://github.com/htcondor/htcondor/archive/V'+version+'.tar.gz'
+    subprocess.check_call(['wget',url])
+    subprocess.check_call(['tar','-zxf','V'+version+'.tar.gz'])
+    return 'htcondor-'+version
+
+def condor_build(version=None):
+    dirname = condor_download(version)
+    initial_dir = os.getcwd()
+    os.chdir(dirname)
+    try:
+        if os.path.exists('release_dir'):
+            shutil.rmtree('release_dir')
+        os.mkdir('release_dir')
+        options = [
+            '-DHAVE_BACKFILL=OFF',
+            '-DHAVE_BOINC=OFF',
+            '-DHAVE_HIBERNATION=OFF',
+            '-DHAVE_KBDD=OFF',
+            '-DWANT_GLEXEC=OFF',
+            '-DWANT_FULL_DEPLOYMENT=OFF',
+            '-DWITH_BOINC=OFF',
+            '-DWITH_BOSCO=OFF',
+            '-DWITH_CAMPUSFACTORY=OFF',
+            '-DWITH_BLAHP=OFF',
+            '-DWITH_CURL=OFF',
+            '-DWITH_COREDUMPER=OFF',
+            '-DWITH_CREAM=OFF',
+            '-DWITH_GANGLIA=OFF',
+            '-DWITH_GLOBUS=OFF',
+            '-DWITH_GSOAP=OFF',
+            '-DWITH_LIBDELTACLOUD=OFF',
+            '-DWITH_LIBVIRT=OFF',
+            '-DWITH_PYTHON_BINDINGS=OFF',
+            '-DWITH_UNICOREGAHP=OFF',
+            '-DWITH_VOMS=OFF',
+        ]
+        if version > '8.5.2':
+            options.append('-DWITH_KRB5=OFF')
+        subprocess.check_call(['cmake','-DCMAKE_INSTALL_PREFIX:PATH='+os.getcwd()+'/release_dir']
+                              +options+['.'])
+        subprocess.check_call(['make'])
+        subprocess.check_call(['make','install'])
+        return os.path.join(initial_dir,dirname,'release_dir')
+    finally:
+       os.chdir(initial_dir)
+
+def main():
+    from optparse import OptionParser
+    parser = OptionParser()
+    parser.add_option('--template-dir',dest='template',default=None,
+                      help='Location of template directory')
+    parser.add_option('--htcondor-version',dest='condor',default='8.4.2',
+                      help='HTCondor version to use')
+    parser.add_option('--parrot-version',dest='parrot',default='5.3.4',
+                      help='Parrot (cctools) version to use')
+    (options,args) = parser.parse_args()
+    if not options.template:
+        raise Exception('need a template directory')
+    options.template = os.path.abspath(options.template)
+
+    curdir = os.getcwd()
+    d = tempfile.mkdtemp(dir=os.getcwd())
+    try:
+        os.chdir(d)
+        parrot_path = parrot_build(version=options.parrot)
+        condor_path = condor_build(version=options.condor)
+        with tarfile.open(os.path.join(curdir,'glidein.tar.gz'),'w:gz') as tar:
+            for f in os.listdir(options.template):
+                tar.add(os.path.join(options.template,f),arcname=f)
+            tar.add('.',arcname='glideinExec',recursive=False)
+            for f in os.listdir(condor_path):
+                tar.add(os.path.join(condor_path,f),arcname=os.path.join('glideinExec',f))
+            tar.add(os.path.join(parrot_path,'bin','parrot_run'),arcname=os.path.join('GLIDEIN_PARROT','parrot_run'))
+            tar.add(os.path.join(parrot_path,'lib','libparrot_helper.so'),arcname=os.path.join('GLIDEIN_PARROT','libparrot_helper.so'))
+    finally:
+        os.chdir(curdir)
+#        shutil.rmtree(d)
+
+
+if __name__ == '__main__':
+    main()
