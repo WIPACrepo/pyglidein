@@ -41,6 +41,7 @@ mkdir glidein
 cd glidein
 
 export _condor_OASIS_CVMFS_Exists="${CVMFS}"
+export _condor_ICECUBE_CVMFS_Exists="${CVMFS}"
 
 export _condor_CONDOR_HOST="$CLUSTER"
 export _condor_COLLECTOR_HOST="${CLUSTER}:9618?sock=collector"
@@ -79,6 +80,7 @@ export _condor_CCB_ADDRESS="${CLUSTER}:9618?sock=collector"
 #export _condor_PRIVATE_NETWORK_NAME=${DOMAIN}
 export _condor_UPDATE_COLLECTOR_WITH_TCP="True"
 export _campusfactory_CAMPUSFACTORY_LOCATION=$PWD
+export _condor_USER_JOB_WRAPPER=$PWD/user_job_wrapper.sh
 
 if [ ! -e $GLIDEIN_DIR/glidein.tar.gz ]; then
   wget -nv http://prod-exe.icecube.wisc.edu/glidein.tar.gz
@@ -96,13 +98,13 @@ export _condor_LIB=$PWD/glideinExec/lib
 export PATH=$_condor_SBIN:$PWD/glideinExec/bin
 export LD_LIBRARY_PATH=$_condor_LIB
 
+# make a job wrapper
+echo 'eval `/cvmfs/icecube.opensciencegrid.org/py2-v1/setup.sh`' > $PWD/job_wrapper.sh
+chmod +x $PWD/job_wrapper.sh
 
-if [ -e $PWD/user_job_wrapper.sh ]; then
-  export _condor_USER_JOB_WRAPPER=$PWD/user_job_wrapper.sh
-fi
-
+# run condor
 exec glideinExec/sbin/condor_master -dyn -f -r 1200
 
+# clean up after ourselves
 cd ..
-
 rm -rf glidein

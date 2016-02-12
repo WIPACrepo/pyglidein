@@ -19,6 +19,12 @@ if [ -n "$gpu_dev" ]; then
   export GPU_DEVICE_ORDINAL=$gpu_dev
 fi
 
+# See if we provided a dynamic wrapper
+JOB_WRAPPER="NONE"
+if [ -e "${PWD}/job_wrapper.sh" ]; then
+    JOB_WRAPPER="${PWD}/job_wrapper.sh"
+fi
+
 
 # idbox TODO:
 #  - run ssh_to_job shell under parrot idbox or disable ssh_to_job
@@ -80,18 +86,30 @@ if [ "$USE_PARROT" = 1 ] && ( "$FORCE_PARROT" = 1 ] || ( safe grep -q -i '^Requi
     # Clense our environment before calling run_parrot, so the user cannot manipulate
     # run_parrot or parrot_run.  Preserve only the necessary variables.
     # We are calling run_parrot here, which calls parrot_run to run the job.
-    exec /usr/bin/env -i \
-       GLIDEIN_PARROT=${GLIDEIN_PARROT} \
-       _CONDOR_SCRATCH_DIR=${_CONDOR_SCRATCH_DIR} \
-       _CONDOR_SLOT=${_CONDOR_SLOT} \
-       _CONDOR_JOB_PIDS=${_CONDOR_JOB_PIDS} \
-    ${GLIDEIN_PARROT}/run_parrot "$@"
+    if [ "${JOB_WRAPPER}" = "NONE" ]; then
+        exec /usr/bin/env -i \
+           GLIDEIN_PARROT=${GLIDEIN_PARROT} \
+           _CONDOR_SCRATCH_DIR=${_CONDOR_SCRATCH_DIR} \
+           _CONDOR_SLOT=${_CONDOR_SLOT} \
+           _CONDOR_JOB_PIDS=${_CONDOR_JOB_PIDS} \
+        ${GLIDEIN_PARROT}/run_parrot "$@"
+    else
+        exec /usr/bin/env -i \
+           GLIDEIN_PARROT=${GLIDEIN_PARROT} \
+           _CONDOR_SCRATCH_DIR=${_CONDOR_SCRATCH_DIR} \
+           _CONDOR_SLOT=${_CONDOR_SLOT} \
+           _CONDOR_JOB_PIDS=${_CONDOR_JOB_PIDS} \
+        ${GLIDEIN_PARROT}/run_parrot "${JOB_WRAPPER} $@"
+    fi
 
     # Note that since we exec the job above, wrappers that come after
     # this one are ignored.
+
+else
+    # fall through to next/default job wrapper
+    if [ "${JOB_WRAPPER}" = "NONE" ]; then
+        exec "$@"
+    else
+        exec "${JOB_WRAPPER} $@"
+    fi
 fi
-
-# fall through to next/default job wrapper
-
-# Condor job wrappers must replace its own image
-exec "$@"
