@@ -172,6 +172,11 @@ def json_decode(value):
     """Returns Python objects for the given JSON string."""
     return json.loads(value,object_hook=JSONToObj)
 
+def config_options_dict(config):
+    config_dict = {section: {option: config.get(section, option) \
+                             for option in config.options(section)} \
+                   for section in config.sections()}
+    return config_dict
 
 def glidein_parser():
     """Make a glidein option parser, and run it."""

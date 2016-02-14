@@ -15,6 +15,9 @@ from util import glidein_parser
 logger = logging.getLogger(__name__)
 
 class SubmitPBS(object):
+    def __init__(self, config):
+        self.config = config
+    
     def get_custom_header(self):
         return "\n"
     
@@ -103,7 +106,7 @@ class SubmitGuillimin(SubmitPBS):
         return "$LSCRATCH"
     def get_custom_header(self):
         first_line = "#PBS -A ngw-282-ac\n"
-        second_line = "#PBS -V\n"
+        # second_line = "#PBS -V\n"
         return first_line + second_line
     def get_custom_num_cpus(self):
         return 2
