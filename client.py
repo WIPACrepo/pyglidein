@@ -128,12 +128,21 @@ def main():
     parser.add_option('--config', type='string', default='cluster.config',
                       help="config file for cluster")
     (options,args) = parser.parse_args()
-    config = ConfigParser.RawConfigParser()
-    config.read("options.config")
+    config = ConfigParser.ConfigParser()
+    config.read(options.config)
     config_dict = config_options_dict(config)
     
-    if "glidein_cmd" not in config_dict["Glidein"]:
-        raise Exception('no glidein_cmd')
+    if config_dict["Cluster"]["scheduler"] == "HTCondor":
+        from submit_condor_glidein import SubmitCondor
+        scheduler = SubmitCondor(config)
+    elif config_dict["Cluster"]["scheduler"] == "PBS":
+        from submit import SubmitPBS
+        scheduler = SubmitPBS(config_dict)
+    else:
+        raise Exception('scheduler not supported')
+    
+    # if "glidein_cmd" not in config_dict["Glidein"]:
+    #     raise Exception('no glidein_cmd')
     if "running_cmd" not in config_dict["Cluster"]:
         raise Exception('no running_cmd')
     
@@ -141,16 +150,7 @@ def main():
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
-    
-    if config_dict["Cluster"]["scheduler"] == "HTCondor":
-        from submit_condor_glidein import SubmitCondor
-        scheduler = SubmitCondor(config)
-    elif config_dict["Cluster"]["scheduler"] == "PBS":
-        from submit_pbs_glidein import SubmitPBS
-        scheduler = SubmitPBS(config)
-    else:
-        raise Exception('scheduler not supported')
-    
+    # sys.exit()
     while True:
         if config_dict["Glidein"]["ssh_state"]:
             state = get_ssh_state()
@@ -163,10 +163,11 @@ def main():
                 logger.warn('error getting running job count',exc_info=True)
                 continue
             i = 0
+            
             for s in state:
                 if config_dict["Cluster"]["gpu_only"] and s["gpus"] == 0:
                     continue
-                if i >= options.limit or i+glideins_running >= options.maxlimit:
+                if i >= config_dict["Cluster"]["limit_per_submit"] or i + glideins_running >= config_dict["Cluster"]["max_total_jobs"]:
                     logger.info('reached limit')
                     break
                 scheduler.submit(s)
@@ -175,9 +176,10 @@ def main():
         else:
             logger.info('no state, nothing to do')
         
-        if config_dict["Glidein"]["delay"] < 1:
+        if int(config_dict["Glidein"]["delay"]) < 1:
             break
         time.sleep(config_dict["Glidein"]["delay"])
+        
 
 if __name__ == '__main__':
     main()

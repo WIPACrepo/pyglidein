@@ -50,7 +50,7 @@ class SubmitPBS(object):
         file.write("#PBS -e $HOME/glidein/out/${PBS_JOBID}.err\n")
     
     def write_cluster_specific(self, file, cluster_specific):
-        file.write(cluster_specific)
+        file.write(cluster_specific + "\n\n")
     
     def write_glidein_variables(self, file, mem, num_cpus, has_cvmfs, num_gpus = 0):
         file.write("export MEMORY=%d\n" % mem)
@@ -76,7 +76,7 @@ class SubmitPBS(object):
             elif num_cpus*self.config["Cluster"]["mem_per_core"] >= state["memory"]:
                 mem = num_cpus*self.config["Cluster"]["mem_per_core"]
                 
-            self.write_general_header(f, mem = self.config["Cluster"]["mem_per_core"], 
+            self.write_general_header(f, mem = mem, 
                                       wall_time_hours = self.config["Cluster"]["walltime_hrs"],
                                       num_cpus = num_cpus, num_gpus = state["gpus"])
             if "custom_header" in self.config["SubmitFile"]:
@@ -85,20 +85,19 @@ class SubmitPBS(object):
                 self.write_cluster_specific(f, self.config["SubmitFile"]["custom_middle"])
             
             self.write_glidein_variables(f, mem = mem,
-                                         num_cpus = options.cpus, has_cvmfs = options.cvmfs, 
-                                         num_gpus = options.gpus)
-            self.write_glidin_part(f, self.config["SubmitFile"]["local_dir"], options.glidein_loc, 
-                                   "glidein.tar.gz", "glidein_start.sh")
+                                         num_cpus = state["cpus"], has_cvmfs = state["cvmfs"], 
+                                         num_gpus = state["gpus"])
+            self.write_glidin_part(f, self.config["SubmitFile"]["local_dir"], self.config["Glidein"]["loc"], 
+                                   self.config["Glidein"]["tarball"], self.config["Glidein"]["executable"])
             if "custom_end" in self.config["SubmitFile"]:
                 self.write_cluster_specific(f, self.config["SubmitFile"]["custom_end"])
             
     def submit(self, state):
         logging.basicConfig(level=logging.INFO)
         # (options,args) = glidein_parser()
-
-        filename = self.config["SubmitFile"]["filename"] + "." + \
-                   self.config["Cluster"]["Scheduler"]
-
+        print(state)
+        filename = self.config["SubmitFile"]["filename"]
+        
         self.write_submit_file(filename, state)
 
         cmd = self.config["Cluster"]["submit_command"] + " " + filename

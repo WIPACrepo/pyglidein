@@ -10,6 +10,7 @@ from datetime import date,datetime,time
 import base64
 import zlib
 import logging
+import ast
 
 
 class json_compressor:
@@ -173,9 +174,22 @@ def json_decode(value):
     return json.loads(value,object_hook=JSONToObj)
 
 def config_options_dict(config):
-    config_dict = {section: {option: config.get(section, option) \
-                             for option in config.options(section)} \
-                   for section in config.sections()}
+    # Python <= 2.6 version
+    config_dict = dict()
+    for section in config.sections():
+        config_dict[section] = dict()
+        for option in config.options(section):
+            try:
+                config_dict[section][option] = ast.literal_eval(config.get(section, option))
+            except:
+                config_dict[section][option] = config.get(section, option)
+    # config_dict = dict((section, dict((option, config.get(section, option)) \
+    #                                   for option in config.options(section))) \
+    #                    for section in config.sections())
+    # Python >= 2.7 version
+    # config_dict = {section: {option: ast.literal_eval(config.get(section, option)) \
+    #                         for option in config.options(section)} \
+    #                for section in config.sections()}
     return config_dict
 
 def glidein_parser():
