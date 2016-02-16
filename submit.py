@@ -106,26 +106,26 @@ class SubmitCondor(object):
         
     def make_env_wrapper(self, env_wrapper):
         with open(env_wrapper,'w') as f:
-            write_file(f, '#!/bin/sh')
-            write_file(f, 'CPUS=$(grep -e "^Cpus" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}")')
-            write_file(f, 'MEMORY=$(grep -e "^Memory" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}")')
-            write_file(f, 'DISK=$(grep -e "^Disk" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}")')
-            write_file(f, 'GPUS=$(grep -e "^AssignedGPUs" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}"|sed "s/\\"//g")')
-            write_file(f, 'if ( [ -z $GPUS ] && [ ! -z $CUDA_VISIBLE_DEVICES ] ); then')
-            write_file(f, '  GPUS=$CUDA_VISIBLE_DEVICES')
-            write_file(f, 'fi')
-            write_file(f, 'GPUS_NO_DIGITS=$(echo $GPUS | sed \'s/[0-9]*//g\'')
-            write_file(f, 'if [ "${GPUS_NO_DIGITS}" = "" ]; then')
-            write_file(f, '    GPUS="CUDA${GPUS}"\n')
-            write_file(f, 'fi')
-            write_file(f, 'if ( [ -z $GPUS ] || [ "$GPUS" = "10000" ] ); then')
-            write_file(f, '  GPUS=0\n')
-            write_file(f, 'fi')
-            write_file(f, 'env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK')
+            self.write_line(f, '#!/bin/sh')
+            self.write_line(f, 'CPUS=$(grep -e "^Cpus" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}")')
+            self.write_line(f, 'MEMORY=$(grep -e "^Memory" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}")')
+            self.write_line(f, 'DISK=$(grep -e "^Disk" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}")')
+            self.write_line(f, 'GPUS=$(grep -e "^AssignedGPUs" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}"|sed "s/\\"//g")')
+            self.write_line(f, 'if ( [ -z $GPUS ] && [ ! -z $CUDA_VISIBLE_DEVICES ] ); then')
+            self.write_line(f, '  GPUS=$CUDA_VISIBLE_DEVICES')
+            self.write_line(f, 'fi')
+            self.write_line(f, 'GPUS_NO_DIGITS=$(echo $GPUS | sed \'s/[0-9]*//g\'')
+            self.write_line(f, 'if [ "${GPUS_NO_DIGITS}" = "" ]; then')
+            self.write_line(f, '    GPUS="CUDA${GPUS}"\n')
+            self.write_line(f, 'fi')
+            self.write_line(f, 'if ( [ -z $GPUS ] || [ "$GPUS" = "10000" ] ); then')
+            self.write_line(f, '  GPUS=0\n')
+            self.write_line(f, 'fi')
+            self.write_line(f, 'env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK')
             if "CustomEnv" in self.config:
                 for k,v in self.config["CustomEnv"].items():
-                    write_file(f, k + '=' + v + ' ')
-            write_file(f, '%s' % self.config["Glidein"]["executable"])
+                    self.write_line(f, k + '=' + v + ' ')
+            self.write_line(f, '%s' % self.config["Glidein"]["executable"])
         
             mode = os.fstat(f.fileno()).st_mode
             mode |= 0o111
@@ -138,15 +138,15 @@ class SubmitCondor(object):
         with open(filename,'w') as f:
             if "custom_header" in self.config["SubmitFile"]:
                 f.write(self.config["SubmitFile"]["custom_header"])
-            write_line(f, "output = /dev/null")
-            write_line(f, "error = /dev/null")
-            write_line(f, "log = log")
-            write_line(f, "notification = never")
-            write_line(f, "should_transfer_files = YES")
-            write_line(f, "when_to_transfer_output = ON_EXIT")
-            write_line(f, "")
-            write_line(f, "executable = %s" % env_wrapper)
-            write_line(f, "+TransferOutput=\"\"")
+            self.write_line(f, "output = /dev/null")
+            self.write_line(f, "error = /dev/null")
+            self.write_line(f, "log = log")
+            self.write_line(f, "notification = never")
+            self.write_line(f, "should_transfer_files = YES")
+            self.write_line(f, "when_to_transfer_output = ON_EXIT")
+            self.write_line(f, "")
+            self.write_line(f, "executable = %s" % env_wrapper)
+            self.write_line(f, "+TransferOutput=\"\"")
             f.write("transfer_input_files = glidein_start.sh")
             if "custom_body" in self.config["SubmitFile"]:
                 f.write(self.config["SubmitFile"]["custom_body"])
@@ -161,13 +161,13 @@ class SubmitCondor(object):
             f.write('\n')
         
             if state["cups"] != 0:
-                write_line(f, 'request_cpus=%d' % state["cups"])
+                self.write_line(f, 'request_cpus=%d' % state["cups"])
             if state["memory"] != 0:
-                write_line(f, 'request_memory=%d' % int(state["memory"]*1.1))
+                self.write_line(f, 'request_memory=%d' % int(state["memory"]*1.1))
             if state["disk"] != 0:
-                write_line(f, 'request_disk=%d' % int(state["disk"]*1024*1.1))
+                self.write_line(f, 'request_disk=%d' % int(state["disk"]*1024*1.1))
             if state["gups"] != 0:
-                write_line(f, 'request_gpus=%d' % int(state["gups"]))
+                self.write_line(f, 'request_gpus=%d' % int(state["gups"]))
             # self.make_submit_file_custom(f)
             if "custom_footer" in self.config["SubmitFile"]:
                 f.write(self.config["SubmitFile"]["custom_footer"])
