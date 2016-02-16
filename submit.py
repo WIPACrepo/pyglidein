@@ -147,27 +147,28 @@ class SubmitCondor(object):
             self.write_line(f, "")
             self.write_line(f, "executable = %s" % env_wrapper)
             self.write_line(f, "+TransferOutput=\"\"")
-            f.write("transfer_input_files = glidein_start.sh")
-            if "custom_body" in self.config["SubmitFile"]:
-                f.write(self.config["SubmitFile"]["custom_body"])
-            if "loc" in self.config["Glidein"]:
-                path = os.path.expanduser(os.path.expandvars(self.config["Glidein"]["loc"]))
-                if os.path.isfile(path):
+            if os.path.isfile(self.config["Glidein"]["executable"]):
+                f.write("transfer_input_files = %s" % self.config["Glidein"]["executable"]) 
+            else:
+                raise Exception("no executable provided")
+            if "tarball" in self.config["Glidein"]:
+                if os.path.isfile(self.config["Glidein"]["tarball"]):
                     f.write(','+path)
                 else:
-                    path = os.path.join(path, self.config["Glidein"]["tarball"])
-                    if os.path.isfile(path):
-                        f.write(','+path)
+                    raise Exception("provided tarball does not exist")
+            f.write('\n')
+            if "custom_body" in self.config["SubmitFile"]:
+                f.write(self.config["SubmitFile"]["custom_body"])
             f.write('\n')
         
-            if state["cups"] != 0:
-                self.write_line(f, 'request_cpus=%d' % state["cups"])
+            if state["cpus"] != 0:
+                self.write_line(f, 'request_cpus=%d' % state["cpus"])
             if state["memory"] != 0:
                 self.write_line(f, 'request_memory=%d' % int(state["memory"]*1.1))
             if state["disk"] != 0:
                 self.write_line(f, 'request_disk=%d' % int(state["disk"]*1024*1.1))
-            if state["gups"] != 0:
-                self.write_line(f, 'request_gpus=%d' % int(state["gups"]))
+            if state["gpus"] != 0:
+                self.write_line(f, 'request_gpus=%d' % int(state["gpus"]))
             # self.make_submit_file_custom(f)
             if "custom_footer" in self.config["SubmitFile"]:
                 f.write(self.config["SubmitFile"]["custom_footer"])
@@ -182,7 +183,7 @@ class SubmitCondor(object):
                               self.config["SubmitFile"]["env_wrapper_name"],
                               state)
                               
-        cmd = self.config["Cluster"]["submit_command"]+self.config["SubmitFile"]["filename"]
+        cmd = self.config["Cluster"]["submit_command"] + " " + self.config["SubmitFile"]["filename"]
         print(cmd)
         if subprocess.call(cmd,shell=True):
             raise Exception('failed to launch glidein')
