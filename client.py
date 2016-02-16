@@ -132,10 +132,10 @@ def main():
     config.read(options.config)
     config_dict = config_options_dict(config)
     
-    if config_dict["Cluster"]["scheduler"] == "HTCondor":
+    if config_dict["Cluster"]["scheduler"] == "htcondor":
         from submit import SubmitCondor
-        scheduler = SubmitCondor(config)
-    elif config_dict["Cluster"]["scheduler"] == "PBS":
+        scheduler = SubmitCondor(config_dict)
+    elif config_dict["Cluster"]["scheduler"] == "pbs":
         from submit import SubmitPBS
         scheduler = SubmitPBS(config_dict)
     else:
