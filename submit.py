@@ -9,27 +9,12 @@ import subprocess
 import logging
 import tempfile
 
-
-
 # class Submit(object):
 #     def __init__(self, config):
 #         self.config = config
 #
 #     def submit(self):
-#         logging.basicConfig(level=logging.INFO)
-#         (options,args) = glidein_parser()
-#         self.config
-#
-#         env_wrapper = 'env_wrapper.sh'
-#         filename = 'submit.condor'
-#
-#         self.make_env_wrapper(env_wrapper)
-#         self.make_submit_file(filename,env_wrapper,options)
-#
-#         cmd = 'condor_submit '+filename
-#         print(cmd)
-#         if subprocess.call(cmd,shell=True):
-#             raise Exception('failed to launch glidein')
+#         pass
             
 class SubmitPBS(object):
     def __init__(self, config):
@@ -136,18 +121,18 @@ class SubmitCondor(object):
             write_file(f, 'if ( [ -z $GPUS ] || [ "$GPUS" = "10000" ] ); then')
             write_file(f, '  GPUS=0\n')
             write_file(f, 'fi')
-            write_file(f, 'env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK ')
+            write_file(f, 'env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK')
             if "CustomEnv" in self.config:
                 for k,v in self.config["CustomEnv"].items():
-                    f.write(k+'='+v+' ')
+                    write_file(f, k + '=' + v + ' ')
             write_file(f, '%s' % self.config["Glidein"]["executable"])
         
             mode = os.fstat(f.fileno()).st_mode
             mode |= 0o111
             os.fchmod(f.fileno(), mode & 0o7777)
 
-    def make_submit_file_custom(self, file):
-        pass
+    # def make_submit_file_custom(self, file):
+    #     pass
     
     def make_submit_file(self, filename, env_wrapper, state):
         with open(filename,'w') as f:
@@ -162,20 +147,9 @@ class SubmitCondor(object):
             write_line(f, "")
             write_line(f, "executable = %s" % env_wrapper)
             write_line(f, "+TransferOutput=\"\"")
-            write_line(f, "transfer_input_files = glidein_start.sh")
+            f.write("transfer_input_files = glidein_start.sh")
             if "custom_body" in self.config["SubmitFile"]:
                 f.write(self.config["SubmitFile"]["custom_body"])
-#             f.write("""
-# output = /dev/null
-# error = /dev/null
-# log = log
-# notification = never
-# should_transfer_files = YES
-# when_to_transfer_output = ON_EXIT
-#
-# executable = env_wrapper.sh
-# +TransferOutput=""
-# transfer_input_files = glidein_start.sh""")
             if "loc" in self.config["Glidein"]:
                 path = os.path.expanduser(os.path.expandvars(self.config["Glidein"]["loc"]))
                 if os.path.isfile(path):
@@ -193,7 +167,7 @@ class SubmitCondor(object):
             if state["disk"] != 0:
                 write_line(f, 'request_disk=%d' % int(state["disk"]*1024*1.1))
             if state["gups"] != 0:
-                write_line(f, 'request_gpus=%d' %int (state["gups"]))
+                write_line(f, 'request_gpus=%d' % int(state["gups"]))
             # self.make_submit_file_custom(f)
             if "custom_footer" in self.config["SubmitFile"]:
                 f.write(self.config["SubmitFile"]["custom_footer"])
