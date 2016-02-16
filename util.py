@@ -182,7 +182,11 @@ def config_options_dict(config):
             try:
                 config_dict[section][option] = ast.literal_eval(config.get(section, option))
             except:
-                config_dict[section][option] = config.get(section, option)
+                val = config.get(section, option)
+                if "#" in val or "$" in val:
+                    config_dict[section][option] = val
+                else:
+                    config_dict[section][option] = val.lower()
     # config_dict = dict((section, dict((option, config.get(section, option)) \
     #                                   for option in config.options(section))) \
     #                    for section in config.sections())

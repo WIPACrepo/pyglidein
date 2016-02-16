@@ -133,7 +133,7 @@ def main():
     config_dict = config_options_dict(config)
     
     if config_dict["Cluster"]["scheduler"] == "HTCondor":
-        from submit_condor_glidein import SubmitCondor
+        from submit import SubmitCondor
         scheduler = SubmitCondor(config)
     elif config_dict["Cluster"]["scheduler"] == "PBS":
         from submit import SubmitPBS
