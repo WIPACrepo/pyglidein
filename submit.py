@@ -125,7 +125,7 @@ class SubmitCondor(object):
             if "CustomEnv" in self.config:
                 for k,v in self.config["CustomEnv"].items():
                     self.write_line(f, k + '=' + v + ' ')
-            self.write_line(f, '%s' % self.config["Glidein"]["executable"])
+            self.write_line(f, './%s' % self.config["Glidein"]["executable"])
         
             mode = os.fstat(f.fileno()).st_mode
             mode |= 0o111
