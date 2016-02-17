@@ -121,11 +121,11 @@ class SubmitCondor(object):
             self.write_line(f, 'if ( [ -z $GPUS ] || [ "$GPUS" = "10000" ] ); then')
             self.write_line(f, '  GPUS=0\n')
             self.write_line(f, 'fi')
-            self.write_line(f, 'env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK')
+            f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK ')
             if "CustomEnv" in self.config:
                 for k,v in self.config["CustomEnv"].items():
-                    self.write_line(f, k + '=' + v + ' ')
-            self.write_line(f, './%s' % self.config["Glidein"]["executable"])
+                    f.write(k + '=' + v + ' ')
+            f.write('%s' % self.config["Glidein"]["executable"])
         
             mode = os.fstat(f.fileno()).st_mode
             mode |= 0o111
