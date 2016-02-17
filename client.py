@@ -12,8 +12,9 @@ from functools import partial
 from optparse import OptionParser
 import urllib
 import urllib2
+import ConfigParser
 
-from util import json_encode,json_decode
+from util import json_encode,json_decode, config_options_dict
 
 logger = logging.getLogger('client')
 
@@ -108,58 +109,77 @@ def get_running(cmd):
 
 def main():
     parser = OptionParser()
-    parser.add_option('--address',type='string',default='http://glidein-simprod.icecube.wisc.edu:11001/jsonrpc',
-                      help='Address to connect to (default: http://glidein-simprod.icecube.wisc.edu:11001/jsonrpc)')
-    parser.add_option('--ssh',action='store_true',default=False,
-                      help='Use ssh file for state')
-    parser.add_option('--limit',type='int',default=10,
-                      help='# of glideins to submit per round (default: 10)')
-    parser.add_option('--max-limit',type='int',dest='maxlimit',default=900,
-                      help='max # of glideins to submit (default: 900)')
-    parser.add_option('--delay',type='int',default=300,
-                      help='delay between calls to server (default: 300 seconds)')
-    parser.add_option('--glidein_cmd',type='string',default=None,
-                      help='glidein command')
-    parser.add_option('--running_cmd',type='string',default=None,
-                      help='check # running command')
-    parser.add_option('--debug',action='store_true',default=False,
-                      help='Enable debug logging')
+    # parser.add_option('--address',type='string',default='http://bosco.icecube.wisc.edu:9070',
+    #                   help='Address to connect to (default: http://bosco.icecube.wisc.edu:9070)')
+    # parser.add_option('--ssh',action='store_true',default=False,
+    #                   help='Use ssh file for state')
+    # parser.add_option('--limit',type='int',default=10,
+    #                   help='# of glideins to submit per round (default: 10)')
+    # parser.add_option('--max-limit',type='int',dest='maxlimit',default=900,
+    #                   help='max # of glideins to submit (default: 900)')
+    # parser.add_option('--delay',type='int',default=300,
+    #                   help='delay between calls to server (default: 300 seconds)')
+    # parser.add_option('--glidein_cmd',type='string',default=None,
+    #                   help='glidein command')
+    # parser.add_option('--running_cmd',type='string',default=None,
+    #                   help='check # running command')
+    # parser.add_option('--debug',action='store_true',default=False,
+    #                   help='Enable debug logging')
+    parser.add_option('--config', type='string', default='cluster.config',
+                      help="config file for cluster")
     (options,args) = parser.parse_args()
+    config = ConfigParser.ConfigParser()
+    config.read(options.config)
+    config_dict = config_options_dict(config)
     
-    if not options.glidein_cmd:
-        raise Exception('no glidein_cmd')
-    if not options.running_cmd:
+    if config_dict["Cluster"]["scheduler"] == "htcondor":
+        from submit import SubmitCondor
+        scheduler = SubmitCondor(config_dict)
+    elif config_dict["Cluster"]["scheduler"] == "pbs":
+        from submit import SubmitPBS
+        scheduler = SubmitPBS(config_dict)
+    else:
+        raise Exception('scheduler not supported')
+    
+    # if "glidein_cmd" not in config_dict["Glidein"]:
+    #     raise Exception('no glidein_cmd')
+    if "running_cmd" not in config_dict["Cluster"]:
         raise Exception('no running_cmd')
     
-    if options.debug:
+    if config_dict["Mode"]["debug"]:
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
-    
+    # sys.exit()
     while True:
-        if options.ssh:
+        if config_dict["Glidein"]["ssh_state"]:
             state = get_ssh_state()
         else:
-            state = get_state(options.address)
+            state = get_state(config_dict["Glidein"]["address"])
         if state:
             try:
-                glideins_running = get_running(options.running_cmd)
+                glideins_running = get_running(config_dict["Cluster"]["running_cmd"])
             except Exception:
                 logger.warn('error getting running job count',exc_info=True)
                 continue
             i = 0
-            for i,s in enumerate(state):
-                if i >= options.limit or i+glideins_running >= options.maxlimit:
+            
+            for s in state:
+                if config_dict["Cluster"]["gpu_only"] and s["gpus"] == 0:
+                    continue
+                if i >= config_dict["Cluster"]["limit_per_submit"] or i + glideins_running >= config_dict["Cluster"]["max_total_jobs"]:
                     logger.info('reached limit')
                     break
-                launch_glidein(options.glidein_cmd,s)
+                scheduler.submit(s)
+                i += 1
             logger.info('launched %d glideins',i)
         else:
             logger.info('no state, nothing to do')
         
-        if options.delay < 1:
+        if int(config_dict["Glidein"]["delay"]) < 1:
             break
-        time.sleep(options.delay)
+        time.sleep(config_dict["Glidein"]["delay"])
+        
 
 if __name__ == '__main__':
     main()
