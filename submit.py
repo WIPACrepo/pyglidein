@@ -114,7 +114,7 @@ class SubmitCondor(object):
             self.write_line(f, 'if ( [ -z $GPUS ] && [ ! -z $CUDA_VISIBLE_DEVICES ] ); then')
             self.write_line(f, '  GPUS=$CUDA_VISIBLE_DEVICES')
             self.write_line(f, 'fi')
-            self.write_line(f, 'GPUS_NO_DIGITS=$(echo $GPUS | sed \'s/[0-9]*//g\'')
+            self.write_line(f, 'GPUS_NO_DIGITS=$(echo $GPUS | sed \'s/[0-9]*//g\')')
             self.write_line(f, 'if [ "${GPUS_NO_DIGITS}" = "" ]; then')
             self.write_line(f, '    GPUS="CUDA${GPUS}"\n')
             self.write_line(f, 'fi')
@@ -138,8 +138,8 @@ class SubmitCondor(object):
         with open(filename,'w') as f:
             if "custom_header" in self.config["SubmitFile"]:
                 f.write(self.config["SubmitFile"]["custom_header"])
-            self.write_line(f, "output = /dev/null")
-            self.write_line(f, "error = /dev/null")
+            self.write_line(f, "output = output")
+            self.write_line(f, "error = error")
             self.write_line(f, "log = log")
             self.write_line(f, "notification = never")
             self.write_line(f, "should_transfer_files = YES")
