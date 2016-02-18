@@ -9,60 +9,136 @@ import subprocess
 import logging
 import tempfile
 
-# class Submit(object):
-#     def __init__(self, config):
-#         self.config = config
-#
-#     def submit(self):
-#         pass
-            
+class Submit(object):
+    """
+    Base class for the submit classes
+    Mostly to provide future expansion for common functions
+    """
+    def __init__(self, config):
+        self.config = config
+
+    def submit(self):
+        pass
+    
+    def write_line(self, file, line):
+        file.write(line+"\n")
+
+
 class SubmitPBS(object):
     def __init__(self, config):
+        """
+        Initialize
+        
+        Args:
+            config: cluster config dict for cluster
+        """
         self.config = config
         
     def write_general_header(self, file, mem = 3000, wall_time_hours = 14, 
                              num_nodes = 1, num_cpus = 2, num_gpus = 0):
+        """
+        Writing the header for a PBS submission script.
+        Most of the pieces needed to tell PBS what resources
+        are being requested.
+        
+        Args:
+            file: python file object
+            mem: requested memory
+            wall_time_hours: requested wall time
+            num_nodes: requested number of nodes
+            num_cpus: requested number of cpus
+            num_gpus: requested number of gpus
+        """
         file.write("#!/bin/bash\n")
+        # Add the necessary gpu request tag if we need gpus.
         if num_gpus == 0:
             file.write("#PBS -l nodes=%d:ppn=%d\n" %\
                        (num_nodes, num_cpus))
         else:
             file.write("#PBS -l nodes=%d:ppn=%d:gpus=%d\n" %\
                        (num_nodes, num_cpus, num_gpus))
+        # Definition of requested memory changes depending on gpu and cpu job
+        # It is easier to request more cpus rather than more memory on PBS
         if num_gpus == 0:
             file.write("#PBS -l mem=%dmb,pmem=%dmb\n" % (mem / num_cpus, mem / num_cpus))
         else:
+            # Need to accomodate the PBS base 10 vs. HTCondor base 2 requests. 
+            # Increase memory by 10% for gpu jobs to make simprod happy.
             file.write("#PBS -l mem=%dmb,pmem=%dmb\n" % ((mem / num_cpus)*1.1, (mem / num_cpus)*1.1))
-        file.write("#PBS -l mem=%dmb,pmem=%dmb\n" % (mem / num_cpus, mem / num_cpus))
         file.write("#PBS -l walltime=%d:00:00\n" % wall_time_hours)
         file.write("#PBS -o $HOME/glidein/out/${PBS_JOBID}.out\n")
         file.write("#PBS -e $HOME/glidein/out/${PBS_JOBID}.err\n")
     
     def write_cluster_specific(self, file, cluster_specific):
+        """
+        Writing the cluster specific pieces provided by 
+        config file.
+        
+        Args:
+            file: python file object
+            cluster_specific: string of cluster specific things
+        """
         file.write(cluster_specific + "\n\n")
     
     def write_glidein_variables(self, file, mem, num_cpus, has_cvmfs, num_gpus = 0):
+        """
+        Writing the header for a PBS submission script.
+        Most of the pieces needed to tell PBS what resources
+        are being requested.
+        
+        Args:
+            file: python file object
+            mem: memory provided for glidein
+            has_cvmfs: whether cvmfs is present
+            num_cpus: number of cpus provided 
+            num_gpus: number of cpus provided
+        """
+        # Accomodating some extra ram requests
         if num_gpus != 0:
             file.write("export MEMORY=%d\n" % int(mem*1.1))
         else:
             file.write("export MEMORY=%d\n" % mem)
         file.write("export CPUS=%d\n" % num_cpus)
+        # Hack around parsing the $CUDA_VISIBLE_DEVICES on PBS clusters
+        # Without the extra "CUDA" part on 'export GPUS`, the variable is not
+        # parsed properly by HTCondor
+        # 99.9% of times number of gpus == 1. 
         if num_gpus != 0:
             file.write("export GPUS=$CUDA_VISIBLE_DEVICES\n")
             file.write("export GPUS=\"CUDA$GPUS\"\n")
         file.write("export CVMFS=%s\n\n" % has_cvmfs)
         
     def write_glidin_part(self, file, local_dir, glidein_loc, glidein_tarball, glidein_script):
+        """
+        Writing the pieces needed to execute the glidein 
+        
+        Args:
+            file: python file object
+            local_dir: what is the local directory
+            glidein_loc: directory of the glidein pieces 
+            glidein_tarball: file name of tarball
+            glidein_script: file name of glidein start script
+        """
         file.write("cd %s\n\n" % local_dir)
         file.write("ln -s " + os.path.join(glidein_loc, glidein_tarball)+' %s\n' % glidein_tarball)
         file.write('ln -s '+ os.path.join(glidein_loc, glidein_script)+' %s\n' % glidein_script)
         file.write('./%s\n' % glidein_script)
 
     def write_submit_file(self, filename, state):
+        """
+        Writing the PBS submit file
+        
+        Args:
+            filename: name of PBS script to create
+            state: what resource requirements a given glidein has
+        """
         with open(filename,'w') as f:
             num_cpus = state["cpus"]
+            # It is easier to request more cpus rather than more memory on PBS
+            # Makes scheduling easier
             while state["memory"] > (self.config["Cluster"]["mem_per_core"]*num_cpus) and state["gpus"] == 0:
                 num_cpus += 1
+            # Correcting memory whether not we have gpus
             if state["gpus"] > 0:
                 mem = state["memory"]
             elif num_cpus*self.config["Cluster"]["mem_per_core"] >= state["memory"]:
@@ -85,6 +161,12 @@ class SubmitPBS(object):
                 self.write_cluster_specific(f, self.config["SubmitFile"]["custom_end"])
             
     def submit(self, state):
+        """
+        Submitting the PBS script
+        
+        Args:
+            state: what resource requirements a given glidein has
+        """
         logging.basicConfig(level=logging.INFO)
         # (options,args) = glidein_parser()
 
@@ -99,12 +181,22 @@ class SubmitPBS(object):
 
 class SubmitCondor(object):
     def __init__(self, config):
+        """
+        Initialize
+        
+        Args:
+            config: cluster config dict for cluster
+        """
         self.config = config
         
-    def write_line(self, file, line):
-        file.write(line+"\n")
-        
     def make_env_wrapper(self, env_wrapper):
+        """
+        Creating wrapper execute script for 
+        HTCondor submit file
+        
+        Args:
+            env_wrapper: name of wrapper script
+        """
         with open(env_wrapper,'w') as f:
             self.write_line(f, '#!/bin/sh')
             self.write_line(f, 'CPUS=$(grep -e "^Cpus" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}")')
@@ -135,11 +227,19 @@ class SubmitCondor(object):
     #     pass
     
     def make_submit_file(self, filename, env_wrapper, state):
+        """
+        Creating HTCondor submit file
+        
+        Args:
+            filename: name of HTCondor submit file
+            env_wrapper: name of wrapper script
+            state: what resource requirements a given glidein has
+        """
         with open(filename,'w') as f:
             if "custom_header" in self.config["SubmitFile"]:
                 f.write(self.config["SubmitFile"]["custom_header"])
-            self.write_line(f, "output = output")
-            self.write_line(f, "error = error")
+            self.write_line(f, "output = /dev/null")
+            self.write_line(f, "error = /dev/null")
             self.write_line(f, "log = log")
             self.write_line(f, "notification = never")
             self.write_line(f, "should_transfer_files = YES")
