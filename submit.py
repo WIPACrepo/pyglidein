@@ -118,7 +118,7 @@ class SubmitCondor(object):
             self.write_line(f, 'if [ "${GPUS_NO_DIGITS}" = "" ]; then')
             self.write_line(f, '    GPUS="CUDA${GPUS}"\n')
             self.write_line(f, 'fi')
-            self.write_line(f, 'if ( [ -z $GPUS ] || [ "$GPUS" = "10000" ] ); then')
+            self.write_line(f, 'if ( [ -z $GPUS ] || [ "$GPUS" = "10000" ] || [ "$GPUS" = "CUDA10000" ]); then')
             self.write_line(f, '  GPUS=0\n')
             self.write_line(f, 'fi')
             f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK ')
