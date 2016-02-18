@@ -126,8 +126,8 @@ def main():
     else:
         raise Exception('scheduler not supported')
     
-    if "glidein_cmd" not in config_dict["Glidein"]:
-        raise Exception('no glidein_cmd')
+    # if "glidein_cmd" not in config_dict["Glidein"]:
+    #     raise Exception('no glidein_cmd')
     if "running_cmd" not in config_dict["Cluster"]:
         raise Exception('no running_cmd')
     
@@ -150,11 +150,13 @@ def main():
             i = 0
             for s in state:
                 # Skipping CPU jobs for gpu only clusters
-                if config_dict["Cluster"]["gpu_only"] and s["gpus"] == 0:
-                    continue
+                if "gpu_only" in config_dict["Cluster"]:
+                    if config_dict["Cluster"]["gpu_only"] and s["gpus"] == 0:
+                        continue
                 # skipping GPU jobs for cpu only clusters
-                if config_dict["Cluster"]["cpu_only"] and s["gpus"] != 0:
-                    continue
+                if "cpu_only" in config_dict["Cluster"]:
+                    if config_dict["Cluster"]["cpu_only"] and s["gpus"] != 0:
+                        continue
                 if i >= config_dict["Cluster"]["limit_per_submit"] or i + glideins_running >= config_dict["Cluster"]["max_total_jobs"]:
                     logger.info('reached limit')
                     break
