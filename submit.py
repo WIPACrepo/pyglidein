@@ -49,27 +49,27 @@ class SubmitPBS(Submit):
             num_cpus: requested number of cpus
             num_gpus: requested number of gpus
         """
-        file.write("#!/bin/bash\n")
+        self.write_line(file, "#!/bin/bash")
         # Add the necessary gpu request tag if we need gpus.
         if num_gpus == 0:
-            self.write_line("#PBS -l nodes=%d:ppn=%d" %\
+            self.write_line(file, "#PBS -l nodes=%d:ppn=%d" %\
                             (num_nodes, num_cpus))
         else:
-            self.write_line("#PBS -l nodes=%d:ppn=%d:gpus=%d" %\
+            self.write_line(file, "#PBS -l nodes=%d:ppn=%d:gpus=%d" %\
                             (num_nodes, num_cpus, num_gpus))
         # Definition of requested memory changes depending on gpu and cpu job
         # It is easier to request more cpus rather than more memory on PBS
         if num_gpus == 0:
-            self.write_line("#PBS -l mem=%dmb,pmem=%dmb" %\
+            self.write_line(file, "#PBS -l mem=%dmb,pmem=%dmb" %\
                             (mem / num_cpus, mem / num_cpus))
         else:
             # Need to accomodate the PBS base 10 vs. HTCondor base 2 requests. 
             # Increase memory by 10% for gpu jobs to make simprod happy.
-            self.write_line("#PBS -l mem=%dmb,pmem=%dmb" %\
+            self.write_line(file, "#PBS -l mem=%dmb,pmem=%dmb" %\
                             ((mem / num_cpus)*1.1, (mem / num_cpus)*1.1))
-        self.write_line("#PBS -l walltime=%d:00:00" % wall_time_hours)
-        self.write_line("#PBS -o $HOME/glidein/out/${PBS_JOBID}.out")
-        self.write_line("#PBS -e $HOME/glidein/out/${PBS_JOBID}.err")
+        self.write_line(file, "#PBS -l walltime=%d:00:00" % wall_time_hours)
+        self.write_line(file, "#PBS -o $HOME/glidein/out/${PBS_JOBID}.out")
+        self.write_line(file, "#PBS -e $HOME/glidein/out/${PBS_JOBID}.err")
     
     def write_cluster_specific(self, file, cluster_specific):
         """
@@ -80,7 +80,7 @@ class SubmitPBS(Submit):
             file: python file object
             cluster_specific: string of cluster specific things
         """
-        self.write_line(cluster_specific + "\n")
+        self.write_line(file, cluster_specific + "\n")
     
     def write_glidein_variables(self, file, mem, num_cpus, has_cvmfs, num_gpus = 0):
         """
@@ -97,20 +97,20 @@ class SubmitPBS(Submit):
         """
         # Accomodating some extra ram requests
         if num_gpus != 0:
-            self.write_line("export MEMORY=%d" % int(mem*1.1))
+            self.write_line(file, "export MEMORY=%d" % int(mem*1.1))
         else:
-            self.write_line("export MEMORY=%d" % mem)
-        self.write_line("export CPUS=%d" % num_cpus)
+            self.write_line(file, "export MEMORY=%d" % mem)
+        self.write_line(file, "export CPUS=%d" % num_cpus)
         # Hack around parsing the $CUDA_VISIBLE_DEVICES on PBS clusters
         # Without the extra "CUDA" part on 'export GPUS`, the variable is not
         # parsed properly by HTCondor
         # 99.9% of times number of gpus == 1. 
         if num_gpus != 0:
-            self.write_line("export GPUS=$CUDA_VISIBLE_DEVICES")
-            self.write_line("export GPUS=\"CUDA$GPUS\"")
-        self.write_line("export CVMFS=%s\n" % has_cvmfs)
+            self.write_line(file, "export GPUS=$CUDA_VISIBLE_DEVICES")
+            self.write_line(file, "export GPUS=\"CUDA$GPUS\"")
+        self.write_line(file, "export CVMFS=%s\n" % has_cvmfs)
         
-    def write_glidin_part(self, file, local_dir, glidein_loc, glidein_tarball, glidein_script):
+    def write_glidin_part(self, file, local_dir = None, glidein_tarball = None, glidein_script = None, glidein_loc = None):
         """
         Writing the pieces needed to execute the glidein 
         
@@ -121,10 +121,11 @@ class SubmitPBS(Submit):
             glidein_tarball: file name of tarball
             glidein_script: file name of glidein start script
         """
-        self.write_line("cd %s\n" % local_dir)
-        self.write_line("ln -s %s %s" % (os.path.join(glidein_loc, glidein_tarball), glidein_tarball))
-        self.write_line('ln -s %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
-        self.write_line('./%s' % glidein_script)
+        self.write_line(file, "cd %s\n" % local_dir)
+        if glidein_tarball:
+            self.write_line(file, "ln -s %s %s" % (os.path.join(glidein_loc, glidein_tarball), glidein_tarball))
+        self.write_line(file, 'ln -s %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
+        self.write_line(file, './%s' % glidein_script)
 
     def write_submit_file(self, filename, state):
         """
@@ -157,8 +158,15 @@ class SubmitPBS(Submit):
             self.write_glidein_variables(f, mem = mem,
                                          num_cpus = state["cpus"], has_cvmfs = state["cvmfs"], 
                                          num_gpus = state["gpus"])
-            self.write_glidin_part(f, self.config["SubmitFile"]["local_dir"], self.config["Glidein"]["loc"], 
-                                   self.config["Glidein"]["tarball"], self.config["Glidein"]["executable"])
+            if "tarball" in self.config["Glidein"]:
+                self.write_glidin_part(f, local_dir = self.config["SubmitFile"]["local_dir"], 
+                                       glidein_loc = self.config["Glidein"]["loc"], 
+                                       glidein_tarball = self.config["Glidein"]["tarball"], 
+                                       glidein_script = self.config["Glidein"]["executable"])
+            else:
+                self.write_glidin_part(f, local_dir = self.config["SubmitFile"]["local_dir"], 
+                                       glidein_loc = self.config["Glidein"]["loc"], 
+                                       glidein_script = self.config["Glidein"]["executable"])
             if "custom_end" in self.config["SubmitFile"]:
                 self.write_cluster_specific(f, self.config["SubmitFile"]["custom_end"])
             
