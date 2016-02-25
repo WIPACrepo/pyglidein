@@ -139,8 +139,9 @@ class SubmitPBS(Submit):
             num_cpus = state["cpus"]
             # It is easier to request more cpus rather than more memory on PBS
             # Makes scheduling easier
-            while state["memory"] > (self.config["Cluster"]["mem_per_core"]*num_cpus) and state["gpus"] == 0:
-                num_cpus += 1
+            if state["gpus"] == 0:
+                while state["memory"] > (self.config["Cluster"]["mem_per_core"]*num_cpus):
+                    num_cpus += 1
             # Correcting memory whether not we have gpus
             if state["gpus"] > 0:
                 mem = state["memory"]
