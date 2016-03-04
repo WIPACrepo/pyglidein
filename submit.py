@@ -190,6 +190,159 @@ class SubmitPBS(Submit):
         if subprocess.call(cmd,shell=True):
             raise Exception('failed to launch glidein')
 
+class SubmitSLURM(Submit):
+    def __init__(self, config):
+        """
+        Initialize
+        
+        Args:
+            config: cluster config dict for cluster
+        """
+        self.config = config
+        
+    def write_general_header(self, file, mem = 3000, wall_time_hours = 14, 
+                             num_nodes = 1, num_cpus = 2, num_gpus = 0):
+        """
+        Writing the header for a PBS submission script.
+        Most of the pieces needed to tell PBS what resources
+        are being requested.
+        
+        Args:
+            file: python file object
+            mem: requested memory
+            wall_time_hours: requested wall time
+            num_nodes: requested number of nodes
+            num_cpus: requested number of cpus
+            num_gpus: requested number of gpus
+        """
+        self.write_line(file, "#!/bin/bash")
+        # Add the necessary gpu request tag if we need gpus.
+	self.write_line(file, '#SBATCH --job-name="glidein"')
+        self.write_line(file, '#SBATCH --nodes=%d'%num_nodes)
+        self.write_line(file, '#SBATCH --ntasks-per-node=%d'%num_cpus)
+        self.write_line(file, '#SBATCH --mem=%d'%(mem*1.1))
+        if num_gpus:
+            self.write_line(file, "#SBATCH --partition=gpu-shared")
+            self.write_line(file, "#SBATCH --gres=gpu:%d"%num_gpus)
+        else:
+            self.write_line(file, "#SBATCH --partition=shared")
+        self.write_line(file, "#SBATCH --time=%d:00:00" % wall_time_hours)
+        if self.config["Mode"]["debug"]:
+            self.write_line(file, "#SBATCH --output=%s/out/%%j.out"%os.getcwd())
+            self.write_line(file, "#SBATCH --error=%s/out/%%j.err"%os.getcwd())
+        else:
+            self.write_line(file, "#SBATCH --output=/dev/null")
+            self.write_line(file, "#SBATCH --error=/dev/null")
+        self.write_line(file, "#SBATCH --export=ALL")
+    
+    def write_cluster_specific(self, file, cluster_specific):
+        """
+        Writing the cluster specific pieces provided by 
+        config file.
+        
+        Args:
+            file: python file object
+            cluster_specific: string of cluster specific things
+        """
+        self.write_line(file, cluster_specific)
+    
+    def write_glidein_variables(self, file, mem, num_cpus, has_cvmfs, num_gpus = 0):
+        """
+        Writing the header for a PBS submission script.
+        Most of the pieces needed to tell PBS what resources
+        are being requested.
+        
+        Args:
+            file: python file object
+            mem: memory provided for glidein
+            has_cvmfs: whether cvmfs is present
+            num_cpus: number of cpus provided 
+            num_gpus: number of cpus provided
+        """
+        self.write_line(file, "export MEMORY=%d" % int(mem*1.1))
+        self.write_line(file, "export CPUS=%d" % num_cpus)
+        if num_gpus:
+            self.write_line(file, "export GPUS=CUDA$CUDA_VISIBLE_DEVICES")
+        self.write_line(file, 'export CVMFS="%s"' % has_cvmfs)
+        if 'site' in self.config['Glidein']:
+            self.write_line(file, 'export SITE="%s"' % self.config['Glidein']['site'])
+        
+    def write_glidin_part(self, file, local_dir = None, glidein_tarball = None, glidein_script = None, glidein_loc = None):
+        """
+        Writing the pieces needed to execute the glidein 
+        
+        Args:
+            file: python file object
+            local_dir: what is the local directory
+            glidein_loc: directory of the glidein pieces 
+            glidein_tarball: file name of tarball
+            glidein_script: file name of glidein start script
+        """
+        self.write_line(file, "cd %s\n" % local_dir)
+        if glidein_tarball:
+            self.write_line(file, "ln -s %s %s" % (os.path.join(glidein_loc, glidein_tarball), glidein_tarball))
+        self.write_line(file, 'ln -s %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
+        self.write_line(file, './%s' % glidein_script)
+
+    def write_submit_file(self, filename, state):
+        """
+        Writing the submit file
+        
+        Args:
+            filename: name of PBS script to create
+            state: what resource requirements a given glidein has
+        """
+        with open(filename,'w') as f:
+            num_cpus = state["cpus"]
+            mem = state["memory"]
+            # It is easier to request more cpus rather than more memory
+            # Makes scheduling easier
+            while mem > self.config["Cluster"]["mem_per_core"]:
+                num_cpus += 1
+                mem = state["memory"]/num_cpus
+                
+            self.write_general_header(f, mem = mem, 
+                                      wall_time_hours = self.config["Cluster"]["walltime_hrs"],
+                                      num_cpus = num_cpus, num_gpus = state["gpus"])
+            if "custom_header" in self.config["SubmitFile"]:
+                self.write_cluster_specific(f, self.config["SubmitFile"]["custom_header"])
+            if "custom_middle" in self.config["SubmitFile"]:
+                self.write_cluster_specific(f, self.config["SubmitFile"]["custom_middle"])
+            
+            self.write_glidein_variables(f, mem = mem,
+                                         num_cpus = state["cpus"], has_cvmfs = state["cvmfs"], 
+                                         num_gpus = state["gpus"])
+            if "tarball" in self.config["Glidein"]:
+                self.write_glidin_part(f, local_dir = self.config["SubmitFile"]["local_dir"], 
+                                       glidein_loc = self.config["Glidein"]["loc"], 
+                                       glidein_tarball = self.config["Glidein"]["tarball"], 
+                                       glidein_script = self.config["Glidein"]["executable"])
+            else:
+                self.write_glidin_part(f, local_dir = self.config["SubmitFile"]["local_dir"], 
+                                       glidein_loc = self.config["Glidein"]["loc"], 
+                                       glidein_script = self.config["Glidein"]["executable"])
+            if "custom_end" in self.config["SubmitFile"]:
+                self.write_cluster_specific(f, self.config["SubmitFile"]["custom_end"])
+            
+    def submit(self, state):
+        """
+        Submitting the script
+        
+        Args:
+            state: what resource requirements a given glidein has
+        """
+        logging.basicConfig(level=logging.INFO)
+        # (options,args) = glidein_parser()
+
+        filename = self.config["SubmitFile"]["filename"]
+        
+        self.write_submit_file(filename, state)
+
+        cmd = self.config["Cluster"]["submit_command"] + " " + filename
+        print(cmd)
+        if subprocess.call(cmd,shell=True):
+            raise Exception('failed to launch glidein')
+
 class SubmitCondor(Submit):
     def __init__(self, config):
         """

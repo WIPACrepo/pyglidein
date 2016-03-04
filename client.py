@@ -123,6 +123,9 @@ def main():
     elif config_dict["Cluster"]["scheduler"] == "pbs":
         from submit import SubmitPBS
         scheduler = SubmitPBS(config_dict)
+    elif config_dict["Cluster"]["scheduler"] == "slurm":
+        from submit import SubmitSLURM
+        scheduler = SubmitSLURM(config_dict)
     else:
         raise Exception('scheduler not supported')
     

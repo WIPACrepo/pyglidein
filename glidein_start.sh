@@ -45,6 +45,7 @@ export _condor_ICECUBE_CVMFS_Exists="${CVMFS}"
 
 export _condor_CONDOR_HOST="$CLUSTER"
 export _condor_COLLECTOR_HOST="${CLUSTER}:9618?sock=collector"
+export _condor_GLIDEIN_Site="\"${SITE}\""
 export _condor_GLIDEIN_HOST="$CLUSTER"
 export _condor_GLIDEIN_Max_Walltime=${WALLTIME};
 export _condor_GLIDEIN_Job_Max_Time=${WALLTIME};
@@ -69,14 +70,13 @@ export _condor_SLOT_TYPE_1_PARTITIONABLE="True"
 export _condor_SLOT_TYPE_1_CONSUMPTION_POLICY="True"
 export _condor_SLOT_TYPE_1_CONSUMPTION_GPUs="quantize(target.RequestGpus,{0})";
 export _condor_SLOT_WEIGHT="Cpus";
-export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists"
+export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists GLIDEIN_Site"
 export _condor_START="ifThenElse(ifThenElse(MY.GPUs =!= undefined,MY.GPUs,0) > 0,ifThenElse(TARGET.RequestGPUs =!= undefined,TARGET.RequestGPUs,0) > 0,TRUE)";
 export _condor_UID_DOMAIN=""
 #export _condor_FILESYSTEM_DOMAIN=${DOMAIN}
 export _condor_MAIL=/bin/mail;
 export _condor_IS_OWNER="False"
 export _campusfactory_wntmp=$PWD
-export _condor_GLIDEIN_Site="${SITE}"
 export _condor_CCB_ADDRESS="${CLUSTER}:9618?sock=collector"
 #export _condor_PRIVATE_NETWORK_NAME=${DOMAIN}
 export _condor_UPDATE_COLLECTOR_WITH_TCP="True"
@@ -96,12 +96,12 @@ export _condor_LOCAL_DIR=$PWD
 export _condor_SBIN=$PWD/glideinExec/sbin
 export _condor_LIB=$PWD/glideinExec/lib
 
-export PATH=$_condor_SBIN:$PWD/glideinExec/bin
-export LD_LIBRARY_PATH=$_condor_LIB
-
 # make a job wrapper
 echo 'eval `/cvmfs/icecube.opensciencegrid.org/py2-v1/setup.sh`' > $PWD/job_wrapper.sh
 chmod +x $PWD/job_wrapper.sh
+
+export PATH=$PATH:$_condor_SBIN:$PWD/glideinExec/bin
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$_condor_LIB
 
 # run condor
 exec glideinExec/sbin/condor_master -dyn -f -r 1200
