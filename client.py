@@ -45,11 +45,12 @@ def main():
     config_cluster = config_dict['Cluster']
 
     # Importing the correct class to handle the submit
-    if config_cluster["scheduler"] == "htcondor":
+    sched_type = config_cluster["scheduler"].lower()
+    if sched_type == "htcondor":
         scheduler = submit.SubmitCondor(config_dict)
-    elif config_cluster["scheduler"] == "pbs":
+    elif sched_type == "pbs":
         scheduler = submit.SubmitPBS(config_dict)
-    elif config_cluster["scheduler"] == "slurm":
+    elif sched_type == "slurm":
         scheduler = submit.SubmitSLURM(config_dict)
     else:
         raise Exception('scheduler not supported')
