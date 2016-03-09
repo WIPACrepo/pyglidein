@@ -8,8 +8,8 @@ import logging
 from optparse import OptionParser
 import ConfigParser
 
-from util import json_decode, config_options_dict
-from client_util import get_state
+from util import json_decode
+from client_util import get_state, config_options_dict
 import submit
 
 logger = logging.getLogger('client')

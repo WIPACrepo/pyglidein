@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 import logging
 import threading
 import urllib2
+import ast
 
 from util import json_encode, json_decode
 
@@ -80,3 +81,16 @@ def get_state(address):
         return c.request('get_state', {})
     except Exception:
         logger.warn('error getting state', exc_info=True)
+
+def config_options_dict(config):
+    config_dict = {}
+    for section in config.sections():
+        config_dict[section] = {}
+        for option in config.options(section):
+            val = config.get(section, option)
+            try:
+                val = ast.literal_eval(val)
+            except Exception:
+                pass
+            config_dict[section][option] = val
+    return config_dict

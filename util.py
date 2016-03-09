@@ -7,7 +7,6 @@ from __future__ import absolute_import, division, print_function
 import json
 from datetime import date, datetime, time
 import logging
-import ast
 
 logger = logging.getLogger('util')
 
@@ -108,17 +107,3 @@ def json_decode(value):
     """Returns Python objects for the given JSON string."""
     return json.loads(value, object_hook=JSONToObj)
 
-def config_options_dict(config):
-    config_dict = {}
-    for section in config.sections():
-        config_dict[section] = {}
-        for option in config.options(section):
-            try:
-                config_dict[section][option] = ast.literal_eval(config.get(section, option))
-            except Exception:
-                val = config.get(section, option)
-                if "#" in val or "$" in val:
-                    config_dict[section][option] = val
-                else:
-                    config_dict[section][option] = val.lower()
-    return config_dict
