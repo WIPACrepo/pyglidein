@@ -1,42 +1,53 @@
 #!/bin/sh
 
-# assume you are already in a scratch directory
-
 #DOMAIN="npx.icecube.wisc.edu"
 
-if [ -z "$GLIDEIN_DIR" ]; then
+if [ -z $GLIDEIN_DIR ]; then
     GLIDEIN_DIR=${PWD}
 fi
-if [ -z "$SITE" ]; then
+if [ -z $SITE ]; then
     SITE="WIPAC"
 fi
-if [ -z "$CLUSTER" ]; then
+if [ -z $CLUSTER ]; then
     CLUSTER="glidein-simprod.icecube.wisc.edu"
 fi
 
-# 14 hours
-WALLTIME=50400
-RETIRETIME=1200
-NOCLAIMTIME=600
+if [ -z $WALLTIME ]; then
+    # 14 hours
+    WALLTIME=50400
+fi
+if [ -z $RETIRETIME ]; then
+    # 20 minutes
+    RETIRETIME=1200
+fi
+if [ -z $NOCLAIMTIME ]; then
+    # 10 minutes
+    NOCLAIMTIME=600
+fi
 
-if [ -z "$CPUS" ]; then
+if [ -z $CPUS ]; then
     CPUS=1
 fi
-if [ -z "$GPUS" ]; then
+if [ -z $GPUS ]; then
     GPUS=0
 fi
-if [ -z "$MEMORY" ]; then
+if [ -z $MEMORY ]; then
     MEMORY=4000
 fi
-if [ -z "$DISK" ]; then
+if [ -z $DISK ]; then
     DISK=8000000
 fi
-if [ -z "$CVMFS" ]; then
-    CVMFS="True"
-fi
+# CVMFS is always true with parrot
+CVMFS="True"
+
+
+##
+# Done with config
+##
 
 export GOTO_NUM_THREADS=1
 
+# assume you are already in a scratch directory
 mkdir glidein
 cd glidein
 

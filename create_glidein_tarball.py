@@ -11,8 +11,8 @@ import tempfile
 
 def libuuid_download(version='1.0.3'):
     url = 'http://downloads.sourceforge.net/project/libuuid/libuuid-'+version+'.tar.gz'
-    subprocess.check_call(['wget',url])
-    subprocess.check_call(['tar','-zxf','libuuid-'+version+'.tar.gz'])
+    subprocess.check_call(['wget', url])
+    subprocess.check_call(['tar', '-zxf', 'libuuid-'+version+'.tar.gz'])
     return 'libuuid-'+version
 
 def libuuid_build():
@@ -37,8 +37,8 @@ def libuuid_build():
 
 def cvmfs_download():
     url = 'https://github.com/cvmfs/cvmfs/archive/libcvmfs-stable.tar.gz'
-    subprocess.check_call(['wget',url])
-    subprocess.check_call(['tar','-zxf','libcvmfs-stable.tar.gz'])
+    subprocess.check_call(['wget', url])
+    subprocess.check_call(['tar', '-zxf', 'libcvmfs-stable.tar.gz'])
     return 'cvmfs-libcvmfs-stable'
 
 def cvmfs_build():
@@ -71,8 +71,8 @@ def cvmfs_build():
 
 def parrot_download(version='5.3.4'):
     url = 'http://ccl.cse.nd.edu/software/files/cctools-'+version+'-source.tar.gz'
-    subprocess.check_call(['wget',url])
-    subprocess.check_call(['tar','-zxf','cctools-'+version+'-source.tar.gz'])
+    subprocess.check_call(['wget', url])
+    subprocess.check_call(['tar', '-zxf', 'cctools-'+version+'-source.tar.gz'])
     return 'cctools-'+version+'-source'
 
 def parrot_build(version=None):
@@ -106,8 +106,8 @@ def parrot_build(version=None):
 def condor_download(version='8.4.3'):
     version = version.replace('.','_')
     url = 'https://github.com/htcondor/htcondor/archive/V'+version+'.tar.gz'
-    subprocess.check_call(['wget',url])
-    subprocess.check_call(['tar','-zxf','V'+version+'.tar.gz'])
+    subprocess.check_call(['wget', url])
+    subprocess.check_call(['tar', '-zxf', 'V'+version+'.tar.gz'])
     return 'htcondor-'+version
 
 def condor_build(version=None):
@@ -149,7 +149,7 @@ def condor_build(version=None):
         subprocess.check_call(['make','install'])
         return os.path.join(initial_dir,dirname,'release_dir')
     finally:
-       os.chdir(initial_dir)
+        os.chdir(initial_dir)
 
 def main():
     from optparse import OptionParser
@@ -160,7 +160,7 @@ def main():
                       help='HTCondor version to use')
     parser.add_option('--parrot-version',dest='parrot',default='5.3.4',
                       help='Parrot (cctools) version to use')
-    (options,args) = parser.parse_args()
+    (options, args) = parser.parse_args()
     if not options.template:
         raise Exception('need a template directory')
     options.template = os.path.abspath(options.template)
@@ -181,8 +181,7 @@ def main():
             tar.add(os.path.join(parrot_path,'lib','libparrot_helper.so'),arcname=os.path.join('GLIDEIN_PARROT','libparrot_helper.so'))
     finally:
         os.chdir(curdir)
-#        shutil.rmtree(d)
-
+        shutil.rmtree(d)
 
 if __name__ == '__main__':
     main()
