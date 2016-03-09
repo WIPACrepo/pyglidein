@@ -41,13 +41,15 @@ def main():
     config = ConfigParser.ConfigParser()
     config.read(options.config)
     config_dict = config_options_dict(config)
+    config_glidein = config_dict['Glidein']
+    config_cluster = config_dict['Cluster']
 
     # Importing the correct class to handle the submit
-    if config_dict["Cluster"]["scheduler"] == "htcondor":
+    if config_cluster["scheduler"] == "htcondor":
         scheduler = submit.SubmitCondor(config_dict)
-    elif config_dict["Cluster"]["scheduler"] == "pbs":
+    elif config_cluster["scheduler"] == "pbs":
         scheduler = submit.SubmitPBS(config_dict)
-    elif config_dict["Cluster"]["scheduler"] == "slurm":
+    elif config_cluster["scheduler"] == "slurm":
         scheduler = submit.SubmitSLURM(config_dict)
     else:
         raise Exception('scheduler not supported')
@@ -57,34 +59,35 @@ def main():
     if "running_cmd" not in config_dict["Cluster"]:
         raise Exception('no running_cmd')
 
-    if config_dict["Mode"]["debug"]:
+    if ('Mode' in config_dict and 'debug' in config_dict['Mode'] and
+        config_dict['Mode']['debug']):
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
 
     while True:
-        if config_dict["Glidein"]["ssh_state"]:
+        if 'ssh_state' in config_glidein and config_glidein['ssh_state']:
             state = get_ssh_state()
         else:
-            state = get_state(config_dict["Glidein"]["address"])
+            state = get_state(config_glidein['address'])
         if state:
             try:
-                glideins_running = get_running(config_dict["Cluster"]["running_cmd"])
+                glideins_running = get_running(config_cluster["running_cmd"])
             except Exception:
                 logger.warn('error getting running job count', exc_info=True)
                 continue
             i = 0
             for s in state:
                 # Skipping CPU jobs for gpu only clusters
-                if "gpu_only" in config_dict["Cluster"]:
-                    if config_dict["Cluster"]["gpu_only"] and s["gpus"] == 0:
-                        continue
+                if ('gpu_only' in config_cluster and config_cluster['gpu_only']
+                    and s["gpus"] == 0):
+                    continue
                 # skipping GPU jobs for cpu only clusters
-                if "cpu_only" in config_dict["Cluster"]:
-                    if config_dict["Cluster"]["cpu_only"] and s["gpus"] != 0:
-                        continue
-                if (i >= config_dict["Cluster"]["limit_per_submit"]
-                    or i + glideins_running >= config_dict["Cluster"]["max_total_jobs"]):
+                if ('cpu_only' in config_cluster and config_cluster['cpu_only']
+                    and s["gpus"] != 0):
+                    continue
+                if (i >= config_cluster["limit_per_submit"]
+                    or i + glideins_running >= config_cluster["max_total_jobs"]):
                     logger.info('reached limit')
                     break
                 scheduler.submit(s)
@@ -93,9 +96,9 @@ def main():
         else:
             logger.info('no state, nothing to do')
 
-        if int(config_dict["Glidein"]["delay"]) < 1:
+        if 'delay' not in config_glidein or int(config_glidein['delay']) < 1:
             break
-        time.sleep(config_dict["Glidein"]["delay"])
+        time.sleep(config_glidein['delay'])
 
 
 if __name__ == '__main__':
