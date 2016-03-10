@@ -19,8 +19,8 @@ for jobs to run in. Jobs then run as normal.
 Install
 -------
 
-To install, just `git clone` the repo to a local directory. These are just
-scripts, so they can be used directly.
+To install, just `git clone` the repository to a local directory. These
+are just scripts, so they can be used directly.
 
 ### Server
 
@@ -59,8 +59,6 @@ All settings are stored in the config file. The important settings are:
     # queue limits
     max_total_jobs = 1000
     limit_per_submit = 50
-
-Details are available [here](docs/config.md).
 
 This is routinely run in a `cron`, but can also be run continuously with:
 
