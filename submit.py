@@ -29,6 +29,12 @@ class Submit(object):
     def write_line(self, f, line):
         f.write(line+"\n")
 
+    def get_executable(self):
+        executable = 'glidein_start.sh'
+        if 'executable' in self.config['Glidein']:
+            executable = self.config["Glidein"]["executable"]
+        return executable
+
 class SubmitPBS(Submit):
     """Submit a PBS / Torque job"""
 
@@ -154,11 +160,11 @@ class SubmitPBS(Submit):
 
             kwargs = {
                 'local_dir': self.config["SubmitFile"]["local_dir"],
-                'glidein_loc': self.config["Glidein"]["loc"],
-                'glidein_script': self.config["Glidein"]["executable"],
+                'glidein_script': self.get_executable(),
             }
             if "tarball" in self.config["Glidein"]:
                 kwargs['glidein_tarball'] = self.config["Glidein"]["tarball"]
+                kwargs['glidein_loc'] = self.config["Glidein"]["loc"]
             self.write_glidein_part(f, **kwargs)
 
             if "custom_end" in self.config["SubmitFile"]:
@@ -260,7 +266,7 @@ class SubmitCondor(Submit):
             if "CustomEnv" in self.config:
                 for k, v in self.config["CustomEnv"].items():
                     f.write(k + '=' + v + ' ')
-            f.write('%s' % self.config["Glidein"]["executable"])
+            f.write(str(self.get_executable()))
 
             mode = os.fstat(f.fileno()).st_mode
             mode |= 0o111
@@ -299,9 +305,10 @@ class SubmitCondor(Submit):
 
             # get input files
             infiles = []
-            if not os.path.isfile(self.config["Glidein"]["executable"]):
+            executable = self.get_executable()
+            if not os.path.isfile(executable):
                 raise Exception("no executable provided")
-            infiles.append(self.config["Glidein"]["executable"])
+            infiles.append(executable)
             if "tarball" in self.config["Glidein"]:
                 if not os.path.isfile(self.config["Glidein"]["tarball"]):
                     raise Exception("provided tarball does not exist")
