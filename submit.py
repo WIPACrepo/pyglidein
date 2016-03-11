@@ -84,14 +84,14 @@ class SubmitPBS(Submit):
         Args:
             f: python file object
             mem: memory provided for glidein
-            wakktime_hours: lifetime of glidein in hours
+            walltime_hours: lifetime of glidein in hours
             cpus: number of cpus provided
             gpus: number of cpus provided
         """
         if mem:
             self.write_line(f, "export MEMORY=%d" % mem)
         if walltime_hours:
-            self.write_line(f, "export WALLTIME=%d" % walltime_hours*3600)
+            self.write_line(f, "export WALLTIME=%d" % (walltime_hours*3600))
         if num_cpus:
             self.write_line(f, "export CPUS=%d" % num_cpus)
         if num_gpus:
@@ -119,6 +119,8 @@ class SubmitPBS(Submit):
             glidein_script: file name of glidein start script
         """
         self.write_line(f, "cd %s\n" % local_dir)
+        if not glidein_loc:
+            glidein_loc = os.getcwd()
         if glidein_tarball:
             self.write_line(f, "ln -s %s %s" % (os.path.join(glidein_loc, glidein_tarball), glidein_tarball))
         self.write_line(f, 'ln -s %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
@@ -145,7 +147,7 @@ class SubmitPBS(Submit):
                 while mem > self.config["Cluster"]["mem_per_core"]:
                     mem = state["memory"]/num_cpus
                     num_cpus += 1
-            walltime = self.config["Cluster"]["walltime_hrs"]
+            walltime = int(self.config["Cluster"]["walltime_hrs"])
 
             self.write_general_header(f, mem=mem, num_cpus=num_cpus, num_gpus=num_gpus,
                                       walltime_hours=walltime)
@@ -185,13 +187,15 @@ class SubmitPBS(Submit):
 
         cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
         print(cmd)
-        if subprocess.call(cmd,shell=True):
-            raise Exception('failed to launch glidein')
+        if not ('Mode' in self.config and 'dryrun' in self.config['Mode'] and
+                self.config['Mode']['dryrun']):
+            if subprocess.call(cmd,shell=True):
+                raise Exception('failed to launch glidein')
 
 class SubmitSLURM(SubmitPBS):
     """SLURM is similar to PBS, but with different headers"""
 
-    def write_general_header(self, f, mem=3000, wall_time_hours=14,
+    def write_general_header(self, f, mem=3000, walltime_hours=14,
                              num_nodes=1, num_cpus=1, num_gpus=0):
         """
         Writing the header for a SLURM submission script.
@@ -201,7 +205,7 @@ class SubmitSLURM(SubmitPBS):
         Args:
             f: python file object
             mem: requested memory
-            wall_time_hours: requested wall time
+            walltime_hours: requested wall time
             num_nodes: requested number of nodes
             num_cpus: requested number of cpus
             num_gpus: requested number of gpus
@@ -216,7 +220,7 @@ class SubmitSLURM(SubmitPBS):
             self.write_line(f, "#SBATCH --gres=gpu:%d"%num_gpus)
         else:
             self.write_line(f, "#SBATCH --partition=shared")
-        self.write_line(f, "#SBATCH --time=%d:00:00" % wall_time_hours)
+        self.write_line(f, "#SBATCH --time=%d:00:00" % walltime_hours)
         if self.config["Mode"]["debug"]:
             self.write_line(f, "#SBATCH --output=%s/out/%%j.out"%os.getcwd())
             self.write_line(f, "#SBATCH --error=%s/out/%%j.err"%os.getcwd())
