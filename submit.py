@@ -136,20 +136,26 @@ class SubmitPBS(Submit):
         """
         with open(filename, 'w') as f:
             num_cpus = state["cpus"]
-            mem = int(state["memory"]*1.1)
+            mem_advertised = int(state["memory"]*1.1)
+            mem_requested = mem_advertised
             num_gpus = state["gpus"]
+
+            mem_per_core = 2000
+            if 'mem_per_core' in self.config['Cluster']:
+                mem_per_core = self.config['Cluster']['mem_per_core']
             if num_gpus:
-                if mem > self.config["Cluster"]["mem_per_core"]:
+                if mem_requested > mem_per_core:
                     # just ask for the max mem, and hope that's good enough
-                    mem = self.config["Cluster"]["mem_per_core"]
+                    mem_requested = mem_per_core
             else:
                 # It is easier to request more cpus rather than more memory
-                while mem > self.config["Cluster"]["mem_per_core"]:
-                    mem = state["memory"]/num_cpus
+                while mem_requested > mem_per_core:
+                    mem_requested = mem_advertised/num_cpus
                     num_cpus += 1
             walltime = int(self.config["Cluster"]["walltime_hrs"])
 
-            self.write_general_header(f, mem=mem, num_cpus=num_cpus, num_gpus=num_gpus,
+            self.write_general_header(f, mem=mem_requested, num_cpus=num_cpus,
+                                      num_gpus=num_gpus,
                                       walltime_hours=walltime)
 
             if "custom_header" in self.config["SubmitFile"]:
@@ -157,7 +163,8 @@ class SubmitPBS(Submit):
             if "custom_middle" in self.config["SubmitFile"]:
                 self.write_line(f, self.config["SubmitFile"]["custom_middle"])
 
-            self.write_glidein_variables(f, mem=mem, num_cpus=num_cpus, num_gpus=num_gpus,
+            self.write_glidein_variables(f, mem=mem_advertised,
+                                         num_cpus=num_cpus, num_gpus=num_gpus,
                                          walltime_hours=walltime)
 
             kwargs = {
