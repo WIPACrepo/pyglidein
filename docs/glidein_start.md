@@ -34,9 +34,9 @@ The following variables can be set to configure things:
 
 * GPUS - GPUs the glidein has access to. Default is none.
 
-* MEMORY - MEMORY in MB the glidein has access to. Default is 4 GB.
+* MEMORY - Memory in MB the glidein has access to. Default is 4 GB.
 
-* DISK - DISK in KB the glidein has access to. Default is 8 GB.
+* DISK - Disk in KB the glidein has access to. Default is 8 GB.
 
 * GLIDEIN_DIR - Directory containing `glidein.tar.gz`, if already available.
   Default is none, downloading from
