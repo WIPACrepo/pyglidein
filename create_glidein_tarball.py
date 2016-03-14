@@ -9,6 +9,9 @@ import subprocess
 import tarfile
 import tempfile
 
+if sys.version_info[0] < 3 && sys.version_info[1] < 7:
+    raise Exception('requires python 2.7+')
+
 def libuuid_download(version='1.0.3'):
     url = 'http://downloads.sourceforge.net/project/libuuid/libuuid-'+version+'.tar.gz'
     subprocess.check_call(['wget', url])
