@@ -3,13 +3,14 @@ Create a glidein tarball by downloading the source, building it, then
 copying what is needed into the tarball.
 """
 
+import sys
 import os
 import shutil
 import subprocess
 import tarfile
 import tempfile
 
-if sys.version_info[0] < 3 && sys.version_info[1] < 7:
+if sys.version_info[0] < 3 and sys.version_info[1] < 7:
     raise Exception('requires python 2.7+')
 
 def libuuid_download(version='1.0.3'):
