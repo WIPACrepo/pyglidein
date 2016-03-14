@@ -150,8 +150,8 @@ class SubmitPBS(Submit):
             else:
                 # It is easier to request more cpus rather than more memory
                 while mem_requested > mem_per_core:
-                    mem_requested = mem_advertised/num_cpus
                     num_cpus += 1
+                    mem_requested = mem_advertised/num_cpus
             walltime = int(self.config["Cluster"]["walltime_hrs"])
 
             self.write_general_header(f, mem=mem_requested, num_cpus=num_cpus,
