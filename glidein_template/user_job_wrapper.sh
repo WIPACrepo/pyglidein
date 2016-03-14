@@ -19,10 +19,12 @@ if [ -n "$gpu_dev" ]; then
   export GPU_DEVICE_ORDINAL=$gpu_dev
 fi
 
+GLIDEIN_DIR=$GLIDEIN_LOCAL_TMP_DIR
+
 # See if we provided a dynamic wrapper
 JOB_WRAPPER="NONE"
-if [ -e "${PWD}/job_wrapper.sh" ]; then
-    JOB_WRAPPER="${PWD}/job_wrapper.sh"
+if [ -e "${GLIDEIN_DIR}/job_wrapper.sh" ]; then
+    JOB_WRAPPER="${GLIDEIN_DIR}/job_wrapper.sh"
 fi
 
 
@@ -36,36 +38,20 @@ safe() {
   /usr/bin/env -i "$@"
 }
 
-# Locate parrot.  We do not rely on any environment that the user can
-# override, because we must avoid being manipulated by the user here.
-GLIDEIN_PARROT="$_CONDOR_SCRATCH_DIR"
-FORCE_PARROT=0
-while [ 1 ]; do
-    p=${GLIDEIN_PARROT%/*}
-    if [ "$p" = "$GLIDEIN_PARROT" ]; then
-        GLIDEIN_PARROT=""
-    fi
-    GLIDEIN_PARROT="$p"
-    if [ -x "$GLIDEIN_PARROT/GLIDEIN_PARROT/run_parrot" ]; then
-        GLIDEIN_PARROT="$GLIDEIN_PARROT/GLIDEIN_PARROT"
-        if [ -e "$GLIDEIN_PARROT/FORCE_PARROT" ]; then
-            FORCE_PARROT=1
-        fi
-        break
-    fi
-done
+# Locate parrot.
+GLIDEIN_PARROT="${GLIDEIN_DIR}/GLIDEIN_PARROT"
 
 # Check whether we can already see cvmfs
-USE_PARROT=1
+USE_PARROT="y"
 if [ -e /cvmfs/icecube.opensciencegrid.org/py2-v1 ]; then
-    USE_PARROT=0
+    USE_PARROT="n"
 fi
 
 # As of parrot 3.4.0, parrot causes ssh_to_job to fail, so
 # avoid using parrot when _CONDOR_JOB_PIDS is non-empty.
 # (That's how we guess that this is an ssh_to_job session.)
 
-if [ "$USE_PARROT" = 1 ] && ( "$FORCE_PARROT" = 1 ] || ( safe grep -q -i '^RequiresCVMFS *= *True' "${_CONDOR_JOB_AD}" && [ -z "$_CONDOR_JOB_PIDS" ] ) ); then
+if [ "$USE_PARROT" = "y" ]; then
 
     # Workaround for GLOBUS_TCP_PORT_RANGE_STATE_FILE pointing to a file
     # we can't write to.  This breaks CMS CRAB 2.8.1 and prior.
