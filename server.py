@@ -166,7 +166,7 @@ class server:
         ])
     def start(self):
         self.http_server = HTTPServer(self.application, xheaders=True)
-        self.http_server.listen(self.cfg['port'])
+        self.http_server.listen(self.cfg["options"].port)
         IOLoop.instance().start()
     def stop(self):
         self.http_server.stop()
@@ -201,11 +201,13 @@ def condor_q(cfg):
                 req_os = None
                 if 'OpSysAndVer =?= "SL6"' in reqs:
                     req_os = 'sl6'
-                state.append({'cpus':cpus, 'memory':memory, 'disk':disk,
-                              'gpus':gpus, 'os':req_os})
+                state.append((cpus, memory, disk, gpus, req_os))
             except Exception:
                 logger.info('error parsing line', exc_info=True)
                 continue
+        state = [{'cpus':s[0], 'memory':s[1], 'disk':s[2],
+                  'gpus':s[3], 'os':s[4], 'count': count} 
+                  for s, count in Counter(state).items()]
     except Exception:
         logger.warn('error in condor_q', exc_info=True)
         state = None
@@ -259,8 +261,6 @@ def main():
     # setup server
     s = server(cfg)
     s.start()
-
-
 
 if __name__ == '__main__':
     main()
