@@ -11,6 +11,9 @@ fi
 if [ -z $CLUSTER ]; then
     CLUSTER="glidein-simprod.icecube.wisc.edu"
 fi
+if [ -z $CACHE_DIR ]; then
+    CACHE_DIR=$PWD
+fi
 
 if [ -z $WALLTIME ]; then
     # 14 hours
