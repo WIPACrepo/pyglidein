@@ -194,9 +194,9 @@ class SubmitPBS(Submit):
         if 'filename' in self.config["SubmitFile"]:
             submit_filename = self.config["SubmitFile"]["filename"]
         
-        group_jobs = "group_jobs" in self.config["Cluster"] and
+        group_jobs = ("group_jobs" in self.config["Cluster"] and
                       self.config["Cluster"]["group_jobs"] and
-                      "count" in state
+                      "count" in state)
         
         num_submits = 1 if group_jobs else state["count"]
         self.write_submit_file(submit_filename, state, group_jobs)
@@ -363,9 +363,9 @@ class SubmitCondor(Submit):
         if 'env_wrapper_name' in self.config['SubmitFile']:
             env_filename = self.config["SubmitFile"]["env_wrapper_name"]
         
-        group_jobs = "group_jobs" in self.config["Cluster"] and
+        group_jobs = ("group_jobs" in self.config["Cluster"] and
                       self.config["Cluster"]["group_jobs"] and 
-                      "count" in state
+                      "count" in state)
         num_submits = 1 if group_jobs else state["count"]
         self.make_env_wrapper(env_filename)
         self.make_submit_file(submit_filename,
