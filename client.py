@@ -92,7 +92,7 @@ def main():
                     logger.info('reached limit')
                     break
                 scheduler.submit(s)
-                i += s["count"] if "count" in s else 1
+                i += 1 if "count" not in s else s["count"]
             logger.info('launched %d glideins', i)
         else:
             logger.info('no state, nothing to do')

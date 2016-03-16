@@ -197,17 +197,15 @@ class SubmitPBS(Submit):
         group_jobs = ("group_jobs" in self.config["Cluster"] and
                       self.config["Cluster"]["group_jobs"] and
                       "count" in state)
-        
-        num_submits = 1 if group_jobs else state["count"]
+
         self.write_submit_file(submit_filename, state, group_jobs)
         
-        for i in range(num_submits):
-            cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
-            print(cmd)
-            if not ('Mode' in self.config and 'dryrun' in self.config['Mode'] and
-                    self.config['Mode']['dryrun']):
-                if subprocess.call(cmd,shell=True):
-                    raise Exception('failed to launch glidein')
+        cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
+        print(cmd)
+        if not ('Mode' in self.config and 'dryrun' in self.config['Mode'] and
+                self.config['Mode']['dryrun']):
+            if subprocess.call(cmd,shell=True):
+                raise Exception('failed to launch glidein')
 
 class SubmitSLURM(SubmitPBS):
     """SLURM is similar to PBS, but with different headers"""
@@ -366,14 +364,12 @@ class SubmitCondor(Submit):
         group_jobs = ("group_jobs" in self.config["Cluster"] and
                       self.config["Cluster"]["group_jobs"] and 
                       "count" in state)
-        num_submits = 1 if group_jobs else state["count"]
         self.make_env_wrapper(env_filename)
         self.make_submit_file(submit_filename,
                               env_filename,
                               state, 
                               group_jobs)
-        for i in range(num_submits):
-            cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
-            print(cmd)
-            if subprocess.call(cmd, shell=True):
-                raise Exception('failed to launch glidein')
+        cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
+        print(cmd)
+        if subprocess.call(cmd, shell=True):
+            raise Exception('failed to launch glidein')
