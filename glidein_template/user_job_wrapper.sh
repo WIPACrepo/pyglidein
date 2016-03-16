@@ -20,12 +20,12 @@ if [ -n "$gpu_dev" ]; then
 fi
 
 GLIDEIN_DIR=$GLIDEIN_LOCAL_TMP_DIR
-if [ ! -d $GLIDEIN_DIR ];
+if [ ! -d $GLIDEIN_DIR ]; then
     GLIDEIN_DIR=$PWD
 fi
 JOB_WRAPPER="${GLIDEIN_DIR}/job_wrapper.sh"
 
-if [ -z $http_proxy ];
+if [ -z $http_proxy ]; then
     http_proxy=http://squid.icecube.wisc.edu:3128
 fi
 
@@ -45,7 +45,7 @@ GLIDEIN_PARROT="${GLIDEIN_DIR}/GLIDEIN_PARROT"
 
 # Check whether we can already see cvmfs
 USE_PARROT="y"
-if [ ! -e $GLIDEIN_PARROT ];
+if [ ! -e $GLIDEIN_PARROT ]; then
     USE_PARROT="n"
 fi
 if [ -e /cvmfs/icecube.opensciencegrid.org/py2-v1 ]; then
