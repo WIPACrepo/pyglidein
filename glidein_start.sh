@@ -82,10 +82,10 @@ export _condor_SLOT_TYPE_1="100%"
 export _condor_NUM_SLOTS_TYPE_1=1
 export _condor_SLOT_TYPE_1_PARTITIONABLE="True"
 export _condor_SLOT_TYPE_1_CONSUMPTION_POLICY="True"
-export _condor_SLOT_TYPE_1_CONSUMPTION_GPUs="quantize(target.RequestGpus,{0})";
+export _condor_SLOT_TYPE_1_CONSUMPTION_GPUs="quantize(ifThenElse(target.RequestGpus =!= undefined,target.RequestGpus,0),{0})";
 export _condor_SLOT_WEIGHT="Cpus";
 export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists GLIDEIN_Site"
-export _condor_STARTER_JOB_ENVIRONMENT="\"GLIDEIN_Site=${SITE} GLIDEIN_DIR=${PWD} GOTO_NUM_THREADS=1\"";
+export _condor_STARTER_JOB_ENVIRONMENT="\"GLIDEIN_Site=${SITE} GLIDEIN_LOCAL_TMP_DIR=${PWD} GOTO_NUM_THREADS=1\"";
 export _condor_START="ifThenElse(ifThenElse(MY.GPUs =!= undefined,MY.GPUs,0) > 0,ifThenElse(TARGET.RequestGPUs =!= undefined,TARGET.RequestGPUs,0) > 0,TRUE)";
 export _condor_UID_DOMAIN=""
 #export _condor_FILESYSTEM_DOMAIN=${DOMAIN}
@@ -112,7 +112,11 @@ export _condor_SBIN=$PWD/glideinExec/sbin
 export _condor_LIB=$PWD/glideinExec/lib
 
 # make a job wrapper
-echo 'eval `/cvmfs/icecube.opensciencegrid.org/py2-v1/setup.sh`' > $PWD/job_wrapper.sh
+cat > $PWD/job_wrapper.sh << "EOF"
+#!/bin/sh
+eval `/cvmfs/icecube.opensciencegrid.org/py2-v1/setup.sh`
+$@
+EOF
 chmod +x $PWD/job_wrapper.sh
 
 export PATH=$PATH:$_condor_SBIN:$PWD/glideinExec/bin
