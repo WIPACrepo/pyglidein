@@ -139,7 +139,7 @@ class SubmitPBS(Submit):
         """
         with open(filename, 'w') as f:
             num_cpus = state["cpus"]
-            mem_advertised = int(state["memory"]*1.1)
+            mem_advertised = int(state["memory"]*1.05)
             mem_requested = mem_advertised
             num_gpus = state["gpus"]
 

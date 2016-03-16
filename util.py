@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, print_function
 import json
 from datetime import date, datetime, time
 import logging
+from collections import defaultdict
 
 logger = logging.getLogger('util')
 
@@ -106,4 +107,10 @@ def json_encode(value):
 def json_decode(value):
     """Returns Python objects for the given JSON string."""
     return json.loads(value, object_hook=JSONToObj)
+    
 
+def counter(states):
+    out_dict = defaultdict(int)
+    for s in states:
+        out_dict[s] += 1
+    return out_dict
