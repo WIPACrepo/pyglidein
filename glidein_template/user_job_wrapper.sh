@@ -92,7 +92,7 @@ if [ "$USE_PARROT" = "y" ]; then
            _CONDOR_SLOT=${_CONDOR_SLOT} \
            _CONDOR_JOB_PIDS=${_CONDOR_JOB_PIDS} \
            http_proxy=${http_proxy} \
-        ${GLIDEIN_PARROT}/run_parrot "${JOB_WRAPPER} $@"
+        ${GLIDEIN_PARROT}/run_parrot ${JOB_WRAPPER} "$@"
     fi
 
     # Note that since we exec the job above, wrappers that come after
@@ -103,6 +103,6 @@ else
     if [ ! -e $JOB_WRAPPER ]; then
         exec "$@"
     else
-        exec "${JOB_WRAPPER} $@"
+        exec ${JOB_WRAPPER} "$@"
     fi
 fi
