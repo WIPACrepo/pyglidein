@@ -77,6 +77,8 @@ def main():
             except Exception:
                 logger.warn('error getting running job count', exc_info=True)
                 continue
+            limit = min(config_cluster["limit_per_submit"], 
+                        config_cluster["max_total_jobs"] - glideins_running)
             i = 0
             for s in state:
                 # Skipping CPU jobs for gpu only clusters
@@ -87,12 +89,11 @@ def main():
                 if ('cpu_only' in config_cluster and config_cluster['cpu_only']
                     and s["gpus"] != 0):
                     continue
-                if (i >= config_cluster["limit_per_submit"]
-                    or i + glideins_running >= config_cluster["max_total_jobs"]):
+                if (i >= limit):
                     logger.info('reached limit')
                     break
-                if s["count"] > config_cluster["limit_per_submit"]: 
-                    s["count"] = config_cluster["limit_per_submit"]
+                if s["count"] > limit: 
+                    s["count"] = limit
                 scheduler.submit(s)
                 i += 1 if "count" not in s else s["count"]
             logger.info('launched %d glideins', i)
