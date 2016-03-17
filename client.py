@@ -91,6 +91,8 @@ def main():
                     or i + glideins_running >= config_cluster["max_total_jobs"]):
                     logger.info('reached limit')
                     break
+                if s["count"] > config_cluster["limit_per_submit"]: 
+                    s["count"] = config_cluster["limit_per_submit"]
                 scheduler.submit(s)
                 i += 1 if "count" not in s else s["count"]
             logger.info('launched %d glideins', i)
