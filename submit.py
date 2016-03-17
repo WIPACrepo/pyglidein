@@ -40,7 +40,7 @@ class SubmitPBS(Submit):
 
     def write_general_header(self, f, mem=3000, walltime_hours=14,
                              num_nodes=1, num_cpus=1, num_gpus=0,
-                             num_jobs = 0):
+                             num_jobs=0):
         """
         Writing the header for a PBS submission script.
         Most of the pieces needed to tell PBS what resources
