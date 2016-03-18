@@ -267,7 +267,8 @@ class SubmitUGE(SubmitPBS):
     option_tag = "#$"
     
     def write_general_header(self, f, mem=3000, walltime_hours=14,
-                             num_nodes=1, num_cpus=1, num_gpus=0):
+                             num_nodes=1, num_cpus=1, num_gpus=0,
+                             num_jobs=0):
         """
         Writing the header for a SLURM submission script.
         Most of the pieces needed to tell SLURM what resources
@@ -295,6 +296,8 @@ class SubmitUGE(SubmitPBS):
         else:
             self.write_option(f, "-o /dev/null")
             self.write_option(f, "-e /dev/null")
+        if num_jobs > 0:
+            self.write_option(f, "-t 1-%d" % num_jobs)
 
 class SubmitCondor(Submit):
     """Submit an HTCondor job"""
