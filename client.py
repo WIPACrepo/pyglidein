@@ -8,11 +8,11 @@ import logging
 from optparse import OptionParser
 import ConfigParser
 from operator import itemgetter
+from functools import cmp_to_key
 
 from util import json_decode
 from client_util import get_state, config_options_dict
 import submit
-
 
 logger = logging.getLogger('client')
 
@@ -39,13 +39,12 @@ def sort_states(state, columns, reverse=True):
     comparers = [((itemgetter(col[1:].strip()), -1) if col.startswith('-') else
                   (itemgetter(col.strip()), 1)) for col in columns]
     def comparer(left, right):
-        for fn, mult in comparers:
-            result = cmp(fn(left), fn(right))
-            if result:
-                return mult * result
-        else:
-            return 0
-    return sorted(state, cmp=comparer, reverse=reverse)
+        comparer_iter = (
+            cmp(fn(left), fn(right)) * mult
+            for fn, mult in comparers
+        )
+        return next((result for result in comparer_iter if result), 0)
+    return sorted(state, key=cmp_to_key(comparer), reverse=reverse)
 
 def main():
     parser = OptionParser()
