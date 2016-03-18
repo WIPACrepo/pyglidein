@@ -179,9 +179,14 @@ class SubmitPBS(Submit):
                 'local_dir': self.config["SubmitFile"]["local_dir"],
                 'glidein_script': self.get_executable(),
             }
-            if "tarball" in self.config["Glidein"]:
+            if "tarball" in self.config["Glidein"] and "loc" in self.config["Glidein"]:
                 kwargs['glidein_tarball'] = self.config["Glidein"]["tarball"]
                 kwargs['glidein_loc'] = self.config["Glidein"]["loc"]
+            elif "tarball" in self.config["Glidein"] and "loc" not in self.config["Glidein"]:
+                if os.path.isfile(self.config["Glidein"]["tarball"]):
+                    kwargs['glidein_tarball'] = self.config["Glidein"]["tarball"]
+                else:
+                    raise Exception("The tarball you provided does not exist")
             self.write_glidein_part(f, **kwargs)
 
             if "custom_end" in self.config["SubmitFile"]:
