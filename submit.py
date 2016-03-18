@@ -242,6 +242,41 @@ class SubmitSLURM(SubmitPBS):
             self.write_option(f, "--error=/dev/null")
         self.write_option(f, "--export=ALL")
 
+class SubmitUGE(SubmitPBS):
+    """UGE is similar to PBS, but with different headers"""
+    
+    option_tag = "#$"
+    
+    def write_general_header(self, f, mem=3000, walltime_hours=14,
+                             num_nodes=1, num_cpus=1, num_gpus=0):
+        """
+        Writing the header for a SLURM submission script.
+        Most of the pieces needed to tell SLURM what resources
+        are being requested.
+
+        Args:
+            f: python file object
+            mem: requested memory
+            walltime_hours: requested wall time
+            num_nodes: requested number of nodes
+            num_cpus: requested number of cpus
+            num_gpus: requested number of gpus
+        """
+        self.write_line(f, "#!/bin/bash")
+        self.write_option(f, '-S /bin/bash')
+        self.write_option(f, '-l h_rss=%dM'%(mem*1.1))
+        if num_gpus:
+            self.write_option(f, "-l gpu=%d"%num_gpus)
+        if num_cpus > 1:
+            self.write_option(f, "-pe multicore %d"%num_cpus)
+        self.write_line(f, "-l h_rt=%d:00:00" % walltime_hours)
+        if self.config["Mode"]["debug"]:
+            self.write_option(f, "-o %s/out/$JOB_ID.out"%os.getcwd())
+            self.write_option(f, "-e %s/out/$JOB_ID.err"%os.getcwd())
+        else:
+            self.write_option(f, "-o /dev/null")
+            self.write_option(f, "-e /dev/null")
+
 class SubmitCondor(Submit):
     """Submit an HTCondor job"""
 
