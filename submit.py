@@ -129,7 +129,7 @@ class SubmitPBS(Submit):
         if not glidein_loc:
             glidein_loc = os.getcwd()
         if glidein_tarball:
-            self.write_line(f, "ln -s %s %s" % (os.path.join(glidein_loc, glidein_tarball), glidein_tarball))
+            self.write_line(f, "ln -s %s %s" % (glidein_tarball, os.path.basename(glidein_tarball)))
         self.write_line(f, 'ln -s %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
         self.write_line(f, './%s' % glidein_script)
 
@@ -179,14 +179,19 @@ class SubmitPBS(Submit):
                 'local_dir': self.config["SubmitFile"]["local_dir"],
                 'glidein_script': self.get_executable(),
             }
-            if "tarball" in self.config["Glidein"] and "loc" in self.config["Glidein"]:
-                kwargs['glidein_tarball'] = self.config["Glidein"]["tarball"]
-                kwargs['glidein_loc'] = self.config["Glidein"]["loc"]
-            elif "tarball" in self.config["Glidein"] and "loc" not in self.config["Glidein"]:
-                if os.path.isfile(self.config["Glidein"]["tarball"]):
-                    kwargs['glidein_tarball'] = self.config["Glidein"]["tarball"]
+            if "tarball" in self.config["Glidein"]:
+                if "loc" in self.config["Glidein"]:
+                    glidein_tarball = os.path.join(self.config["Glidein"]["loc"], 
+                                                   self.config["Glidein"]["tarball"])
+                    kwargs['glidein_loc'] = self.config["Glidein"]["loc"]
+                else:
+                    glidein_tarball = self.config["Glidein"]["tarball"]
+
+                if os.path.isfile(glidein_tarball):
+                    kwargs['glidein_tarball'] = glidein_tarball
                 else:
                     raise Exception("The tarball you provided does not exist")
+
             self.write_glidein_part(f, **kwargs)
 
             if "custom_end" in self.config["SubmitFile"]:
