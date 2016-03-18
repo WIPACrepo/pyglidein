@@ -233,7 +233,7 @@ class SubmitSLURM(SubmitPBS):
             self.write_option(f, "--gres=gpu:%d"%num_gpus)
         else:
             self.write_option(f, "--partition=shared")
-        self.write_line(f, "--time=%d:00:00" % walltime_hours)
+        self.write_option(f, "--time=%d:00:00" % walltime_hours)
         if self.config["Mode"]["debug"]:
             self.write_option(f, "--output=%s/out/%%j.out"%os.getcwd())
             self.write_option(f, "--error=%s/out/%%j.err"%os.getcwd())
@@ -269,7 +269,7 @@ class SubmitUGE(SubmitPBS):
             self.write_option(f, "-l gpu=%d"%num_gpus)
         if num_cpus > 1:
             self.write_option(f, "-pe multicore %d"%num_cpus)
-        self.write_line(f, "-l h_rt=%d:00:00" % walltime_hours)
+        self.write_option(f, "-l h_rt=%d:00:00" % walltime_hours)
         if self.config["Mode"]["debug"]:
             self.write_option(f, "-o %s/out/$JOB_ID.out"%os.getcwd())
             self.write_option(f, "-e %s/out/$JOB_ID.err"%os.getcwd())
