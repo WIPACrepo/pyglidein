@@ -52,6 +52,8 @@ def main():
         scheduler = submit.SubmitPBS(config_dict)
     elif sched_type == "slurm":
         scheduler = submit.SubmitSLURM(config_dict)
+    elif sched_type == "uge":
+        scheduler = submit.SubmitUGE(config_dict)
     else:
         raise Exception('scheduler not supported')
 

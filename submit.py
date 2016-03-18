@@ -38,6 +38,10 @@ class Submit(object):
 class SubmitPBS(Submit):
     """Submit a PBS / Torque job"""
 
+    option_tag = "#PBS"
+    def write_option(self, f, line):
+        f.write(self.option_tag+" "+line+"\n")
+
     def write_general_header(self, f, mem=3000, walltime_hours=14,
                              num_nodes=1, num_cpus=1, num_gpus=0):
         """
@@ -56,23 +60,23 @@ class SubmitPBS(Submit):
         self.write_line(f, "#!/bin/bash")
         # Add the necessary gpu request tag if we need gpus.
         if num_gpus == 0:
-            self.write_line(f, "#PBS -l nodes=%d:ppn=%d" %\
+            self.write_option(f, "-l nodes=%d:ppn=%d" %\
                             (num_nodes, num_cpus))
         else:
-            self.write_line(f, "#PBS -l nodes=%d:ppn=%d:gpus=%d" %\
+            self.write_option(f, "-l nodes=%d:ppn=%d:gpus=%d" %\
                             (num_nodes, num_cpus, num_gpus))
-        self.write_line(f, "#PBS -l mem=%dmb,pmem=%dmb" % (mem, mem))
-        self.write_line(f, "#PBS -l walltime=%d:00:00" % walltime_hours)
+        self.write_option(f, "-l mem=%dmb,pmem=%dmb" % (mem, mem))
+        self.write_option(f, "-l walltime=%d:00:00" % walltime_hours)
         if ('Mode' in self.config and 'debug' in self.config['Mode']
            and self.config["Mode"]["debug"]):
             outdir = os.path.join(os.getcwd(),'out')
             if not os.path.isdir(outdir):
                 os.mkdir(outdir)
-            self.write_line(f, "#PBS -o %s/${PBS_JOBID}.out"%outdir)
-            self.write_line(f, "#PBS -e %s/${PBS_JOBID}.err"%outdir)
+            self.write_option(f, "-o %s/${PBS_JOBID}.out"%outdir)
+            self.write_option(f, "-e %s/${PBS_JOBID}.err"%outdir)
         else:
-            self.write_line(f, "#PBS -o /dev/null")
-            self.write_line(f, "#PBS -e /dev/null")
+            self.write_option(f, "-o /dev/null")
+            self.write_option(f, "-e /dev/null")
 
     def write_glidein_variables(self, f, mem=None, walltime_hours=None,
                                 num_cpus=None, num_gpus=None):
@@ -201,7 +205,9 @@ class SubmitPBS(Submit):
 
 class SubmitSLURM(SubmitPBS):
     """SLURM is similar to PBS, but with different headers"""
-
+    
+    option_tag = "#SBATCH"
+    
     def write_general_header(self, f, mem=3000, walltime_hours=14,
                              num_nodes=1, num_cpus=1, num_gpus=0):
         """
@@ -218,23 +224,58 @@ class SubmitSLURM(SubmitPBS):
             num_gpus: requested number of gpus
         """
         self.write_line(f, "#!/bin/bash")
-        self.write_line(f, '#SBATCH --job-name="glidein"')
-        self.write_line(f, '#SBATCH --nodes=%d'%num_nodes)
-        self.write_line(f, '#SBATCH --ntasks-per-node=%d'%num_cpus)
-        self.write_line(f, '#SBATCH --mem=%d'%(mem*1.1))
+        self.write_option(f, '--job-name="glidein"')
+        self.write_option(f, '--nodes=%d'%num_nodes)
+        self.write_option(f, '--ntasks-per-node=%d'%num_cpus)
+        self.write_option(f, '--mem=%d'%(mem*1.1))
         if num_gpus:
-            self.write_line(f, "#SBATCH --partition=gpu-shared")
-            self.write_line(f, "#SBATCH --gres=gpu:%d"%num_gpus)
+            self.write_option(f, "--partition=gpu-shared")
+            self.write_option(f, "--gres=gpu:%d"%num_gpus)
         else:
-            self.write_line(f, "#SBATCH --partition=shared")
-        self.write_line(f, "#SBATCH --time=%d:00:00" % walltime_hours)
+            self.write_option(f, "--partition=shared")
+        self.write_option(f, "--time=%d:00:00" % walltime_hours)
         if self.config["Mode"]["debug"]:
-            self.write_line(f, "#SBATCH --output=%s/out/%%j.out"%os.getcwd())
-            self.write_line(f, "#SBATCH --error=%s/out/%%j.err"%os.getcwd())
+            self.write_option(f, "--output=%s/out/%%j.out"%os.getcwd())
+            self.write_option(f, "--error=%s/out/%%j.err"%os.getcwd())
         else:
-            self.write_line(f, "#SBATCH --output=/dev/null")
-            self.write_line(f, "#SBATCH --error=/dev/null")
-        self.write_line(f, "#SBATCH --export=ALL")
+            self.write_option(f, "--output=/dev/null")
+            self.write_option(f, "--error=/dev/null")
+        self.write_option(f, "--export=ALL")
+
+class SubmitUGE(SubmitPBS):
+    """UGE is similar to PBS, but with different headers"""
+    
+    option_tag = "#$"
+    
+    def write_general_header(self, f, mem=3000, walltime_hours=14,
+                             num_nodes=1, num_cpus=1, num_gpus=0):
+        """
+        Writing the header for a SLURM submission script.
+        Most of the pieces needed to tell SLURM what resources
+        are being requested.
+
+        Args:
+            f: python file object
+            mem: requested memory
+            walltime_hours: requested wall time
+            num_nodes: requested number of nodes
+            num_cpus: requested number of cpus
+            num_gpus: requested number of gpus
+        """
+        self.write_line(f, "#!/bin/bash")
+        self.write_option(f, '-S /bin/bash')
+        self.write_option(f, '-l h_rss=%dM'%(mem*1.1))
+        if num_gpus:
+            self.write_option(f, "-l gpu=%d"%num_gpus)
+        if num_cpus > 1:
+            self.write_option(f, "-pe multicore %d"%num_cpus)
+        self.write_option(f, "-l h_rt=%d:00:00" % walltime_hours)
+        if self.config["Mode"]["debug"]:
+            self.write_option(f, "-o %s/out/$JOB_ID.out"%os.getcwd())
+            self.write_option(f, "-e %s/out/$JOB_ID.err"%os.getcwd())
+        else:
+            self.write_option(f, "-o /dev/null")
+            self.write_option(f, "-e /dev/null")
 
 class SubmitCondor(Submit):
     """Submit an HTCondor job"""
