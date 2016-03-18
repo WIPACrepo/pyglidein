@@ -7,10 +7,12 @@ import subprocess
 import logging
 from optparse import OptionParser
 import ConfigParser
+from operator import itemgetter
 
 from util import json_decode
 from client_util import get_state, config_options_dict
 import submit
+
 
 logger = logging.getLogger('client')
 
@@ -32,6 +34,18 @@ def launch_glidein(cmd, params=[]):
 def get_running(cmd):
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     return int(p.communicate()[0].strip())
+    
+def sort_states(state, columns, reverse=True):
+    comparers = [((itemgetter(col[1:].strip()), -1) if col.startswith('-') else
+                  (itemgetter(col.strip()), 1)) for col in columns]
+    def comparer(left, right):
+        for fn, mult in comparers:
+            result = cmp(fn(left), fn(right))
+            if result:
+                return mult * result
+        else:
+            return 0
+    return sorted(state, cmp=comparer, reverse=reverse)
 
 def main():
     parser = OptionParser()
@@ -81,6 +95,7 @@ def main():
                 continue
             limit = min(config_cluster["limit_per_submit"], 
                         config_cluster["max_total_jobs"] - glideins_running)
+            state = sort_states(state, ["gpus", "memory"])
             for s in state:
                 if limit <= 0:
                     logger.info('reached limit')
