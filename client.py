@@ -36,15 +36,26 @@ def get_running(cmd):
     return int(p.communicate()[0].strip())
     
 def sort_states(state, columns, reverse=True):
-    comparers = [((itemgetter(col[1:].strip()), -1) if col.startswith('-') else
-                  (itemgetter(col.strip()), 1)) for col in columns]
-    def comparer(left, right):
-        comparer_iter = (
-            cmp(fn(left), fn(right)) * mult
-            for fn, mult in comparers
-        )
-        return next((result for result in comparer_iter if result), 0)
-    return sorted(state, key=cmp_to_key(comparer), reverse=reverse)
+    key_cache = {}
+    col_cache = dict([(c[1:],-1) if c[0] == '-' else (c,1) for c in columns])
+    def comp_key(key):
+        if key in key_cache:
+            return key_cache[key]
+        if key in col_cache:
+            ret = len(columns)-columns.index(key if col_cache[key] == 1 else '-'+key)
+        else:
+            ret = 0
+        key_cache[key] = ret
+        return ret
+    def compare(row):
+        ret = []
+        for k in sorted(row, key=comp_key, reverse=True):
+            v = row[k]
+            if k in col_cache:
+                v *= col_cache[k]
+            ret.append(v)
+        return ret
+    return sorted(state, key=compare, reverse=reverse)
 
 def main():
     parser = OptionParser()
