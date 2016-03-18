@@ -203,13 +203,14 @@ class SubmitPBS(Submit):
                       "count" in state)
 
         self.write_submit_file(submit_filename, state, group_jobs)
-        
-        cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
-        print(cmd)
-        if not ('Mode' in self.config and 'dryrun' in self.config['Mode'] and
-                self.config['Mode']['dryrun']):
-            if subprocess.call(cmd,shell=True):
-                raise Exception('failed to launch glidein')
+        num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
+        for i in xrange(num_submits):
+            cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
+            print(cmd)
+            if not ('Mode' in self.config and 'dryrun' in self.config['Mode'] and
+                    self.config['Mode']['dryrun']):
+                if subprocess.call(cmd,shell=True):
+                    raise Exception('failed to launch glidein')
 
 class SubmitSLURM(SubmitPBS):
     """SLURM is similar to PBS, but with different headers"""
@@ -410,7 +411,9 @@ class SubmitCondor(Submit):
                               env_filename,
                               state, 
                               group_jobs)
-        cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
-        print(cmd)
-        if subprocess.call(cmd, shell=True):
-            raise Exception('failed to launch glidein')
+        num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
+        for i in xrange(num_submits):
+            cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
+            print(cmd)
+            if subprocess.call(cmd, shell=True):
+                raise Exception('failed to launch glidein')
