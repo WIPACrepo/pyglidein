@@ -20,11 +20,13 @@ if [ -n "$gpu_dev" ]; then
 fi
 
 GLIDEIN_DIR=$GLIDEIN_LOCAL_TMP_DIR
+if [ ! -d $GLIDEIN_DIR ]; then
+    GLIDEIN_DIR=$PWD
+fi
+JOB_WRAPPER="${GLIDEIN_DIR}/job_wrapper.sh"
 
-# See if we provided a dynamic wrapper
-JOB_WRAPPER="NONE"
-if [ -e "${GLIDEIN_DIR}/job_wrapper.sh" ]; then
-    JOB_WRAPPER="${GLIDEIN_DIR}/job_wrapper.sh"
+if [ -z $http_proxy ]; then
+    http_proxy=http://squid.icecube.wisc.edu:3128
 fi
 
 
@@ -43,6 +45,9 @@ GLIDEIN_PARROT="${GLIDEIN_DIR}/GLIDEIN_PARROT"
 
 # Check whether we can already see cvmfs
 USE_PARROT="y"
+if [ ! -e $GLIDEIN_PARROT ]; then
+    USE_PARROT="n"
+fi
 if [ -e /cvmfs/icecube.opensciencegrid.org/py2-v1 ]; then
     USE_PARROT="n"
 fi
@@ -72,12 +77,13 @@ if [ "$USE_PARROT" = "y" ]; then
     # Clense our environment before calling run_parrot, so the user cannot manipulate
     # run_parrot or parrot_run.  Preserve only the necessary variables.
     # We are calling run_parrot here, which calls parrot_run to run the job.
-    if [ "${JOB_WRAPPER}" = "NONE" ]; then
+    if [ ! -e $JOB_WRAPPER ]; then
         exec /usr/bin/env -i \
            GLIDEIN_PARROT=${GLIDEIN_PARROT} \
            _CONDOR_SCRATCH_DIR=${_CONDOR_SCRATCH_DIR} \
            _CONDOR_SLOT=${_CONDOR_SLOT} \
            _CONDOR_JOB_PIDS=${_CONDOR_JOB_PIDS} \
+           http_proxy=${http_proxy} \
         ${GLIDEIN_PARROT}/run_parrot "$@"
     else
         exec /usr/bin/env -i \
@@ -85,7 +91,8 @@ if [ "$USE_PARROT" = "y" ]; then
            _CONDOR_SCRATCH_DIR=${_CONDOR_SCRATCH_DIR} \
            _CONDOR_SLOT=${_CONDOR_SLOT} \
            _CONDOR_JOB_PIDS=${_CONDOR_JOB_PIDS} \
-        ${GLIDEIN_PARROT}/run_parrot "${JOB_WRAPPER} $@"
+           http_proxy=${http_proxy} \
+        ${GLIDEIN_PARROT}/run_parrot ${JOB_WRAPPER} "$@"
     fi
 
     # Note that since we exec the job above, wrappers that come after
@@ -93,9 +100,9 @@ if [ "$USE_PARROT" = "y" ]; then
 
 else
     # fall through to next/default job wrapper
-    if [ "${JOB_WRAPPER}" = "NONE" ]; then
+    if [ ! -e $JOB_WRAPPER ]; then
         exec "$@"
     else
-        exec "${JOB_WRAPPER} $@"
+        exec ${JOB_WRAPPER} "$@"
     fi
 fi

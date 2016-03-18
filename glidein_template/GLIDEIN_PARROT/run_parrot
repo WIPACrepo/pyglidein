@@ -7,8 +7,7 @@
 # ${_CONDOR_SCRATCH_DIR}/parrot_job_env.sh
 
 # load GLIDEIN_PARROT_OPTIONS and PARROT_CVMFS_REPO
-export PARROT_CVMFS_REPO="<default-repositories>:quota_limit=4000,quota_threshold=2000,proxies=http://squid.icecube.wisc.edu:3128|http://cache01.hep.wisc.edu:8001|http://cache02.hep.wisc.edu:8001"
-GLIDEIN_PARROT_OPTIONS="-M /cvmfs/cms.hep.wisc.edu/osg/app/cmssoft/cms/=/cvmfs/cms.cern.ch"
+GLIDEIN_PARROT_OPTIONS="-p $http_proxy"
 GlideinUseParrotIDBox="true"
 export PARROT_ALLOW_SWITCHING_CVMFS_REPOSITORIES=1
 
@@ -64,5 +63,5 @@ fi
 
 export PARROT_HELPER="${GLIDEIN_PARROT}/libparrot_helper.so"
 
-exec "${GLIDEIN_PARROT}/parrot_run" -t "$parrot_tmp" $GLIDEIN_PARROT_OPTIONS -- ${GLIDEIN_PARROT}/exec_job "$@"
+exec "${GLIDEIN_PARROT}/parrot_run" -t "$parrot_tmp" $GLIDEIN_PARROT_OPTIONS -- ${GLIDEIN_PARROT}/exec_job.sh "$@"
 
