@@ -43,7 +43,8 @@ class SubmitPBS(Submit):
         f.write(self.option_tag+" "+line+"\n")
 
     def write_general_header(self, f, mem=3000, walltime_hours=14,
-                             num_nodes=1, num_cpus=1, num_gpus=0):
+                             num_nodes=1, num_cpus=1, num_gpus=0,
+                             num_jobs=0):
         """
         Writing the header for a PBS submission script.
         Most of the pieces needed to tell PBS what resources
@@ -77,6 +78,8 @@ class SubmitPBS(Submit):
         else:
             self.write_option(f, "-o /dev/null")
             self.write_option(f, "-e /dev/null")
+        if num_jobs > 0:
+            self.write_option(f, "-t 0-%d" % num_jobs)
 
     def write_glidein_variables(self, f, mem=None, walltime_hours=None,
                                 num_cpus=None, num_gpus=None):
@@ -126,11 +129,11 @@ class SubmitPBS(Submit):
         if not glidein_loc:
             glidein_loc = os.getcwd()
         if glidein_tarball:
-            self.write_line(f, "ln -s %s %s" % (os.path.join(glidein_loc, glidein_tarball), glidein_tarball))
+            self.write_line(f, "ln -s %s %s" % (glidein_tarball, os.path.basename(glidein_tarball)))
         self.write_line(f, 'ln -s %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
         self.write_line(f, './%s' % glidein_script)
 
-    def write_submit_file(self, filename, state):
+    def write_submit_file(self, filename, state, group_jobs):
         """
         Writing the submit file
 
@@ -140,7 +143,7 @@ class SubmitPBS(Submit):
         """
         with open(filename, 'w') as f:
             num_cpus = state["cpus"]
-            mem_advertised = int(state["memory"]*1.1)
+            mem_advertised = int(state["memory"]*1.05)
             mem_requested = mem_advertised
             num_gpus = state["gpus"]
 
@@ -158,9 +161,10 @@ class SubmitPBS(Submit):
                     mem_requested = mem_advertised/num_cpus
             walltime = int(self.config["Cluster"]["walltime_hrs"])
 
+            
             self.write_general_header(f, mem=mem_requested, num_cpus=num_cpus,
-                                      num_gpus=num_gpus,
-                                      walltime_hours=walltime)
+                                      num_gpus=num_gpus, walltime_hours=walltime,
+                                      num_jobs = state["count"] if group_jobs else 0)
 
             if "custom_header" in self.config["SubmitFile"]:
                 self.write_line(f, self.config["SubmitFile"]["custom_header"])
@@ -176,8 +180,18 @@ class SubmitPBS(Submit):
                 'glidein_script': self.get_executable(),
             }
             if "tarball" in self.config["Glidein"]:
-                kwargs['glidein_tarball'] = self.config["Glidein"]["tarball"]
-                kwargs['glidein_loc'] = self.config["Glidein"]["loc"]
+                if "loc" in self.config["Glidein"]:
+                    glidein_tarball = os.path.join(self.config["Glidein"]["loc"], 
+                                                   self.config["Glidein"]["tarball"])
+                    kwargs['glidein_loc'] = self.config["Glidein"]["loc"]
+                else:
+                    glidein_tarball = self.config["Glidein"]["tarball"]
+
+                if os.path.isfile(glidein_tarball):
+                    kwargs['glidein_tarball'] = glidein_tarball
+                else:
+                    raise Exception("The tarball you provided does not exist")
+
             self.write_glidein_part(f, **kwargs)
 
             if "custom_end" in self.config["SubmitFile"]:
@@ -193,15 +207,20 @@ class SubmitPBS(Submit):
         submit_filename = 'submit.pbs'
         if 'filename' in self.config["SubmitFile"]:
             submit_filename = self.config["SubmitFile"]["filename"]
+        
+        group_jobs = ("group_jobs" in self.config["Cluster"] and
+                      self.config["Cluster"]["group_jobs"] and
+                      "count" in state)
 
-        self.write_submit_file(submit_filename, state)
-
-        cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
-        print(cmd)
-        if not ('Mode' in self.config and 'dryrun' in self.config['Mode'] and
-                self.config['Mode']['dryrun']):
-            if subprocess.call(cmd,shell=True):
-                raise Exception('failed to launch glidein')
+        self.write_submit_file(submit_filename, state, group_jobs)
+        num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
+        for i in xrange(num_submits):
+            cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
+            print(cmd)
+            if not ('Mode' in self.config and 'dryrun' in self.config['Mode'] and
+                    self.config['Mode']['dryrun']):
+                if subprocess.call(cmd,shell=True):
+                    raise Exception('failed to launch glidein')
 
 class SubmitSLURM(SubmitPBS):
     """SLURM is similar to PBS, but with different headers"""
@@ -248,7 +267,8 @@ class SubmitUGE(SubmitPBS):
     option_tag = "#$"
     
     def write_general_header(self, f, mem=3000, walltime_hours=14,
-                             num_nodes=1, num_cpus=1, num_gpus=0):
+                             num_nodes=1, num_cpus=1, num_gpus=0,
+                             num_jobs=0):
         """
         Writing the header for a SLURM submission script.
         Most of the pieces needed to tell SLURM what resources
@@ -276,6 +296,8 @@ class SubmitUGE(SubmitPBS):
         else:
             self.write_option(f, "-o /dev/null")
             self.write_option(f, "-e /dev/null")
+        if num_jobs > 0:
+            self.write_option(f, "-t 1-%d" % num_jobs)
 
 class SubmitCondor(Submit):
     """Submit an HTCondor job"""
@@ -324,7 +346,7 @@ class SubmitCondor(Submit):
             mode |= 0o111
             os.fchmod(f.fileno(), mode & 0o7777)
 
-    def make_submit_file(self, filename, env_wrapper, state):
+    def make_submit_file(self, filename, env_wrapper, state, group_jobs):
         """
         Creating HTCondor submit file
 
@@ -381,8 +403,10 @@ class SubmitCondor(Submit):
 
             if "custom_footer" in self.config["SubmitFile"]:
                 self.write_line(f, self.config["SubmitFile"]["custom_footer"])
-
-            self.write_line(f, 'queue')
+            if group_jobs:
+                self.write_line(f, 'queue %d' % state["count"])
+            else:
+                self.write_line(f, 'queue')
 
     def submit(self, state):
         submit_filename = 'submit.condor'
@@ -391,12 +415,18 @@ class SubmitCondor(Submit):
         env_filename = 'env_wrapper.sh'
         if 'env_wrapper_name' in self.config['SubmitFile']:
             env_filename = self.config["SubmitFile"]["env_wrapper_name"]
+        
+        group_jobs = ("group_jobs" in self.config["Cluster"] and
+                      self.config["Cluster"]["group_jobs"] and 
+                      "count" in state)
         self.make_env_wrapper(env_filename)
         self.make_submit_file(submit_filename,
                               env_filename,
-                              state)
-
-        cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
-        print(cmd)
-        if subprocess.call(cmd, shell=True):
-            raise Exception('failed to launch glidein')
+                              state, 
+                              group_jobs)
+        num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
+        for i in xrange(num_submits):
+            cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
+            print(cmd)
+            if subprocess.call(cmd, shell=True):
+                raise Exception('failed to launch glidein')

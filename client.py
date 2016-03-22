@@ -7,6 +7,8 @@ import subprocess
 import logging
 from optparse import OptionParser
 import ConfigParser
+from operator import itemgetter
+from functools import cmp_to_key
 
 from util import json_decode
 from client_util import get_state, config_options_dict
@@ -32,6 +34,28 @@ def launch_glidein(cmd, params=[]):
 def get_running(cmd):
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     return int(p.communicate()[0].strip())
+    
+def sort_states(state, columns, reverse=True):
+    key_cache = {}
+    col_cache = dict([(c[1:],-1) if c[0] == '-' else (c,1) for c in columns])
+    def comp_key(key):
+        if key in key_cache:
+            return key_cache[key]
+        if key in col_cache:
+            ret = len(columns)-columns.index(key if col_cache[key] == 1 else '-'+key)
+        else:
+            ret = 0
+        key_cache[key] = ret
+        return ret
+    def compare(row):
+        ret = []
+        for k in sorted(row, key=comp_key, reverse=True):
+            v = row[k]
+            if k in col_cache:
+                v *= col_cache[k]
+            ret.append(v)
+        return ret
+    return sorted(state, key=compare, reverse=reverse)
 
 def main():
     parser = OptionParser()
@@ -79,8 +103,13 @@ def main():
             except Exception:
                 logger.warn('error getting running job count', exc_info=True)
                 continue
-            i = 0
+            limit = min(config_cluster["limit_per_submit"], 
+                        config_cluster["max_total_jobs"] - glideins_running)
+            state = sort_states(state, ["gpus", "memory"])
             for s in state:
+                if limit <= 0:
+                    logger.info('reached limit')
+                    break
                 # Skipping CPU jobs for gpu only clusters
                 if ('gpu_only' in config_cluster and config_cluster['gpu_only']
                     and s["gpus"] == 0):
@@ -89,13 +118,13 @@ def main():
                 if ('cpu_only' in config_cluster and config_cluster['cpu_only']
                     and s["gpus"] != 0):
                     continue
-                if (i >= config_cluster["limit_per_submit"]
-                    or i + glideins_running >= config_cluster["max_total_jobs"]):
-                    logger.info('reached limit')
-                    break
+                if "count" in s and s["count"] > limit: 
+                    s["count"] = limit
                 scheduler.submit(s)
-                i += 1
-            logger.info('launched %d glideins', i)
+                limit -= 1 if "count" not in s else s["count"]
+            logger.info('launched %d glideins', min(config_cluster["limit_per_submit"], 
+                                                    config_cluster["max_total_jobs"] - glideins_running) \
+                                                - limit)
         else:
             logger.info('no state, nothing to do')
 
