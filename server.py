@@ -7,6 +7,7 @@ import logging
 from functools import partial
 from optparse import OptionParser
 from collections import Counter
+from distutils
 
 from util import json_encode, json_decode
 import tornado.escape
@@ -172,6 +173,10 @@ class server:
         self.http_server.stop()
         IOLoop.instance().stop()
 
+def get_condor_version():
+     p = subprocess.Popen("condor_version", shell=True, stdout=subprocess.PIPE)
+     out = p.communicate()[0]
+     return out.split(" ")[1]
 
 def condor_q(cfg):
     """Get the status of the HTCondor queue"""
@@ -183,6 +188,10 @@ def condor_q(cfg):
         cmd += ['-constraint', cfg['options'].constraint]
     if cfg['options'].user:
         cmd += [cfg['options'].user]
+    if ((distutils.version.Looseversion(get_condor_version()) >=
+         distutils.version.Looseversion("8.5.2"))
+         not cfg['options'].user):
+        cmd += ["-allusers"]
 
     state = []
     try:
