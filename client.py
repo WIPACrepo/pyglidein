@@ -7,8 +7,6 @@ import subprocess
 import logging
 from optparse import OptionParser
 import ConfigParser
-from operator import itemgetter
-from functools import cmp_to_key
 
 from util import json_decode
 from client_util import get_state, config_options_dict
