@@ -188,8 +188,8 @@ def condor_q(cfg):
         cmd += ['-constraint', cfg['options'].constraint]
     if cfg['options'].user:
         cmd += [cfg['options'].user]
-    if (distutils.version.Looseversion(get_condor_version()) >=
-         distutils.version.Looseversion("8.5.2") and
+    if (distutils.version.LooseVersion(get_condor_version()) >=
+         distutils.version.LooseVersion("8.5.2") and
          not cfg['options'].user):
         cmd += ["-allusers"]
 
