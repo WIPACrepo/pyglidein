@@ -199,7 +199,7 @@ def condor_q(cfg):
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         output = p.communicate()[0]
         for line in output.splitlines():
-            logger.info(line)
+            logger.debug(line)
             try:
                 cpus, memory, disk, gpus, reqs = line.split(', ',4)
                 cpus = 1 if cpus == 'undefined' else int(cpus)
