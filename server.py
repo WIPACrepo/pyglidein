@@ -7,7 +7,7 @@ import logging
 from functools import partial
 from optparse import OptionParser
 from collections import Counter
-from distutils
+import distutils
 
 from util import json_encode, json_decode
 import tornado.escape
