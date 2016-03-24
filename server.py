@@ -148,9 +148,8 @@ class DefaultHandler(MyHandler):
   <h1>List of requirements</h1>
   <div class="reqs">
     <div><span class="num">Num</span><span>CPUs</span><span>Memory</span><span>Disk</span><span>GPUs</span><span>OS</span></div>""")
-        c = Counter((x['cpus'],x['memory'],x['disk'],x['gpus'],x['os']) for x in self.cfg['state'])
-        for k in c:
-            self.write('<div><span class="num">'+str(c[k])+'</span><span>'+'</span><span>'.join(str(x) for x in k)+'</span></div>')
+        for row in self.cfg['state']:
+            self.write('<div><span class="num">'+str(row['count'])+'</span><span>'+str(row['cpus'])+'</span><span>'+str(row['memory'])+'</span><span>'+str(row['disk'])+'</span><span>'+str(row['gpus'])+'</span><span>'+str(row['os'])+'</span></div>')
         self.write("""
   </div>
 </body>
