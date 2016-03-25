@@ -329,9 +329,9 @@ class SubmitCondor(Submit):
             self.write_line(f, '  GPUS=0')
             self.write_line(f, 'fi')
             if 'site' in self.config['Glidein']:
-                self.write_line(file, 'SITE="%s"' % self.config['Glidein']['site'])
+                self.write_line(f, 'SITE="%s"' % self.config['Glidein']['site'])
             if 'cluster' in self.config['Glidein']:
-                self.write_line(file, 'CLUSTER="%s"' % self.config['Glidein']['cluster'])
+                self.write_line(f, 'CLUSTER="%s"' % self.config['Glidein']['cluster'])
             f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK ')
             if 'site' in self.config['Glidein']:
                 f.write('SITE=$SITE ')
