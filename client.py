@@ -103,7 +103,13 @@ def main():
                 continue
             limit = min(config_cluster["limit_per_submit"], 
                         config_cluster["max_total_jobs"] - glideins_running)
-            state = sort_states(state, ["gpus", "memory"])
+            if (("prioritize_high_mem" in config_cluster and config_cluster["prioritize_high_mem"]) and
+                ("prioritize_gpu" in config_cluster and config_cluster["prioritize_gpu"])):
+                state = sort_states(state, ["gpus","memory"])
+            elif "prioritize_high_mem" in config_cluster and config_cluster["prioritize_high_mem"]:
+                state = sort_states(state, ["memory"])
+            elif "prioritize_gpu" in config_cluster and config_cluster["prioritize_gpu"]:
+                state = sort_states(state, ["gpus"])
             for s in state:
                 if limit <= 0:
                     logger.info('reached limit')
