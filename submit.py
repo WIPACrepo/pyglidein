@@ -299,6 +299,79 @@ class SubmitUGE(SubmitPBS):
         if num_jobs > 0:
             self.write_option(f, "-t 1-%d" % num_jobs)
 
+class SubmitLSF(SubmitPBS):
+    """LSF is similar to PBS, but with different headers"""
+
+    option_tag = "#BSUB"
+
+    def write_general_header(self, f, mem=3000, walltime_hours=14,
+                             num_nodes=1, num_cpus=1, num_gpus=0,
+                             num_jobs=0):
+        """
+        Writing the header for an LSF submission script.
+        Most of the pieces needed to tell LSF what resources
+        are being requested.
+
+        Args:
+            f: python file object
+            mem: requested memory
+            walltime_hours: requested wall time
+            num_nodes: requested number of nodes
+            num_cpus: requested number of cpus
+            num_gpus: requested number of gpus
+            num_jobs: number of jobs in a job array
+        """
+        self.write_line(f, "#!/bin/bash")
+        if num_gpus > 0:
+            self.write_option(f, "-R 'rusage[cuda=%d]'" % num_gpus)
+        walltime_line = "-W %d:00" % walltime_hours
+
+        # check for additional parameters in config
+        if 'SubmitFile' in self.config:
+            submit_conf = self.config['SubmitFile']
+            if 'ref_host' in submit_conf:
+                # add reference host for walltime if given
+                walltime_line+="/%s" % submit_conf['ref_host']
+            if 'mem_scale' in submit_conf:
+                # scale the requested memory by a factor
+                mem_scale = submit_conf['mem_scale']
+                if (isinstance(mem_scale, int) or
+                    isinstance(mem_scale, float)):
+                    mem*=mem_scale
+                else:
+                    raise TypeError("""Memory scaling factor of type"""
+                                    """ int or float expected. Found %s."""
+                                    % type(mem_scale).__name__)
+
+        self.write_option(f, walltime_line)
+        self.write_option(f, "-M %d" % mem)
+        self.write_option(f, "-n %d" % num_cpus)
+        """
+        # ignore for now
+        # need to make sure to reserve the correct number of nodes
+        cpus_tot = num_cpus
+        if num_nodes > 1:
+            cpus_tot = num_nodes*cpus_per_node
+        self.write_option(f, "-n %d -R 'span[ptile=%d]'" %\
+                             (cpus_tot, cpus_per_node))
+        """
+        if num_jobs > 0:
+            # job name will be "[index]"
+            self.write_option(f, "-J [1-%d]" % num_jobs)
+
+        if ('Mode' in self.config and 'debug' in self.config['Mode']
+            and self.config['Mode']['debug']):
+            outdir = os.path.join(os.getcwd(), 'out')
+            if not os.path.isdir(outdir):
+                os.mkdir(outdir)
+            # %I is job index (all jobs in an array have same id %J)
+            self.write_option(f, "-o %s/%%J_%%I.out" % outdir)
+            self.write_option(f, "-e %s/%%J_%%I.err" % outdir)
+        else:
+            self.write_option(f, "-o /dev/null")
+            self.write_option(f, "-e /dev/null")
+
+
 class SubmitCondor(Submit):
     """Submit an HTCondor job"""
 
