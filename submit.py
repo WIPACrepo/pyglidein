@@ -356,7 +356,7 @@ class SubmitLSF(SubmitPBS):
             if 'ref_host' in submit_conf:
                 # add reference host for walltime if given
                 walltime_line+="/%s" % submit_conf['ref_host']
-                       
+
         self.write_option(f, walltime_line)
         # default memory units are kB for LSF
         mem_scale = 1000
