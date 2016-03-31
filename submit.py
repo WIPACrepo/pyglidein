@@ -35,6 +35,28 @@ class Submit(object):
             executable = self.config["Glidein"]["executable"]
         return executable
 
+    def get_safety_margin_scale(self, key, sec="SubmitFile"):
+        """
+        Return scaling factor for job limit safety margin
+        (e.g. memory, disk space).
+
+        Args:
+            key: key to evaluate in config file
+            sec: section to evaluate in config file
+                 (default: 'SubmitFile')
+        """
+        try:
+            # look for entry and check type
+            scale = self.config[sec][key]
+            if not (isinstance(scale, int) or
+                    isinstance(scale, float)):
+                raise TypeError()
+        except:
+            # don't scale if no entry or invalid type found
+            scale = 1
+
+        return scale            
+
 class SubmitPBS(Submit):
     """Submit a PBS / Torque job"""
 
@@ -143,7 +165,8 @@ class SubmitPBS(Submit):
         """
         with open(filename, 'w') as f:
             num_cpus = state["cpus"]
-            mem_advertised = int(state["memory"]*1.05)
+            mem_safety_margin = 1.05*self.get_safety_margin_scale("mem_safety_scale")
+            mem_advertised = int(state["memory"]*mem_safety_margin)
             mem_requested = mem_advertised
             num_gpus = state["gpus"]
 
@@ -154,6 +177,7 @@ class SubmitPBS(Submit):
                 if mem_requested > mem_per_core:
                     # just ask for the max mem, and hope that's good enough
                     mem_requested = mem_per_core
+                    mem_advertised = mem_requested
             else:
                 # It is easier to request more cpus rather than more memory
                 while mem_requested > mem_per_core:
@@ -161,7 +185,7 @@ class SubmitPBS(Submit):
                     mem_requested = mem_advertised/num_cpus
             walltime = int(self.config["Cluster"]["walltime_hrs"])
 
-            
+
             self.write_general_header(f, mem=mem_requested, num_cpus=num_cpus,
                                       num_gpus=num_gpus, walltime_hours=walltime,
                                       num_jobs = state["count"] if group_jobs else 0)
@@ -332,19 +356,10 @@ class SubmitLSF(SubmitPBS):
             if 'ref_host' in submit_conf:
                 # add reference host for walltime if given
                 walltime_line+="/%s" % submit_conf['ref_host']
-            if 'mem_scale' in submit_conf:
-                # scale the requested memory by a factor
-                mem_scale = submit_conf['mem_scale']
-                if (isinstance(mem_scale, int) or
-                    isinstance(mem_scale, float)):
-                    mem*=mem_scale
-                else:
-                    raise TypeError("""Memory scaling factor of type"""
-                                    """ int or float expected. Found %s."""
-                                    % type(mem_scale).__name__)
 
         self.write_option(f, walltime_line)
-        self.write_option(f, "-M %d" % mem)
+        # default for LSF is kB
+        self.write_option(f, "-M %d" % (mem*1000))
         self.write_option(f, "-n %d" % num_cpus)
         """
         # ignore for now
@@ -468,7 +483,8 @@ class SubmitCondor(Submit):
             if state["cpus"] != 0:
                 self.write_line(f, 'request_cpus=%d' % state["cpus"])
             if state["memory"] != 0:
-                self.write_line(f, 'request_memory=%d' % int(state["memory"]*1.1))
+                mem_safety_margin = 1.1*self.get_safety_margin_scale("mem_safety_scale")
+                self.write_line(f, 'request_memory=%d' % int(state["memory"]*mem_safety_margin))
             if state["disk"] != 0:
                 self.write_line(f, 'request_disk=%d' % int(state["disk"]*1024*1.1))
             if state["gpus"] != 0:
