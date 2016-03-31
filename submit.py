@@ -35,9 +35,9 @@ class Submit(object):
             executable = self.config["Glidein"]["executable"]
         return executable
 
-    def get_safety_margin_scale(self, key, sec="SubmitFile"):
+    def get_resource_limit_scale(self, key, sec="SubmitFile"):
         """
-        Return scaling factor for job limit safety margin
+        Return scaling factor for job limit resources
         (e.g. memory, disk space).
 
         Args:
@@ -52,10 +52,10 @@ class Submit(object):
                     isinstance(scale, float)):
                 raise TypeError()
         except:
-            # don't scale if no entry or invalid type found
+            # return 1 if no entry or invalid type found
             scale = 1
 
-        return scale            
+        return scale
 
 class SubmitPBS(Submit):
     """Submit a PBS / Torque job"""
@@ -165,7 +165,7 @@ class SubmitPBS(Submit):
         """
         with open(filename, 'w') as f:
             num_cpus = state["cpus"]
-            mem_safety_margin = 1.05*self.get_safety_margin_scale("mem_safety_scale")
+            mem_safety_margin = 1.05*self.get_resource_limit_scale("mem_safety_scale")
             mem_advertised = int(state["memory"]*mem_safety_margin)
             mem_requested = mem_advertised
             num_gpus = state["gpus"]
@@ -356,10 +356,13 @@ class SubmitLSF(SubmitPBS):
             if 'ref_host' in submit_conf:
                 # add reference host for walltime if given
                 walltime_line+="/%s" % submit_conf['ref_host']
-
+                       
         self.write_option(f, walltime_line)
-        # default for LSF is kB
-        self.write_option(f, "-M %d" % (mem*1000))
+        # default memory units are kB for LSF
+        mem_scale = 1000
+        # scale memory to non-default units if parameter exists
+        mem_scale*=self.get_resource_limit_scale("mem_scale")
+        self.write_option(f, "-M %d" % (mem*mem_scale))
         self.write_option(f, "-n %d" % num_cpus)
         """
         # ignore for now
@@ -483,7 +486,7 @@ class SubmitCondor(Submit):
             if state["cpus"] != 0:
                 self.write_line(f, 'request_cpus=%d' % state["cpus"])
             if state["memory"] != 0:
-                mem_safety_margin = 1.1*self.get_safety_margin_scale("mem_safety_scale")
+                mem_safety_margin = 1.1*self.get_resource_limit_scale("mem_safety_scale")
                 self.write_line(f, 'request_memory=%d' % int(state["memory"]*mem_safety_margin))
             if state["disk"] != 0:
                 self.write_line(f, 'request_disk=%d' % int(state["disk"]*1024*1.1))
