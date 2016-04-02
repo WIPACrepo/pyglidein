@@ -76,6 +76,8 @@ def main():
         scheduler = submit.SubmitSLURM(config_dict)
     elif sched_type == "uge":
         scheduler = submit.SubmitUGE(config_dict)
+    elif sched_type == "lsf":
+        scheduler = submit.SubmitLSF(config_dict)
     else:
         raise Exception('scheduler not supported')
 
