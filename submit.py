@@ -66,7 +66,7 @@ class SubmitPBS(Submit):
 
     def write_general_header(self, f, mem=3000, walltime_hours=14,
                              num_nodes=1, num_cpus=1, num_gpus=0,
-                             num_jobs=0):
+                             num_jobs=0, queue=None):
         """
         Writing the header for a PBS submission script.
         Most of the pieces needed to tell PBS what resources
@@ -81,6 +81,11 @@ class SubmitPBS(Submit):
             num_gpus: requested number of gpus
         """
         self.write_line(f, "#!/bin/bash")
+
+        if queue:
+            self.write_option(f, "-q %s" %\
+                            (queue))
+
         # Add the necessary gpu request tag if we need gpus.
         if num_gpus == 0:
             self.write_option(f, "-l nodes=%d:ppn=%d" %\
@@ -173,6 +178,17 @@ class SubmitPBS(Submit):
             mem_per_core = 2000
             if 'mem_per_core' in self.config['Cluster']:
                 mem_per_core = self.config['Cluster']['mem_per_core']
+
+            if mem_requested <= 2000 and '2000' in self.config['Queues']:
+                queue = self.config['Queues']['2000']
+                mem_per_core = 2000
+            elif mem_requested <= 3000 and '3000' in self.config['Queues']:
+                queue = self.config['Queues']['3000']
+                mem_per_core = 3000
+            elif mem_requested <= 4000 and '4000' in self.config['Queues']:
+                queue = self.config['Queues']['4000']
+                mem_per_core = 4000
+
             if num_gpus:
                 if mem_requested > mem_per_core:
                     # just ask for the max mem, and hope that's good enough
