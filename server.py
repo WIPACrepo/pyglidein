@@ -150,6 +150,10 @@ class DefaultHandler(MyHandler):
       margin-right: .5em;
       width: 5em;
       display: inline-block;
+      vertical-align: top;
+    }
+    div.clients>div>span {
+      width: 15em;
     }
   </style>
 </head>
@@ -159,9 +163,14 @@ class DefaultHandler(MyHandler):
   <div class="clients">
     <div><span>UUID</span><span>Last update</span><span>Stats</span></div>""")
         for uuid in self.cfg['monitoring']:
-            info = self.cfg['monitoring'][uuid]
-            timestamp = info.pop('timestamp')
-            self.write('<div><span>'+str(uuid)+'</span><span>'+timestamp.isoformat(' ')+'</span><span>'+str(info)+'</span></div>')
+            try:
+                info = self.cfg['monitoring'][uuid]
+                timestamp = info['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+                stats = '<br>'.join(str(k)+': '+str(info[k]) for k in info if k != 'timestamp')
+                self.write('<div><span class="uuid">'+str(uuid)+'</span><span class="date">'+timestamp+'</span><span class="stats">'+stats+'</span></div>')
+            except Exception:
+                logging.info('error in monitoring display: %r %r',uuid,self.cfg['monitoring'][uuid],exc_info=True)
+                continue
         self.write("""
   </div>
   <h2>List of requirements</h2>
