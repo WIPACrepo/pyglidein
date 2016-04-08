@@ -88,7 +88,7 @@ class SubmitPBS(Submit):
         else:
             self.write_option(f, "-l nodes=%d:ppn=%d:gpus=%d" %\
                             (num_nodes, num_cpus, num_gpus))
-        self.write_option(f, "-l mem=%dmb,pmem=%dmb" % (mem, mem))
+        self.write_option(f, "-l pmem=%dmb" % mem)
         self.write_option(f, "-l walltime=%d:00:00" % walltime_hours)
         if ('Mode' in self.config and 'debug' in self.config['Mode']
            and self.config["Mode"]["debug"]):
