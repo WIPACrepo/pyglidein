@@ -59,6 +59,8 @@ def main():
     parser = OptionParser()
     parser.add_option('--config', type='string', default='cluster.config',
                       help="config file for cluster")
+    parser.add_option('--uuid', type='string', default=os.getusername() + "_" + os.getenv('HOSTNAME'),
+                      help="Unique identifier for heartbeat")
     (options, args) = parser.parse_args()
     config = ConfigParser.ConfigParser()
     config.read(options.config)
@@ -110,6 +112,7 @@ def main():
             else:
                 state = sort_states(state, ["gpus", "memory"])
             for s in state:
+                if sched_type == "pbs": s["memory"] = s["memory"]*1024/1000 
                 if limit <= 0:
                     logger.info('reached limit')
                     break
