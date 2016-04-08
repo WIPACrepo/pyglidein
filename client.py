@@ -6,6 +6,7 @@ import time
 import subprocess
 import logging
 import socket
+import getpass
 from optparse import OptionParser
 import ConfigParser
 
@@ -61,7 +62,7 @@ def main():
     parser.add_option('--config', type='string', default='cluster.config',
                       help="config file for cluster")
     parser.add_option('--uuid', type='string',
-                      default=os.getusername()+'@'+socket.gethostname(),
+                      default=getpass.getuser()+'@'+socket.gethostname(),
                       help="Unique id for this client")
     (options, args) = parser.parse_args()
     config = ConfigParser.ConfigParser()
