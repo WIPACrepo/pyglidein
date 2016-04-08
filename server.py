@@ -8,6 +8,7 @@ from functools import partial
 from optparse import OptionParser
 from collections import Counter
 import distutils.version
+from datetime import datetime
 
 from util import json_encode, json_decode
 import tornado.escape
@@ -103,6 +104,11 @@ class JSONRPCHandler(MyHandler):
             try:
                 if method == 'get_state':
                     ret = self.cfg['state']
+                elif method == 'monitoring':
+                    client_id = params.pop('uuid')
+                    params['timestamp'] = datetime.utcnow()
+                    self.cfg['monitoring'][client_id] = params
+                    ret = ''
                 else:
                     self.json_error({'code':-32601, 'message':'Method not found'},
                                     request_id=request_id)
@@ -134,10 +140,13 @@ class DefaultHandler(MyHandler):
     .num {
       margin-left: 1em;
     }
-    div.reqs>div {
+    div.clients>div, div.reqs>div {
       margin: .2em;
     }
-    div.reqs>div>span {
+    div.clients {
+      margin-bottom: 1em;
+    }
+    div.clients>div>span, div.reqs>div>span {
       margin-right: .5em;
       width: 5em;
       display: inline-block;
@@ -145,7 +154,17 @@ class DefaultHandler(MyHandler):
   </style>
 </head>
 <body>
-  <h1>List of requirements</h1>
+  <h1>Pyglidein Server</h1>
+  <h2>Clients</h2>
+  <div class="clients">
+    <div><span>UUID</span><span>Last update</span><span>Stats</span></div>""")
+        for uuid in self.cfg['monitoring']:
+            info = self.cfg['monitoring'][uuid]
+            timestamp = info.pop('timestamp')
+            self.write('<div><span>'+str(uuid)+'</span><span>'+timestamp.isoformat(' ')+'</span><span>'+str(info)+'</span></div>')
+        self.write("""
+  </div>
+  <h2>List of requirements</h2>
   <div class="reqs">
     <div><span class="num">Num</span><span>CPUs</span><span>Memory</span><span>Disk</span><span>GPUs</span><span>OS</span></div>""")
         for row in self.cfg['state']:
@@ -261,7 +280,7 @@ def main():
     if options.delay < 0 or options.delay > 1000:
         raise Exception('delay out of range')
 
-    cfg = {'options':options, 'condor_q':False, 'state':[]}
+    cfg = {'options':options, 'condor_q':False, 'state':[], 'monitoring':{}}
 
     # load condor_q
     IOLoop.instance().call_later(5, partial(condor_q_helper, cfg))
