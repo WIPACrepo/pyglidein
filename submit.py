@@ -182,7 +182,8 @@ class SubmitPBS(Submit):
                 # It is easier to request more cpus rather than more memory
                 while mem_requested > mem_per_core:
                     num_cpus += 1
-                    mem_requested = mem_advertised/num_cpus
+                    #@samary: Don't divide per core
+                    #mem_requested = mem_advertised/num_cpus
             walltime = int(self.config["Cluster"]["walltime_hrs"])
 
 
