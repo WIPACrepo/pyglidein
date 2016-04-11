@@ -35,6 +35,28 @@ class Submit(object):
             executable = self.config["Glidein"]["executable"]
         return executable
 
+    def get_resource_limit_scale(self, key, sec="SubmitFile"):
+        """
+        Return scaling factor for job limit resources
+        (e.g. memory, disk space).
+
+        Args:
+            key: key to evaluate in config file
+            sec: section to evaluate in config file
+                 (default: 'SubmitFile')
+        """
+        try:
+            # look for entry and check type
+            scale = self.config[sec][key]
+            if not (isinstance(scale, int) or
+                    isinstance(scale, float)):
+                raise TypeError()
+        except:
+            # return 1 if no entry or invalid type found
+            scale = 1
+
+        return scale
+
 class SubmitPBS(Submit):
     """Submit a PBS / Torque job"""
 
@@ -66,7 +88,7 @@ class SubmitPBS(Submit):
         else:
             self.write_option(f, "-l nodes=%d:ppn=%d:gpus=%d" %\
                             (num_nodes, num_cpus, num_gpus))
-        self.write_option(f, "-l mem=%dmb,pmem=%dmb" % (mem, mem))
+        self.write_option(f, "-l pmem=%dmb" % mem)
         self.write_option(f, "-l walltime=%d:00:00" % walltime_hours)
         if ('Mode' in self.config and 'debug' in self.config['Mode']
            and self.config["Mode"]["debug"]):
@@ -143,7 +165,8 @@ class SubmitPBS(Submit):
         """
         with open(filename, 'w') as f:
             num_cpus = state["cpus"]
-            mem_advertised = int(state["memory"]*1.05)
+            mem_safety_margin = 1.05*self.get_resource_limit_scale("mem_safety_scale")
+            mem_advertised = int(state["memory"]*mem_safety_margin)
             mem_requested = mem_advertised
             num_gpus = state["gpus"]
 
@@ -154,6 +177,7 @@ class SubmitPBS(Submit):
                 if mem_requested > mem_per_core:
                     # just ask for the max mem, and hope that's good enough
                     mem_requested = mem_per_core
+                    mem_advertised = mem_requested
             else:
                 # It is easier to request more cpus rather than more memory
                 while mem_requested > mem_per_core:
@@ -161,7 +185,7 @@ class SubmitPBS(Submit):
                     mem_requested = mem_advertised/num_cpus
             walltime = int(self.config["Cluster"]["walltime_hrs"])
 
-            
+
             self.write_general_header(f, mem=mem_requested, num_cpus=num_cpus,
                                       num_gpus=num_gpus, walltime_hours=walltime,
                                       num_jobs = state["count"] if group_jobs else 0)
@@ -228,7 +252,7 @@ class SubmitSLURM(SubmitPBS):
     option_tag = "#SBATCH"
     
     def write_general_header(self, f, mem=3000, walltime_hours=14,
-                             num_nodes=1, num_cpus=1, num_gpus=0):
+                             num_nodes=1, num_cpus=1, num_gpus=0, num_jobs=0):
         """
         Writing the header for a SLURM submission script.
         Most of the pieces needed to tell SLURM what resources
@@ -241,7 +265,10 @@ class SubmitSLURM(SubmitPBS):
             num_nodes: requested number of nodes
             num_cpus: requested number of cpus
             num_gpus: requested number of gpus
+            num_jobs: requested number of jobs
         """
+        if num_jobs > 1:
+            raise Exception('more than one job not supported')
         self.write_line(f, "#!/bin/bash")
         self.write_option(f, '--job-name="glidein"')
         self.write_option(f, '--nodes=%d'%num_nodes)
@@ -298,6 +325,73 @@ class SubmitUGE(SubmitPBS):
             self.write_option(f, "-e /dev/null")
         if num_jobs > 0:
             self.write_option(f, "-t 1-%d" % num_jobs)
+
+class SubmitLSF(SubmitPBS):
+    """LSF is similar to PBS, but with different headers"""
+
+    option_tag = "#BSUB"
+
+    def write_general_header(self, f, mem=3000, walltime_hours=14,
+                             num_nodes=1, num_cpus=1, num_gpus=0,
+                             num_jobs=0):
+        """
+        Writing the header for an LSF submission script.
+        Most of the pieces needed to tell LSF what resources
+        are being requested.
+
+        Args:
+            f: python file object
+            mem: requested memory
+            walltime_hours: requested wall time
+            num_nodes: requested number of nodes
+            num_cpus: requested number of cpus
+            num_gpus: requested number of gpus
+            num_jobs: number of jobs in a job array
+        """
+        self.write_line(f, "#!/bin/bash")
+        if num_gpus > 0:
+            self.write_option(f, "-R 'rusage[cuda=%d]'" % num_gpus)
+        walltime_line = "-W %d:00" % walltime_hours
+
+        # check for additional parameters in config
+        if 'SubmitFile' in self.config:
+            submit_conf = self.config['SubmitFile']
+            if 'ref_host' in submit_conf:
+                # add reference host for walltime if given
+                walltime_line+="/%s" % submit_conf['ref_host']
+
+        self.write_option(f, walltime_line)
+        # default memory units are kB for LSF
+        mem_scale = 1000
+        # scale memory to non-default units if parameter exists
+        mem_scale*=self.get_resource_limit_scale("mem_scale")
+        self.write_option(f, "-M %d" % (mem*mem_scale))
+        self.write_option(f, "-n %d" % num_cpus)
+        """
+        # ignore for now
+        # need to make sure to reserve the correct number of nodes
+        cpus_tot = num_cpus
+        if num_nodes > 1:
+            cpus_tot = num_nodes*cpus_per_node
+        self.write_option(f, "-n %d -R 'span[ptile=%d]'" %\
+                             (cpus_tot, cpus_per_node))
+        """
+        if num_jobs > 0:
+            # job name will be "[index]"
+            self.write_option(f, "-J [1-%d]" % num_jobs)
+
+        if ('Mode' in self.config and 'debug' in self.config['Mode']
+            and self.config['Mode']['debug']):
+            outdir = os.path.join(os.getcwd(), 'out')
+            if not os.path.isdir(outdir):
+                os.mkdir(outdir)
+            # %I is job index (all jobs in an array have same id %J)
+            self.write_option(f, "-o %s/%%J_%%I.out" % outdir)
+            self.write_option(f, "-e %s/%%J_%%I.err" % outdir)
+        else:
+            self.write_option(f, "-o /dev/null")
+            self.write_option(f, "-e /dev/null")
+
 
 class SubmitCondor(Submit):
     """Submit an HTCondor job"""
@@ -395,7 +489,8 @@ class SubmitCondor(Submit):
             if state["cpus"] != 0:
                 self.write_line(f, 'request_cpus=%d' % state["cpus"])
             if state["memory"] != 0:
-                self.write_line(f, 'request_memory=%d' % int(state["memory"]*1.1))
+                mem_safety_margin = 1.1*self.get_resource_limit_scale("mem_safety_scale")
+                self.write_line(f, 'request_memory=%d' % int(state["memory"]*mem_safety_margin))
             if state["disk"] != 0:
                 self.write_line(f, 'request_disk=%d' % int(state["disk"]*1024*1.1))
             if state["gpus"] != 0:
