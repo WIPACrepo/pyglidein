@@ -252,7 +252,7 @@ class SubmitSLURM(SubmitPBS):
     option_tag = "#SBATCH"
     
     def write_general_header(self, f, mem=3000, walltime_hours=14,
-                             num_nodes=1, num_cpus=1, num_gpus=0):
+                             num_nodes=1, num_cpus=1, num_gpus=0, num_jobs=0):
         """
         Writing the header for a SLURM submission script.
         Most of the pieces needed to tell SLURM what resources
@@ -265,7 +265,10 @@ class SubmitSLURM(SubmitPBS):
             num_nodes: requested number of nodes
             num_cpus: requested number of cpus
             num_gpus: requested number of gpus
+            num_jobs: requested number of jobs
         """
+        if num_jobs > 1:
+            raise Exception('more than one job not supported')
         self.write_line(f, "#!/bin/bash")
         self.write_option(f, '--job-name="glidein"')
         self.write_option(f, '--nodes=%d'%num_nodes)
