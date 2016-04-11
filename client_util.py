@@ -82,6 +82,15 @@ def get_state(address):
     except Exception:
         logger.warn('error getting state', exc_info=True)
 
+def monitoring(address,info=None):
+    if info is None:
+        info = {}
+    c = Client(address=address)
+    try:
+        return c.request('monitoring', info)
+    except Exception:
+        logger.warn('error getting state', exc_info=True)
+
 def config_options_dict(config):
     config_dict = {}
     for section in config.sections():

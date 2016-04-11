@@ -5,11 +5,13 @@ import os
 import time
 import subprocess
 import logging
+import socket
+import getpass
 from optparse import OptionParser
 import ConfigParser
 
 from util import json_decode
-from client_util import get_state, config_options_dict
+from client_util import get_state, monitoring, config_options_dict
 import submit
 
 logger = logging.getLogger('client')
@@ -59,6 +61,9 @@ def main():
     parser = OptionParser()
     parser.add_option('--config', type='string', default='cluster.config',
                       help="config file for cluster")
+    parser.add_option('--uuid', type='string',
+                      default=getpass.getuser()+'@'+socket.gethostname(),
+                      help="Unique id for this client")
     (options, args) = parser.parse_args()
     config = ConfigParser.ConfigParser()
     config.read(options.config)
@@ -97,14 +102,18 @@ def main():
             state = get_ssh_state()
         else:
             state = get_state(config_glidein['address'])
+        info = {'uuid': options.uuid,
+                'glideins_running': 0,
+                'glideins_launched': 0,
+               }
         if state:
             try:
-                glideins_running = get_running(config_cluster["running_cmd"])
+                info['glideins_running'] = get_running(config_cluster["running_cmd"])
             except Exception:
                 logger.warn('error getting running job count', exc_info=True)
                 continue
             limit = min(config_cluster["limit_per_submit"], 
-                        config_cluster["max_total_jobs"] - glideins_running)
+                        config_cluster["max_total_jobs"] - info['glideins_running'])
             if "prioritize_jobs" in config_cluster:
                 state = sort_states(state, config_cluster["prioritize_jobs"])
             else:
@@ -124,12 +133,15 @@ def main():
                 if "count" in s and s["count"] > limit: 
                     s["count"] = limit
                 scheduler.submit(s)
-                limit -= 1 if "count" not in s else s["count"]
-            logger.info('launched %d glideins', min(config_cluster["limit_per_submit"], 
-                                                    config_cluster["max_total_jobs"] - glideins_running) \
-                                                - limit)
+                num = 1 if "count" not in s else s["count"]
+                limit -= num
+                info['glideins_launched'] += num
+            logger.info('launched %d glideins', info['glideins_launched'])
         else:
             logger.info('no state, nothing to do')
+
+        # send monitoring info to server
+        monitoring(config_glidein['address'], info)
 
         if 'delay' not in config_glidein or int(config_glidein['delay']) < 1:
             break
