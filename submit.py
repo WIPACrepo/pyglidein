@@ -246,6 +246,16 @@ class SubmitPBS(Submit):
                 if subprocess.call(cmd,shell=True):
                     raise Exception('failed to launch glidein')
 
+    def cleanup(cmd, direc):
+        cmd = cmd[:-6]
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        d = p.communicate()[0]
+        job_ids = set([job.split(" ")[0] for job in d.splitlines() if "[" not in job.split(" ")[0] ])
+        dir_ids = set([dir.split("/")[-1].split(".")[0] for dir in glob.glob(os.path.join(os.path.expandvars(direc), "*"))])
+        for ids in (dir_ids - job_ids):
+            logger.info("Deleting %s", ids)
+            shutil.rmtree(glob.glob(os.path.join(os.path.expandvars(direc), ids + "*"))[0])
+
 class SubmitSLURM(SubmitPBS):
     """SLURM is similar to PBS, but with different headers"""
     
