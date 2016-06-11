@@ -59,6 +59,16 @@ def sort_states(state, columns, reverse=True):
         return ret
     return sorted(state, key=compare, reverse=reverse)
 
+def cleanup(cmd, direc):
+    cmd = cmd[:-6]
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    d = p.communicate()[0]
+    job_ids = set([job.split(" ")[0] for job in d.splitlines() if "[" not in job.split(" ")[0] ])
+    dir_ids = set([dir.split("/")[-1].split(".")[0] for dir in glob.glob(os.path.join(os.path.expandvars(direc), "*"))])
+    for ids in (dir_ids - job_ids):
+        logger.info("Deleting %s", ids)
+        shutil.rmtree(glob.glob(os.path.join(os.path.expandvars(direc), ids + "*"))[0])
+
 def main():
     parser = OptionParser()
     parser.add_option('--config', type='string', default='cluster.config',

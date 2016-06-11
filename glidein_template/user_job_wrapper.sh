@@ -25,10 +25,6 @@ if [ ! -d $GLIDEIN_DIR ]; then
 fi
 JOB_WRAPPER="${GLIDEIN_DIR}/job_wrapper.sh"
 
-if [ -z $http_proxy ]; then
-    http_proxy=http://squid.icecube.wisc.edu:3128
-fi
-
 
 # idbox TODO:
 #  - run ssh_to_job shell under parrot idbox or disable ssh_to_job
@@ -73,6 +69,10 @@ if [ "$USE_PARROT" = "y" ]; then
     # done messing with job environment; save it to a file for parrot/exec_job
     export -p > "${_CONDOR_SCRATCH_DIR}/parrot_job_env.sh"
 
+    # only set the proxy for parrot/cvmfs
+    if [ -z $http_proxy ]; then
+        http_proxy=http://squid.icecube.wisc.edu:3128
+    fi
 
     # Clense our environment before calling run_parrot, so the user cannot manipulate
     # run_parrot or parrot_run.  Preserve only the necessary variables.
