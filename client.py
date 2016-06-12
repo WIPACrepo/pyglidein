@@ -160,7 +160,7 @@ def main():
             break
         time.sleep(config_glidein['delay'])
     if "cleanup" in config_cluster and config_cluster["cleanup"]:
-        cleanup(config_cluster["running_cmd"], config_cluster["dir_cleanup"])
+        scheduler.cleanup(config_cluster["running_cmd"], config_cluster["dir_cleanup"])
 
 
 if __name__ == '__main__':

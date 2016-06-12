@@ -56,6 +56,9 @@ class Submit(object):
             scale = 1
 
         return scale
+    
+    def cleanup(cmd, direc):
+        pass
 
 class SubmitPBS(Submit):
     """Submit a PBS / Torque job"""
@@ -246,13 +249,24 @@ class SubmitPBS(Submit):
                 if subprocess.call(cmd,shell=True):
                     raise Exception('failed to launch glidein')
 
+    def cleanup(cmd, direc):
+        cmd = cmd[:-6]
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        d = p.communicate()[0]
+        job_ids = set([job.split(" ")[0] for job in d.splitlines() if "[" not in job.split(" ")[0] ])
+        dir_ids = set([dir.split("/")[-1].split(".")[0] for dir in glob.glob(os.path.join(os.path.expandvars(direc), "*"))])
+        for ids in (dir_ids - job_ids):
+            logger.info("Deleting %s", ids)
+            shutil.rmtree(glob.glob(os.path.join(os.path.expandvars(direc), ids + "*"))[0])
+
 class SubmitSLURM(SubmitPBS):
     """SLURM is similar to PBS, but with different headers"""
     
     option_tag = "#SBATCH"
     
-    def write_general_header(self, f, mem=3000, walltime_hours=14,
-                             num_nodes=1, num_cpus=1, num_gpus=0, num_jobs=0):
+    def write_general_header(self, f, mem=3000, walltime_hours=14, 
+                             num_nodes=1, num_cpus=1, num_gpus=0, 
+                             num_jobs=0):
         """
         Writing the header for a SLURM submission script.
         Most of the pieces needed to tell SLURM what resources
@@ -267,6 +281,8 @@ class SubmitSLURM(SubmitPBS):
             num_gpus: requested number of gpus
             num_jobs: requested number of jobs
         """
+        if "parition" not in self.config:
+            raise RuntimeError("Need to provide a parition")
         if num_jobs > 1:
             raise Exception('more than one job not supported')
         self.write_line(f, "#!/bin/bash")
@@ -275,10 +291,8 @@ class SubmitSLURM(SubmitPBS):
         self.write_option(f, '--ntasks-per-node=%d'%num_cpus)
         self.write_option(f, '--mem=%d'%(mem*1.1))
         if num_gpus:
-            self.write_option(f, "--partition=gpu-shared")
             self.write_option(f, "--gres=gpu:%d"%num_gpus)
-        else:
-            self.write_option(f, "--partition=shared")
+        self.write_option(f, "--partition=%s" % self.config["parition"])
         self.write_option(f, "--time=%d:00:00" % walltime_hours)
         if self.config["Mode"]["debug"]:
             self.write_option(f, "--output=%s/out/%%j.out"%os.getcwd())
@@ -391,7 +405,6 @@ class SubmitLSF(SubmitPBS):
         else:
             self.write_option(f, "-o /dev/null")
             self.write_option(f, "-e /dev/null")
-
 
 class SubmitCondor(Submit):
     """Submit an HTCondor job"""
