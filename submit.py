@@ -56,6 +56,9 @@ class Submit(object):
             scale = 1
 
         return scale
+    
+    def cleanup(cmd, direc):
+        pass
 
 class SubmitPBS(Submit):
     """Submit a PBS / Torque job"""
