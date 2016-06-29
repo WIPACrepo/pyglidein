@@ -151,17 +151,17 @@ class SubmitPBS(Submit):
             glidein_tarball: file name of tarball
             glidein_script: file name of glidein start script
         """
-        self.write_line(f, 'CLEANUP=0\n')
-        self.write_line(f, 'LOCAL_DIR=%s\n' % local_dir)
-        self.write_line(f, 'if [ ! -d $LOCAL_DIR ]; then\n')
-        self.write_line(f, '    mkdir -p $LOCAL_DIR\n')
-        self.write_line(f, '    CLEANUP=1\n')
-        self.write_line(f, 'fi\n')
-        self.write_line(f, 'cd $LOCAL_DIR\n')
+        self.write_line(f, 'CLEANUP=0')
+        self.write_line(f, 'LOCAL_DIR=%s' % local_dir)
+        self.write_line(f, 'if [ ! -d $LOCAL_DIR ]; then')
+        self.write_line(f, '    mkdir -p $LOCAL_DIR')
+        self.write_line(f, '    CLEANUP=1')
+        self.write_line(f, 'fi')
+        self.write_line(f, 'cd $LOCAL_DIR')
         if not glidein_loc:
             glidein_loc = os.getcwd()
         if glidein_tarball:
-            self.write_line(f, "ln -s %s %s" % (glidein_tarball, os.path.basename(glidein_tarball)))
+            self.write_line(f, 'ln -s %s %s' % (glidein_tarball, os.path.basename(glidein_tarball)))
         self.write_line(f, 'ln -s %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
 
         f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK ')
@@ -172,11 +172,11 @@ class SubmitPBS(Submit):
         if "CustomEnv" in self.config:
             for k, v in self.config["CustomEnv"].items():
                 f.write(k + '=' + v + ' ')
-        f.write('./%s' % glidein_script)
+        f.write('./%s\n' % glidein_script)
 
-        self.write_line(f, 'if [ $CLEANUP = 1 ]; then\n')
-        self.write_line(f, '    rm -rf $LOCAL_DIR\n')
-        self.write_line(f, 'fi\n')
+        self.write_line(f, 'if [ $CLEANUP = 1 ]; then')
+        self.write_line(f, '    rm -rf $LOCAL_DIR')
+        self.write_line(f, 'fi')
 
     def write_submit_file(self, filename, state, group_jobs):
         """
