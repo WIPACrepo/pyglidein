@@ -290,7 +290,7 @@ class SubmitSLURM(SubmitPBS):
         self.write_option(f, '--mem=%d'%(mem*1.1))
         if num_gpus:
             self.write_option(f, "--gres=gpu:%d"%num_gpus)
-        if "partition" in self.config['Cluster'].keys():
+        if "partition" in self.config['Cluster']:
             self.write_option(f, "--partition=%s" % self.config['Cluster']["partition"])
         self.write_option(f, "--time=%d:00:00" % walltime_hours)
         if self.config["Mode"]["debug"]:
