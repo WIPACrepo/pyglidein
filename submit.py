@@ -281,8 +281,6 @@ class SubmitSLURM(SubmitPBS):
             num_gpus: requested number of gpus
             num_jobs: requested number of jobs
         """
-        if "parition" not in self.config:
-            raise RuntimeError("Need to provide a parition")
         if num_jobs > 1:
             raise Exception('more than one job not supported')
         self.write_line(f, "#!/bin/bash")
@@ -292,7 +290,8 @@ class SubmitSLURM(SubmitPBS):
         self.write_option(f, '--mem=%d'%(mem*1.1))
         if num_gpus:
             self.write_option(f, "--gres=gpu:%d"%num_gpus)
-        self.write_option(f, "--partition=%s" % self.config["parition"])
+        if "partition" in self.config['Cluster'].keys():
+            self.write_option(f, "--partition=%s" % self.config['Cluster']["partition"])
         self.write_option(f, "--time=%d:00:00" % walltime_hours)
         if self.config["Mode"]["debug"]:
             self.write_option(f, "--output=%s/out/%%j.out"%os.getcwd())
