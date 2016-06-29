@@ -8,6 +8,8 @@ import platform
 import subprocess
 import logging
 import tempfile
+import shutil
+import glob
 
 class Submit(object):
     """
@@ -57,7 +59,7 @@ class Submit(object):
 
         return scale
     
-    def cleanup(cmd, direc):
+    def cleanup(self, cmd, direc):
         pass
 
 class SubmitPBS(Submit):
@@ -209,7 +211,6 @@ class SubmitPBS(Submit):
 
             self.write_general_header(f, mem=mem_requested, num_cpus=num_cpus,
                                       num_gpus=num_gpus, walltime_hours=walltime,
-                                      disk=disk,
                                       num_jobs = state["count"] if group_jobs else 0)
 
             if "custom_header" in self.config["SubmitFile"]:
@@ -219,7 +220,7 @@ class SubmitPBS(Submit):
 
             self.write_glidein_variables(f, mem=mem_advertised,
                                          num_cpus=num_cpus, num_gpus=num_gpus,
-                                         walltime_hours=walltime)
+                                         walltime_hours=walltime, disk=disk)
 
             kwargs = {
                 'local_dir': self.config["SubmitFile"]["local_dir"],
@@ -268,14 +269,14 @@ class SubmitPBS(Submit):
                 if subprocess.call(cmd,shell=True):
                     raise Exception('failed to launch glidein')
 
-    def cleanup(cmd, direc):
+    def cleanup(self, cmd, direc):
         cmd = cmd[:-6]
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         d = p.communicate()[0]
         job_ids = set([job.split(" ")[0] for job in d.splitlines() if "[" not in job.split(" ")[0] ])
         dir_ids = set([dir.split("/")[-1].split(".")[0] for dir in glob.glob(os.path.join(os.path.expandvars(direc), "*"))])
         for ids in (dir_ids - job_ids):
-            logger.info("Deleting %s", ids)
+            logging.info("Deleting %s", ids)
             shutil.rmtree(glob.glob(os.path.join(os.path.expandvars(direc), ids + "*"))[0])
 
 class SubmitSLURM(SubmitPBS):
