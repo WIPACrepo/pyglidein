@@ -146,7 +146,7 @@ def main():
                 if "count" in s and s["count"] > limit: 
                     s["count"] = limit
                 if ("max_memory_per_job" in config_cluster 
-                    and s["memory"] >= config_cluster["max_memory_per_job"]):
+                    and s["memory"] > config_cluster["max_memory_per_job"]):
                     continue
                 scheduler.submit(s)
                 num = 1 if "count" not in s else s["count"]
