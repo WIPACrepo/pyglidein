@@ -307,7 +307,7 @@ class SubmitSLURM(SubmitPBS):
         self.write_option(f, '--job-name="glidein"')
         self.write_option(f, '--nodes=%d'%num_nodes)
         self.write_option(f, '--ntasks-per-node=%d'%num_cpus)
-        self.write_option(f, '--mem=%d'%(mem*1.1))
+        self.write_option(f, '--mem=%d'%(mem))
         if num_gpus:
             self.write_option(f, "--gres=gpu:%d"%num_gpus)
         if "partition" in self.config['Cluster']:
@@ -344,7 +344,7 @@ class SubmitUGE(SubmitPBS):
         """
         self.write_line(f, "#!/bin/bash")
         self.write_option(f, '-S /bin/bash')
-        self.write_option(f, '-l h_rss=%dM'%(mem*1.1))
+        self.write_option(f, '-l h_rss=%dM'%(mem))
         if num_gpus:
             self.write_option(f, "-l gpu=%d"%num_gpus)
         if num_cpus > 1:
