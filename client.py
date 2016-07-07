@@ -146,7 +146,7 @@ def main():
                 # skipping jobs over cluster resource limits
                 skip = False
                 for resource in ('cpus','gpus','memory','disk'):
-                    cfg_name = 'max_{}_per_job'.format(resource)
+                    cfg_name = 'max_%s_per_job'%(resource)
                     if (cfg_name in config_cluster
                         and s[resource] > config_cluster[cfg_name]):
                         skip = True
