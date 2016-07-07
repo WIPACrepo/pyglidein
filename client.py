@@ -9,6 +9,8 @@ import socket
 import getpass
 from optparse import OptionParser
 import ConfigParser
+import glob
+import shutil
 
 from util import json_decode
 from client_util import get_state, monitoring, config_options_dict
@@ -56,6 +58,16 @@ def sort_states(state, columns, reverse=True):
             ret.append(v)
         return ret
     return sorted(state, key=compare, reverse=reverse)
+
+def cleanup(cmd, direc):
+    cmd = cmd[:-6]
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    d = p.communicate()[0]
+    job_ids = set([job.split(" ")[0] for job in d.splitlines() if "[" not in job.split(" ")[0] ])
+    dir_ids = set([dir.split("/")[-1].split(".")[0] for dir in glob.glob(os.path.join(os.path.expandvars(direc), "*"))])
+    for ids in (dir_ids - job_ids):
+        logger.info("Deleting %s", ids)
+        shutil.rmtree(glob.glob(os.path.join(os.path.expandvars(direc), ids + "*"))[0])
 
 def main():
     parser = OptionParser()
@@ -133,6 +145,9 @@ def main():
                     continue
                 if "count" in s and s["count"] > limit: 
                     s["count"] = limit
+                if ("max_memory_per_job" in config_cluster 
+                    and s["memory"] > config_cluster["max_memory_per_job"]):
+                    continue
                 scheduler.submit(s)
                 num = 1 if "count" not in s else s["count"]
                 limit -= num
@@ -147,6 +162,8 @@ def main():
         if 'delay' not in config_glidein or int(config_glidein['delay']) < 1:
             break
         time.sleep(config_glidein['delay'])
+    if "cleanup" in config_cluster and config_cluster["cleanup"]:
+        scheduler.cleanup(config_cluster["running_cmd"], config_cluster["dir_cleanup"])
 
 
 if __name__ == '__main__':
