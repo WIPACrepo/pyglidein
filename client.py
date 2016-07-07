@@ -143,7 +143,18 @@ def main():
                 if ('cpu_only' in config_cluster and config_cluster['cpu_only']
                     and s["gpus"] != 0):
                     continue
-                if "count" in s and s["count"] > limit: 
+                # skipping jobs over cluster resource limits
+                skip = False
+                for resource in ('cpus','gpus','memory','disk'):
+                    cfg_name = 'max_%s_per_job'%(resource)
+                    if (cfg_name in config_cluster
+                        and s[resource] > config_cluster[cfg_name]):
+                        skip = True
+                        break
+                if skip:
+                    continue
+
+                if "count" in s and s["count"] > limit:
                     s["count"] = limit
                 if ("max_memory_per_job" in config_cluster 
                     and s["memory"] > config_cluster["max_memory_per_job"]):
