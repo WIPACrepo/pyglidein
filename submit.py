@@ -8,6 +8,8 @@ import platform
 import subprocess
 import logging
 import tempfile
+import shutil
+import glob
 
 class Submit(object):
     """
@@ -57,7 +59,7 @@ class Submit(object):
 
         return scale
     
-    def cleanup(cmd, direc):
+    def cleanup(self, cmd, direc):
         pass
 
 class SubmitPBS(Submit):
@@ -106,12 +108,10 @@ class SubmitPBS(Submit):
         if num_jobs > 0:
             self.write_option(f, "-t 0-%d" % num_jobs)
 
-    def write_glidein_variables(self, f, mem=None, walltime_hours=None,
-                                num_cpus=None, num_gpus=None):
+    def write_glidein_variables(self, f, mem=1000, walltime_hours=12,
+                                num_cpus=1, num_gpus=0, disk=None):
         """
-        Writing the header for a PBS submission script.
-        Most of the pieces needed to tell PBS what resources
-        are being requested.
+        Tell the glidein what resources it has.
 
         Args:
             f: python file object
@@ -119,24 +119,25 @@ class SubmitPBS(Submit):
             walltime_hours: lifetime of glidein in hours
             cpus: number of cpus provided
             gpus: number of cpus provided
+            disk: disk provided for glidein
         """
-        if mem:
-            self.write_line(f, "export MEMORY=%d" % mem)
-        if walltime_hours:
-            self.write_line(f, "export WALLTIME=%d" % (walltime_hours*3600))
-        if num_cpus:
-            self.write_line(f, "export CPUS=%d" % num_cpus)
+        self.write_line(f, "MEMORY=%d" % mem)
+        self.write_line(f, "WALLTIME=%d" % (walltime_hours*3600))
+        self.write_line(f, "CPUS=%d" % num_cpus)
         if num_gpus:
             self.write_line(f, 'if [ "$CUDA_VISIBLE_DEVICES" = "0" ]; then')
-            self.write_line(f, '  export GPUS="CUDA${CUDA_VISIBLE_DEVICES}"')
+            self.write_line(f, '  GPUS="CUDA${CUDA_VISIBLE_DEVICES}"')
             self.write_line(f, 'else')
-            self.write_line(f, '  export GPUS=$CUDA_VISIBLE_DEVICES')
+            self.write_line(f, '  GPUS=$CUDA_VISIBLE_DEVICES')
             self.write_line(f, 'fi')
+        else:
+            self.write_line(f, 'GPUS=0')
+        self.write_line(f, "CPUS=%d" % num_cpus)
 
         if 'site' in self.config['Glidein']:
-            self.write_line(f, 'export SITE="%s"' % self.config['Glidein']['site'])
+            self.write_line(f, 'SITE="%s"' % self.config['Glidein']['site'])
         if 'cluster' in self.config['Glidein']:
-            self.write_line(f, 'export CLUSTER="%s"' % self.config['Glidein']['cluster'])
+            self.write_line(f, 'CLUSTER="%s"' % self.config['Glidein']['cluster'])
 
     def write_glidein_part(self, f, local_dir=None, glidein_tarball=None,
                            glidein_script=None, glidein_loc=None):
@@ -150,13 +151,32 @@ class SubmitPBS(Submit):
             glidein_tarball: file name of tarball
             glidein_script: file name of glidein start script
         """
-        self.write_line(f, "cd %s\n" % local_dir)
+        self.write_line(f, 'CLEANUP=0')
+        self.write_line(f, 'LOCAL_DIR=%s' % local_dir)
+        self.write_line(f, 'if [ ! -d $LOCAL_DIR ]; then')
+        self.write_line(f, '    mkdir -p $LOCAL_DIR')
+        self.write_line(f, '    CLEANUP=1')
+        self.write_line(f, 'fi')
+        self.write_line(f, 'cd $LOCAL_DIR')
         if not glidein_loc:
             glidein_loc = os.getcwd()
         if glidein_tarball:
-            self.write_line(f, "ln -s %s %s" % (glidein_tarball, os.path.basename(glidein_tarball)))
+            self.write_line(f, 'ln -s %s %s' % (glidein_tarball, os.path.basename(glidein_tarball)))
         self.write_line(f, 'ln -s %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
-        self.write_line(f, './%s' % glidein_script)
+
+        f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK ')
+        if 'site' in self.config['Glidein']:
+            f.write('SITE=$SITE ')
+        if 'cluster' in self.config['Glidein']:
+            f.write('CLUSTER=$CLUSTER ')
+        if "CustomEnv" in self.config:
+            for k, v in self.config["CustomEnv"].items():
+                f.write(k + '=' + v + ' ')
+        f.write('./%s\n' % glidein_script)
+
+        self.write_line(f, 'if [ $CLEANUP = 1 ]; then')
+        self.write_line(f, '    rm -rf $LOCAL_DIR')
+        self.write_line(f, 'fi')
 
     def write_submit_file(self, filename, state, group_jobs):
         """
@@ -172,6 +192,7 @@ class SubmitPBS(Submit):
             mem_advertised = int(state["memory"]*mem_safety_margin)
             mem_requested = mem_advertised
             num_gpus = state["gpus"]
+            disk = state["disk"]
 
             mem_per_core = 2000
             if 'mem_per_core' in self.config['Cluster']:
@@ -188,7 +209,6 @@ class SubmitPBS(Submit):
                     mem_requested = mem_advertised/num_cpus
             walltime = int(self.config["Cluster"]["walltime_hrs"])
 
-
             self.write_general_header(f, mem=mem_requested, num_cpus=num_cpus,
                                       num_gpus=num_gpus, walltime_hours=walltime,
                                       num_jobs = state["count"] if group_jobs else 0)
@@ -200,7 +220,7 @@ class SubmitPBS(Submit):
 
             self.write_glidein_variables(f, mem=mem_advertised,
                                          num_cpus=num_cpus, num_gpus=num_gpus,
-                                         walltime_hours=walltime)
+                                         walltime_hours=walltime, disk=disk)
 
             kwargs = {
                 'local_dir': self.config["SubmitFile"]["local_dir"],
@@ -249,14 +269,14 @@ class SubmitPBS(Submit):
                 if subprocess.call(cmd,shell=True):
                     raise Exception('failed to launch glidein')
 
-    def cleanup(cmd, direc):
+    def cleanup(self, cmd, direc):
         cmd = cmd[:-6]
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         d = p.communicate()[0]
         job_ids = set([job.split(" ")[0] for job in d.splitlines() if "[" not in job.split(" ")[0] ])
         dir_ids = set([dir.split("/")[-1].split(".")[0] for dir in glob.glob(os.path.join(os.path.expandvars(direc), "*"))])
         for ids in (dir_ids - job_ids):
-            logger.info("Deleting %s", ids)
+            logging.info("Deleting %s", ids)
             shutil.rmtree(glob.glob(os.path.join(os.path.expandvars(direc), ids + "*"))[0])
 
 class SubmitSLURM(SubmitPBS):
@@ -287,7 +307,7 @@ class SubmitSLURM(SubmitPBS):
         self.write_option(f, '--job-name="glidein"')
         self.write_option(f, '--nodes=%d'%num_nodes)
         self.write_option(f, '--ntasks-per-node=%d'%num_cpus)
-        self.write_option(f, '--mem=%d'%(mem*1.1))
+        self.write_option(f, '--mem=%d'%(mem))
         if num_gpus:
             self.write_option(f, "--gres=gpu:%d"%num_gpus)
         if "partition" in self.config['Cluster']:
@@ -324,7 +344,7 @@ class SubmitUGE(SubmitPBS):
         """
         self.write_line(f, "#!/bin/bash")
         self.write_option(f, '-S /bin/bash')
-        self.write_option(f, '-l h_rss=%dM'%(mem*1.1))
+        self.write_option(f, '-l h_rss=%dM'%(mem))
         if num_gpus:
             self.write_option(f, "-l gpu=%d"%num_gpus)
         if num_cpus > 1:
