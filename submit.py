@@ -164,7 +164,7 @@ class SubmitPBS(Submit):
             self.write_line(f, 'ln -s %s %s' % (glidein_tarball, os.path.basename(glidein_tarball)))
         self.write_line(f, 'ln -s %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
 
-        f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK ')
+        f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME ')
         if 'site' in self.config['Glidein']:
             f.write('SITE=$SITE ')
         if 'cluster' in self.config['Glidein']:
