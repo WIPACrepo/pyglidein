@@ -52,7 +52,8 @@ class MyHandler(tornado.web.RequestHandler):
         """
         Get some params from the website module
 
-        :param cfg: the global config
+        Args:
+            cfg: the global config
         """
         self.cfg = cfg
 
@@ -65,9 +66,10 @@ class MyHandler(tornado.web.RequestHandler):
         raise tornado.web.HTTPError(400, 'POST is invalid.  Use GET')
 
 class JSONRPCHandler(MyHandler):
-    """JSONRPC 2.0 Handler.
+    """
+    JSONRPC 2.0 Handler.
 
-       Call DB methods using RPC over json.
+    Call DB methods using RPC over json.
     """
     def post(self):
         """Parses json in the jsonrpc format, returning results in

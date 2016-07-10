@@ -76,6 +76,7 @@ class Client(object):
             return None
 
 def get_state(address):
+    """Getting the server state directly from remote queue"""
     c = Client(address=address)
     try:
         return c.request('get_state', {})
@@ -83,6 +84,7 @@ def get_state(address):
         logger.warn('error getting state', exc_info=True)
 
 def monitoring(address,info=None):
+    """Sending monitoring information back"""
     if info is None:
         info = {}
     c = Client(address=address)
@@ -92,9 +94,19 @@ def monitoring(address,info=None):
         logger.warn('error getting state', exc_info=True)
 
 def config_options_dict(config):
-    config_dict = {}
+    """
+    Parsing config file
+
+    Args:
+        config: Pythong config parser object
+
+    Returns:
+        A dict with the different sections of the config file
+        and the literal values of the configuraton objects
+    """
+    config_dict = dict()
     for section in config.sections():
-        config_dict[section] = {}
+        config_dict[section] = dict()
         for option in config.options(section):
             val = config.get(section, option)
             try:

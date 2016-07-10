@@ -20,6 +20,7 @@ logger = logging.getLogger('client')
 
 
 def get_ssh_state():
+    """Getting the state of the remote queue from a text file"""
     try:
         filename = os.path.expanduser('~/glidein_state')
         return json_decode(open(filename).read())
@@ -27,6 +28,13 @@ def get_ssh_state():
         logger.warn('error getting ssh state', exc_info=True)
 
 def launch_glidein(cmd, params=[]):
+    """
+    Command to launch a jobs using subprocess
+
+    Args:
+        cmd: Job submission command needed for the respective batch job manager
+        params: List of parameters that are passed to cmd
+    """
     for p in params:
         cmd += ' --'+p+' '+str(params[p])
     print(cmd)
@@ -34,10 +42,29 @@ def launch_glidein(cmd, params=[]):
         raise Exception('failed to launch glidein')
 
 def get_running(cmd):
+    """Determine how many jobs are running in the queue"""
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     return int(p.communicate()[0].strip())
     
 def sort_states(state, columns, reverse=True):
+    """
+    Sort the states according to the list given by prioritize_jobs.
+    
+    prioritize_jobs (or columns in this case) is list of according to 
+    which state should be prioritized for job submission. The position 
+    in the list indicates the prioritization. columns = ["memory", "disk"] 
+    with reverse=True means jobs with high memory will be submitted before
+    jobs with lower memory requirements, followed by jobs with high disk vs. 
+    low disk requirement. Jobs with high memory and disk requirements 
+    will be submitted first then jobs with high memory and medium disk 
+    requirements, and so on and so forth. 
+
+    Args:
+        state: List of states
+        columns: List of keys in the dict by which dict is sorted
+        reverse: Reverse the sorting or not. True = Bigger first,
+                 False = smaller first
+    """
     key_cache = {}
     col_cache = dict([(c[1:],-1) if c[0] == '-' else (c,1) for c in columns])
     def comp_key(key):
@@ -58,16 +85,6 @@ def sort_states(state, columns, reverse=True):
             ret.append(v)
         return ret
     return sorted(state, key=compare, reverse=reverse)
-
-def cleanup(cmd, direc):
-    cmd = cmd[:-6]
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-    d = p.communicate()[0]
-    job_ids = set([job.split(" ")[0] for job in d.splitlines() if "[" not in job.split(" ")[0] ])
-    dir_ids = set([dir.split("/")[-1].split(".")[0] for dir in glob.glob(os.path.join(os.path.expandvars(direc), "*"))])
-    for ids in (dir_ids - job_ids):
-        logger.info("Deleting %s", ids)
-        shutil.rmtree(glob.glob(os.path.join(os.path.expandvars(direc), ids + "*"))[0])
 
 def main():
     parser = OptionParser()
@@ -126,6 +143,7 @@ def main():
                 continue
             limit = min(config_cluster["limit_per_submit"], 
                         config_cluster["max_total_jobs"] - info['glideins_running'])
+            # Prioitize job submission. By default, prioritize submission of gpu and high memory jobs. 
             if "prioritize_jobs" in config_cluster:
                 state = sort_states(state, config_cluster["prioritize_jobs"])
             else:
