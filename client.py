@@ -153,16 +153,16 @@ def main():
                 if limit <= 0:
                     logger.info('reached limit')
                     break
+                skip = False
                 # Skipping CPU jobs for gpu only clusters
                 if ('gpu_only' in config_cluster and config_cluster['gpu_only']
                     and s["gpus"] == 0):
-                    continue
+                    skip = True
                 # skipping GPU jobs for cpu only clusters
                 if ('cpu_only' in config_cluster and config_cluster['cpu_only']
                     and s["gpus"] != 0):
-                    continue
+                    skip = True
                 # skipping jobs over cluster resource limits
-                skip = False
                 for resource in ('cpus','gpus','memory','disk'):
                     cfg_name = 'max_%s_per_job'%(resource)
                     if (cfg_name in config_cluster
@@ -171,12 +171,8 @@ def main():
                         break
                 if skip:
                     continue
-
                 if "count" in s and s["count"] > limit:
                     s["count"] = limit
-                if ("max_memory_per_job" in config_cluster 
-                    and s["memory"] > config_cluster["max_memory_per_job"]):
-                    continue
                 scheduler.submit(s)
                 num = 1 if "count" not in s else s["count"]
                 limit -= num

@@ -188,7 +188,6 @@ class SubmitPBS(Submit):
         if "CustomEnv" in self.config:
             for k, v in self.config["CustomEnv"].items():
                 f.write(k + '=' + v + ' ')
-        self.write_line(f, 'cd $LOCAL_DIR')
         self.write_line(f, './%s' % glidein_script)
 
         self.write_line(f, 'if [ $CLEANUP = 1 ]; then')
