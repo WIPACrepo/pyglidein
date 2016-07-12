@@ -29,9 +29,22 @@ class Submit(object):
         raise NotImplementedError()
 
     def write_line(self, f, line):
+        """
+        Wrapper function so we dont have to write \n a million times
+        
+        Args:
+            f: File handle
+            line: Line to be written to file
+        """
         f.write(line+"\n")
 
     def get_executable(self):
+        """
+        Getting the file to be executed by glidein when the jobs starts
+
+        Returns:
+            String that is the location of the executable
+        """
         executable = 'glidein_start.sh'
         if 'executable' in self.config['Glidein']:
             executable = self.config["Glidein"]["executable"]
@@ -46,6 +59,8 @@ class Submit(object):
             key: key to evaluate in config file
             sec: section to evaluate in config file
                  (default: 'SubmitFile')
+        Returns:
+            A float that is the scaling factor for a resource
         """
         try:
             # look for entry and check type
@@ -66,8 +81,9 @@ class SubmitPBS(Submit):
     """Submit a PBS / Torque job"""
 
     option_tag = "#PBS"
+
     def write_option(self, f, line):
-        f.write(self.option_tag+" "+line+"\n")
+        write_line(f, self.option_tag+" "+line)
 
     def write_general_header(self, f, mem=3000, walltime_hours=14,
                              num_nodes=1, num_cpus=1, num_gpus=0,
@@ -172,7 +188,7 @@ class SubmitPBS(Submit):
         if "CustomEnv" in self.config:
             for k, v in self.config["CustomEnv"].items():
                 f.write(k + '=' + v + ' ')
-        f.write('./%s\n' % glidein_script)
+        self.write_line(f, './%s' % glidein_script)
 
         self.write_line(f, 'if [ $CLEANUP = 1 ]; then')
         self.write_line(f, '    rm -rf $LOCAL_DIR')
@@ -246,7 +262,7 @@ class SubmitPBS(Submit):
 
     def submit(self, state):
         """
-        Submitting the PBS script
+        Writing submit file and submitting a job for PBS-like batch managers
 
         Args:
             state: what resource requirements a given glidein has
@@ -270,6 +286,15 @@ class SubmitPBS(Submit):
                     raise Exception('failed to launch glidein')
 
     def cleanup(self, cmd, direc):
+        """
+        Cleans up temporary directories that were created on a network file system that were not 
+        deleted by the job itself. Checks whether the job ID used to identify a temporary directory
+        is still in the queue. If it is not, the directory gets deleted.
+
+        Args:
+            cmd: Command needed to query about which jobs are running for the user
+            direc: Which directory to look for the temporory directories
+        """
         cmd = cmd[:-6]
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         d = p.communicate()[0]
@@ -536,6 +561,12 @@ class SubmitCondor(Submit):
                 self.write_line(f, 'queue')
 
     def submit(self, state):
+        """
+        Writing submit file and submitting a HTCondor job
+
+        Args:
+            state: what resource requirements a given glidein has
+        """
         submit_filename = 'submit.condor'
         if 'filename' in self.config["SubmitFile"]:
             submit_filename = self.config["SubmitFile"]["filename"]
