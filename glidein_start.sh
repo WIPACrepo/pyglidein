@@ -64,7 +64,7 @@ export _condor_GLIDEIN_HOST="$CLUSTER"
 export _condor_GLIDEIN_Max_Walltime=${WALLTIME};
 export _condor_GLIDEIN_Job_Max_Time=${WALLTIME};
 export _condor_CLAIM_WORKLIFE=${WALLTIME};
-export _condor_TIMETOLIVE=${WALLTIME};
+export _condor_TimeToLive="${WALLTIME} - MonitorSelfAge";
 export _condor_STARTD_NOCLAIM_SHUTDOWN="ifThenElse(ifThenElse(isUndefined(NumDynamicSlots),False,NumDynamicSlots > 0), ${WALLTIME} - MonitorSelfAge, ${NOCLAIMTIME})";
 export _condor_MaxJobRetirementTime=${WALLTIME}
 export _condor_SLOT1_RetirementTime="ifThenElse(MonitorSelfAge + ${RETIRETIME} > ${WALLTIME}, ${RETIRETIME}, MonitorSelfAge + ${RETIRETIME} - ${WALLTIME})";
@@ -84,7 +84,7 @@ export _condor_SLOT_TYPE_1_PARTITIONABLE="True"
 export _condor_SLOT_TYPE_1_CONSUMPTION_POLICY="True"
 export _condor_SLOT_TYPE_1_CONSUMPTION_GPUs="quantize(ifThenElse(target.RequestGpus =!= undefined,target.RequestGpus,0),{0})";
 export _condor_SLOT_WEIGHT="Cpus";
-export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists GLIDEIN_Site"
+export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists GLIDEIN_Site GLIDEIN_Max_Walltime"
 export _condor_STARTER_JOB_ENVIRONMENT="\"GLIDEIN_Site=${SITE} GLIDEIN_LOCAL_TMP_DIR=${PWD} GOTO_NUM_THREADS=1\"";
 export _condor_START="ifThenElse(ifThenElse(MY.GPUs =!= undefined,MY.GPUs,0) > 0,ifThenElse(TARGET.RequestGPUs =!= undefined,TARGET.RequestGPUs,0) > 0,TRUE)";
 export _condor_UID_DOMAIN=""
