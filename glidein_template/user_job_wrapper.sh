@@ -52,7 +52,7 @@ fi
 # avoid using parrot when _CONDOR_JOB_PIDS is non-empty.
 # (That's how we guess that this is an ssh_to_job session.)
 
-if [ "$USE_PARROT" = "y" ]; then
+if [ "$USE_PARROT" = "y" ] && [ -z "$_CONDOR_JOB_PIDS" ]; then
 
     # Workaround for GLOBUS_TCP_PORT_RANGE_STATE_FILE pointing to a file
     # we can't write to.  This breaks CMS CRAB 2.8.1 and prior.
