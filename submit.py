@@ -83,9 +83,9 @@ class SubmitPBS(Submit):
     option_tag = "#PBS"
 
     def write_option(self, f, line):
-        write_line(f, self.option_tag+" "+line)
+        self.write_line(f, self.option_tag+" "+line)
 
-    def write_general_header(self, f, mem=3000, walltime_hours=14,
+    def write_general_header(self, f, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
                              num_jobs=0):
         """
@@ -125,7 +125,7 @@ class SubmitPBS(Submit):
             self.write_option(f, "-t 0-%d" % num_jobs)
 
     def write_glidein_variables(self, f, mem=1000, walltime_hours=12,
-                                num_cpus=1, num_gpus=0, disk=None):
+                                num_cpus=1, num_gpus=0, disk=1):
         """
         Tell the glidein what resources it has.
 
@@ -140,6 +140,7 @@ class SubmitPBS(Submit):
         self.write_line(f, "MEMORY=%d" % mem)
         self.write_line(f, "WALLTIME=%d" % (walltime_hours*3600))
         self.write_line(f, "CPUS=%d" % num_cpus)
+        self.write_line(f, "DISK=%d" % (disk*1024))
         if num_gpus:
             self.write_line(f, 'if [ "$CUDA_VISIBLE_DEVICES" = "0" ]; then')
             self.write_line(f, '  GPUS="CUDA${CUDA_VISIBLE_DEVICES}"')
@@ -208,7 +209,7 @@ class SubmitPBS(Submit):
             mem_advertised = int(state["memory"]*mem_safety_margin)
             mem_requested = mem_advertised
             num_gpus = state["gpus"]
-            disk = state["disk"]
+            disk = state["disk"]*1.1
 
             mem_per_core = 2000
             if 'mem_per_core' in self.config['Cluster']:
@@ -227,6 +228,7 @@ class SubmitPBS(Submit):
 
             self.write_general_header(f, mem=mem_requested, num_cpus=num_cpus,
                                       num_gpus=num_gpus, walltime_hours=walltime,
+                                      disk=disk,
                                       num_jobs = state["count"] if group_jobs else 0)
 
             if "custom_header" in self.config["SubmitFile"]:
@@ -309,7 +311,7 @@ class SubmitSLURM(SubmitPBS):
     
     option_tag = "#SBATCH"
     
-    def write_general_header(self, f, mem=3000, walltime_hours=14, 
+    def write_general_header(self, f, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0, 
                              num_jobs=0):
         """
@@ -351,7 +353,7 @@ class SubmitUGE(SubmitPBS):
     
     option_tag = "#$"
     
-    def write_general_header(self, f, mem=3000, walltime_hours=14,
+    def write_general_header(self, f, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
                              num_jobs=0):
         """
@@ -370,6 +372,7 @@ class SubmitUGE(SubmitPBS):
         self.write_line(f, "#!/bin/bash")
         self.write_option(f, '-S /bin/bash')
         self.write_option(f, '-l h_rss=%dM'%(mem))
+        self.write_option(f, '-l tmpdir_size=%dM'%(disk))
         if num_gpus:
             self.write_option(f, "-l gpu=%d"%num_gpus)
         if num_cpus > 1:
@@ -389,7 +392,7 @@ class SubmitLSF(SubmitPBS):
 
     option_tag = "#BSUB"
 
-    def write_general_header(self, f, mem=3000, walltime_hours=14,
+    def write_general_header(self, f, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
                              num_jobs=0):
         """
