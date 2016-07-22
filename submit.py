@@ -83,7 +83,7 @@ class SubmitPBS(Submit):
     option_tag = "#PBS"
 
     def write_option(self, f, line):
-        write_line(f, self.option_tag+" "+line)
+        self.write_line(f, self.option_tag+" "+line)
 
     def write_general_header(self, f, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
