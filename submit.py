@@ -372,7 +372,7 @@ class SubmitUGE(SubmitPBS):
         self.write_line(f, "#!/bin/bash")
         self.write_option(f, '-S /bin/bash')
         self.write_option(f, '-l h_rss=%dM'%(mem))
-        self.write_option(f, '-l tmpdir_size=%dM'%(disk))
+        self.write_option(f, '-l tmpdir_size=%dM'%(max((disk, 1000))))
         if num_gpus:
             self.write_option(f, "-l gpu=%d"%num_gpus)
         if num_cpus > 1:
