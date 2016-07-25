@@ -136,13 +136,17 @@ def main():
                 'glideins_launched': 0,
                }
         if state:
+            idle = 0
             try:
                 info['glideins_running'] = get_running(config_cluster["running_cmd"])
+                if "idle_cmd" in config_cluster:
+                    idle = get_running(config_cluster["idle_cmd"])
             except Exception:
                 logger.warn('error getting running job count', exc_info=True)
                 continue
             limit = min(config_cluster["limit_per_submit"], 
-                        config_cluster["max_total_jobs"] - info['glideins_running'])
+                        config_cluster["max_total_jobs"] - info['glideins_running'],
+                        max(config_cluster.get("max_idle_jobs", 1000) - idle, 0))
             # Prioitize job submission. By default, prioritize submission of gpu and high memory jobs. 
             if "prioritize_jobs" in config_cluster:
                 state = sort_states(state, config_cluster["prioritize_jobs"])
