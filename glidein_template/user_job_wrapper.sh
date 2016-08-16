@@ -10,9 +10,8 @@ export PATH=$PATH:/usr/bin:/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib64:/usr/local/lib:/usr/lib64:/usr/lib:/usr/lib/x86_64-linux-gnu:/lib64:/lib:/lib/x86_64-linux-gnu
 
 # hide all GPUs unless job actually requested a GPU.
-# TODO: get AMD gpus working
 export CUDA_VISIBLE_DEVICES COMPUTE GPU_DEVICE_ORDINAL
-gpu_dev=$(echo $_CONDOR_AssignedGPUs | sed "s/CUDA//g" | sed "s/\"//g")
+gpu_dev=$(grep -e "^AssignedGPUs" $_CONDOR_MACHINE_AD | awk -F "= " "{print $2}" | sed "s/CUDA//g" | sed "s/\"//g")
 if [ -n "$gpu_dev" ]; then
   export CUDA_VISIBLE_DEVICES=$gpu_dev
   export COMPUTE=:0.$gpu_dev
@@ -52,7 +51,7 @@ fi
 # avoid using parrot when _CONDOR_JOB_PIDS is non-empty.
 # (That's how we guess that this is an ssh_to_job session.)
 
-if [ "$USE_PARROT" = "y" ]; then
+if [ "$USE_PARROT" = "y" ] && [ -z "$_CONDOR_JOB_PIDS" ]; then
 
     # Workaround for GLOBUS_TCP_PORT_RANGE_STATE_FILE pointing to a file
     # we can't write to.  This breaks CMS CRAB 2.8.1 and prior.

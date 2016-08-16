@@ -104,9 +104,9 @@ def config_options_dict(config):
         A dict with the different sections of the config file
         and the literal values of the configuraton objects
     """
-    config_dict = dict()
+    config_dict = {}
     for section in config.sections():
-        config_dict[section] = dict()
+        config_dict[section] = {}
         for option in config.options(section):
             val = config.get(section, option)
             try:
