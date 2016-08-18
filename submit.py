@@ -142,7 +142,7 @@ class SubmitPBS(Submit):
         self.write_line(f, "CPUS=%d" % num_cpus)
         self.write_line(f, "DISK=%d" % (disk*1024))
         if num_gpus:
-            self.write_line(f, 'if [ "$CUDA_VISIBLE_DEVICES" = "0" ]; then')
+            self.write_line(f, 'if [ "$CUDA_VISIBLE_DEVICES" -eq "$CUDA_VISIBLE_DEVICES" ] 2>/dev/null ; then')
             self.write_line(f, '  GPUS="CUDA${CUDA_VISIBLE_DEVICES}"')
             self.write_line(f, 'else')
             self.write_line(f, '  GPUS=$CUDA_VISIBLE_DEVICES')
