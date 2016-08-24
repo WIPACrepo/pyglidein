@@ -149,7 +149,6 @@ class SubmitPBS(Submit):
             self.write_line(f, 'fi')
         else:
             self.write_line(f, 'GPUS=0')
-        self.write_line(f, "CPUS=%d" % num_cpus)
 
         if 'site' in self.config['Glidein']:
             self.write_line(f, 'SITE="%s"' % self.config['Glidein']['site'])
@@ -204,26 +203,36 @@ class SubmitPBS(Submit):
             state: what resource requirements a given glidein has
         """
         with open(filename, 'w') as f:
-            num_cpus = state["cpus"]
-            mem_safety_margin = 1.05*self.get_resource_limit_scale("mem_safety_scale")
-            mem_advertised = int(state["memory"]*mem_safety_margin)
-            mem_requested = mem_advertised
-            num_gpus = state["gpus"]
-            disk = state["disk"]*1.1
-
-            mem_per_core = 2000
-            if 'mem_per_core' in self.config['Cluster']:
-                mem_per_core = self.config['Cluster']['mem_per_core']
-            if num_gpus:
-                if mem_requested > mem_per_core:
-                    # just ask for the max mem, and hope that's good enough
-                    mem_requested = mem_per_core
-                    mem_advertised = mem_requested
+            if 'whole_node' in self.config['Cluster']:
+                num_cpus = int(self.config['Cluster']['whole_node_cpus'])
+                mem_requested = mem_advertised = int(self.config['Cluster']['whole_node_memory'])
+                disk = int(self.config['Cluster']['whole_node_disk'])
+                if 'whole_node_gpus' in self.config['Cluster']:
+                    num_gpus = int(self.config['Cluster']['whole_node_gpus'])
+                else:
+                    num_gpus = 0
             else:
-                # It is easier to request more cpus rather than more memory
-                while mem_requested > mem_per_core:
-                    num_cpus += 1
-                    mem_requested = mem_advertised/num_cpus
+                num_cpus = state["cpus"]
+                mem_safety_margin = 1.05*self.get_resource_limit_scale("mem_safety_scale")
+                mem_advertised = int(state["memory"]*mem_safety_margin)
+                mem_requested = mem_advertised
+                num_gpus = state["gpus"]
+                disk = state["disk"]*1.1
+
+                mem_per_core = 2000
+                if 'mem_per_core' in self.config['Cluster']:
+                    mem_per_core = self.config['Cluster']['mem_per_core']
+                if num_gpus:
+                    if mem_requested > mem_per_core:
+                        # just ask for the max mem, and hope that's good enough
+                        mem_requested = mem_per_core
+                        mem_advertised = mem_requested
+                else:
+                    # It is easier to request more cpus rather than more memory
+                    while mem_requested > mem_per_core:
+                        num_cpus += 1
+                        mem_requested = mem_advertised/num_cpus
+
             walltime = int(self.config["Cluster"]["walltime_hrs"])
 
             self.write_general_header(f, mem=mem_requested, num_cpus=num_cpus,
