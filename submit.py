@@ -38,17 +38,17 @@ class Submit(object):
         """
         f.write(line+"\n")
 
-    def get_executable(self):
+    def get_glidein_script(self):
         """
-        Getting the file to be executed by glidein when the jobs starts
+        Get the glidein startup script.
 
         Returns:
-            String that is the location of the executable
+            String that is the location of the script
         """
-        executable = 'glidein_start.sh'
-        if 'executable' in self.config['Glidein']:
-            executable = self.config["Glidein"]["executable"]
-        return executable
+        glidein_script = 'glidein_start.sh'
+        if 'glidein_script' in self.config['Glidein']:
+            glidein_script = self.config['Glidein']['glidein_script']
+        return glidein_script
 
     def get_resource_limit_scale(self, key, sec="SubmitFile"):
         """
@@ -142,14 +142,13 @@ class SubmitPBS(Submit):
         self.write_line(f, "CPUS=%d" % num_cpus)
         self.write_line(f, "DISK=%d" % (disk*1024))
         if num_gpus:
-            self.write_line(f, 'if [ "$CUDA_VISIBLE_DEVICES" = "0" ]; then')
+            self.write_line(f, 'if [ "$CUDA_VISIBLE_DEVICES" -eq "$CUDA_VISIBLE_DEVICES" ] 2>/dev/null ; then')
             self.write_line(f, '  GPUS="CUDA${CUDA_VISIBLE_DEVICES}"')
             self.write_line(f, 'else')
             self.write_line(f, '  GPUS=$CUDA_VISIBLE_DEVICES')
             self.write_line(f, 'fi')
         else:
             self.write_line(f, 'GPUS=0')
-        self.write_line(f, "CPUS=%d" % num_cpus)
 
         if 'site' in self.config['Glidein']:
             self.write_line(f, 'SITE="%s"' % self.config['Glidein']['site'])
@@ -189,7 +188,10 @@ class SubmitPBS(Submit):
         if "CustomEnv" in self.config:
             for k, v in self.config["CustomEnv"].items():
                 f.write(k + '=' + v + ' ')
-        self.write_line(f, './%s' % glidein_script)
+        executable = ''
+        if 'executable' in self.config['SubmitFile']:
+            executable = self.config['SubmitFile']['executable']
+        self.write_line(f, '%s ./%s' % (executable, glidein_script))
 
         self.write_line(f, 'if [ $CLEANUP = 1 ]; then')
         self.write_line(f, '    rm -rf $LOCAL_DIR')
@@ -204,26 +206,36 @@ class SubmitPBS(Submit):
             state: what resource requirements a given glidein has
         """
         with open(filename, 'w') as f:
-            num_cpus = state["cpus"]
-            mem_safety_margin = 1.05*self.get_resource_limit_scale("mem_safety_scale")
-            mem_advertised = int(state["memory"]*mem_safety_margin)
-            mem_requested = mem_advertised
-            num_gpus = state["gpus"]
-            disk = state["disk"]*1.1
-
-            mem_per_core = 2000
-            if 'mem_per_core' in self.config['Cluster']:
-                mem_per_core = self.config['Cluster']['mem_per_core']
-            if num_gpus:
-                if mem_requested > mem_per_core:
-                    # just ask for the max mem, and hope that's good enough
-                    mem_requested = mem_per_core
-                    mem_advertised = mem_requested
+            if 'whole_node' in self.config['Cluster']:
+                num_cpus = int(self.config['Cluster']['whole_node_cpus'])
+                mem_requested = mem_advertised = int(self.config['Cluster']['whole_node_memory'])
+                disk = int(self.config['Cluster']['whole_node_disk'])
+                if 'whole_node_gpus' in self.config['Cluster']:
+                    num_gpus = int(self.config['Cluster']['whole_node_gpus'])
+                else:
+                    num_gpus = 0
             else:
-                # It is easier to request more cpus rather than more memory
-                while mem_requested > mem_per_core:
-                    num_cpus += 1
-                    mem_requested = mem_advertised/num_cpus
+                num_cpus = state["cpus"]
+                mem_safety_margin = 1.05*self.get_resource_limit_scale("mem_safety_scale")
+                mem_advertised = int(state["memory"]*mem_safety_margin)
+                mem_requested = mem_advertised
+                num_gpus = state["gpus"]
+                disk = state["disk"]*1.1
+
+                mem_per_core = 2000
+                if 'mem_per_core' in self.config['Cluster']:
+                    mem_per_core = self.config['Cluster']['mem_per_core']
+                if num_gpus:
+                    if mem_requested > mem_per_core:
+                        # just ask for the max mem, and hope that's good enough
+                        mem_requested = mem_per_core
+                        mem_advertised = mem_requested
+                else:
+                    # It is easier to request more cpus rather than more memory
+                    while mem_requested > mem_per_core:
+                        num_cpus += 1
+                        mem_requested = mem_advertised/num_cpus
+
             walltime = int(self.config["Cluster"]["walltime_hrs"])
 
             self.write_general_header(f, mem=mem_requested, num_cpus=num_cpus,
@@ -242,7 +254,7 @@ class SubmitPBS(Submit):
 
             kwargs = {
                 'local_dir': self.config["SubmitFile"]["local_dir"],
-                'glidein_script': self.get_executable(),
+                'glidein_script': self.get_glidein_script(),
             }
             if "tarball" in self.config["Glidein"]:
                 if "loc" in self.config["Glidein"]:
@@ -494,7 +506,9 @@ class SubmitCondor(Submit):
             if "CustomEnv" in self.config:
                 for k, v in self.config["CustomEnv"].items():
                     f.write(k + '=' + v + ' ')
-            f.write(str(self.get_executable()))
+            if 'executable' in self.config['SubmitFile']:
+                f.write(str(self.config['SubmitFile']['executable'])+' ')
+            f.write(str(self.get_glidein_script()))
 
             mode = os.fstat(f.fileno()).st_mode
             mode |= 0o111
@@ -533,10 +547,10 @@ class SubmitCondor(Submit):
 
             # get input files
             infiles = []
-            executable = self.get_executable()
-            if not os.path.isfile(executable):
-                raise Exception("no executable provided")
-            infiles.append(executable)
+            glidein_script = self.get_glidein_script()
+            if not os.path.isfile(glidein_script):
+                raise Exception("no glidein_script provided")
+            infiles.append(glidein_script)
             if "tarball" in self.config["Glidein"]:
                 if not os.path.isfile(self.config["Glidein"]["tarball"]):
                     raise Exception("provided tarball does not exist")
