@@ -113,7 +113,7 @@ class SubmitPBS(Submit):
             and self.config["Cluster"]["pmem_only"]):
             self.write_option(f, "-l pmem=%dmb" % mem)
         else:
-            self.write_option(f, "-l pmem=%dmb,mem=%dmb" % (mem,mem*num_cpus)
+            self.write_option(f, "-l pmem=%dmb,mem=%dmb" % (mem,mem*num_cpus))
         self.write_option(f, "-l walltime=%d:00:00" % walltime_hours)
         if ('Mode' in self.config and 'debug' in self.config['Mode']
            and self.config["Mode"]["debug"]):
