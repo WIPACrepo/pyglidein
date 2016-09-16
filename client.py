@@ -95,6 +95,7 @@ def main():
                       help="Unique id for this client")
     (options, args) = parser.parse_args()
     config = ConfigParser.ConfigParser()
+    config.optionxform = str
     config.read(options.config)
     config_dict = config_options_dict(config)
     config_glidein = config_dict['Glidein']
