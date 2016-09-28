@@ -11,7 +11,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib64:/usr/local/lib:/usr/lib
 
 # hide all GPUs unless job actually requested a GPU.
 export CUDA_VISIBLE_DEVICES COMPUTE GPU_DEVICE_ORDINAL
-gpu_dev=$(grep -e "^AssignedGPUs" $_CONDOR_MACHINE_AD | awk -F "= " "{print $2}" | sed "s/CUDA//g" | sed "s/\"//g")
+gpu_dev=$(grep -e "^AssignedGPUs" $_CONDOR_MACHINE_AD | awk -F "= " "{print \$2}" | sed "s/CUDA//g" | sed "s/\"//g")
 if [ -n "$gpu_dev" ]; then
   export CUDA_VISIBLE_DEVICES=$gpu_dev
   export COMPUTE=:0.$gpu_dev
