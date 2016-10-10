@@ -181,8 +181,8 @@ class SubmitPBS(Submit):
         if not glidein_loc:
             glidein_loc = os.getcwd()
         if glidein_tarball:
-            self.write_line(f, 'ln -s %s %s' % (glidein_tarball, os.path.basename(glidein_tarball)))
-        self.write_line(f, 'ln -s %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
+            self.write_line(f, 'ln -fs %s %s' % (glidein_tarball, os.path.basename(glidein_tarball)))
+        self.write_line(f, 'ln -fs %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
 
         f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME ')
         if 'site' in self.config['Glidein']:
