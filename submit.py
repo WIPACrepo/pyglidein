@@ -272,7 +272,6 @@ class SubmitPBS(Submit):
                     kwargs['glidein_tarball'] = glidein_tarball
                 else:
                     raise Exception("The tarball you provided does not exist")
-
             self.write_glidein_part(f, **kwargs)
 
             if "custom_end" in self.config["SubmitFile"]:
@@ -357,6 +356,8 @@ class SubmitSLURM(SubmitPBS):
             self.write_option(f, "--partition=%s" % self.config['Cluster']["partition"])
         self.write_option(f, "--time=%d:00:00" % walltime_hours)
         if self.config["Mode"]["debug"]:
+            if not os.path.isdir("%s/out/"%os.getcwd()):
+                os.mkdir("%s/out/"%os.getcwd())
             self.write_option(f, "--output=%s/out/%%j.out"%os.getcwd())
             self.write_option(f, "--error=%s/out/%%j.err"%os.getcwd())
         else:
