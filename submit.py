@@ -183,6 +183,8 @@ class SubmitPBS(Submit):
         if glidein_tarball:
             self.write_line(f, 'ln -fs %s %s' % (glidein_tarball, os.path.basename(glidein_tarball)))
         self.write_line(f, 'ln -fs %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
+        if not os.path.isfile(os.path.join(glidein_loc, glidein_script)):
+            raise Exception("glidein_script %s does not exist!"%os.path.join(glidein_loc, glidein_script))
 
         f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME ')
         if 'site' in self.config['Glidein']:
