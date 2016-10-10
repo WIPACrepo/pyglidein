@@ -260,11 +260,12 @@ class SubmitPBS(Submit):
                 'local_dir': self.config["SubmitFile"]["local_dir"],
                 'glidein_script': self.get_glidein_script(),
             }
+            if "loc" in self.config["Glidein"]:
+                kwargs['glidein_loc'] = self.config["Glidein"]["loc"]
             if "tarball" in self.config["Glidein"]:
                 if "loc" in self.config["Glidein"]:
                     glidein_tarball = os.path.join(self.config["Glidein"]["loc"], 
                                                    self.config["Glidein"]["tarball"])
-                    kwargs['glidein_loc'] = self.config["Glidein"]["loc"]
                 else:
                     glidein_tarball = self.config["Glidein"]["tarball"]
 
