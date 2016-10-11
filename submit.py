@@ -359,10 +359,11 @@ class SubmitSLURM(SubmitPBS):
             self.write_option(f, "--partition=%s" % self.config['Cluster']["partition"])
         self.write_option(f, "--time=%d:00:00" % walltime_hours)
         if self.config["Mode"]["debug"]:
-            if not os.path.isdir("%s/out/"%os.getcwd()):
-                os.mkdir("%s/out/"%os.getcwd())
-            self.write_option(f, "--output=%s/out/%%j.out"%os.getcwd())
-            self.write_option(f, "--error=%s/out/%%j.err"%os.getcwd())
+            log_dir = os.path.join(os.getcwd(), 'out')
+            if not os.path.isdir(log_dir):
+                os.mkdir(log_dir)
+            self.write_option(f, "--output="+os.path.join(log_dir, "%j.out"))
+            self.write_option(f, "--error="+os.path.join(log_dir, "%j.err"))
         else:
             self.write_option(f, "--output=/dev/null")
             self.write_option(f, "--error=/dev/null")
