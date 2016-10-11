@@ -181,8 +181,10 @@ class SubmitPBS(Submit):
         if not glidein_loc:
             glidein_loc = os.getcwd()
         if glidein_tarball:
-            self.write_line(f, 'ln -s %s %s' % (glidein_tarball, os.path.basename(glidein_tarball)))
-        self.write_line(f, 'ln -s %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
+            self.write_line(f, 'ln -fs %s %s' % (glidein_tarball, os.path.basename(glidein_tarball)))
+        self.write_line(f, 'ln -fs %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
+        if not os.path.isfile(os.path.join(glidein_loc, glidein_script)):
+            raise Exception("glidein_script %s does not exist!"%os.path.join(glidein_loc, glidein_script))
 
         f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME ')
         if 'site' in self.config['Glidein']:
@@ -260,11 +262,12 @@ class SubmitPBS(Submit):
                 'local_dir': self.config["SubmitFile"]["local_dir"],
                 'glidein_script': self.get_glidein_script(),
             }
+            if "loc" in self.config["Glidein"]:
+                kwargs['glidein_loc'] = self.config["Glidein"]["loc"]
             if "tarball" in self.config["Glidein"]:
                 if "loc" in self.config["Glidein"]:
                     glidein_tarball = os.path.join(self.config["Glidein"]["loc"], 
                                                    self.config["Glidein"]["tarball"])
-                    kwargs['glidein_loc'] = self.config["Glidein"]["loc"]
                 else:
                     glidein_tarball = self.config["Glidein"]["tarball"]
 
@@ -272,7 +275,6 @@ class SubmitPBS(Submit):
                     kwargs['glidein_tarball'] = glidein_tarball
                 else:
                     raise Exception("The tarball you provided does not exist")
-
             self.write_glidein_part(f, **kwargs)
 
             if "custom_end" in self.config["SubmitFile"]:
@@ -357,8 +359,11 @@ class SubmitSLURM(SubmitPBS):
             self.write_option(f, "--partition=%s" % self.config['Cluster']["partition"])
         self.write_option(f, "--time=%d:00:00" % walltime_hours)
         if self.config["Mode"]["debug"]:
-            self.write_option(f, "--output=%s/out/%%j.out"%os.getcwd())
-            self.write_option(f, "--error=%s/out/%%j.err"%os.getcwd())
+            log_dir = os.path.join(os.getcwd(), 'out')
+            if not os.path.isdir(log_dir):
+                os.mkdir(log_dir)
+            self.write_option(f, "--output="+os.path.join(log_dir, "%j.out"))
+            self.write_option(f, "--error="+os.path.join(log_dir, "%j.err"))
         else:
             self.write_option(f, "--output=/dev/null")
             self.write_option(f, "--error=/dev/null")
