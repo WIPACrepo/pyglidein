@@ -215,6 +215,7 @@ class SubmitPBS(Submit):
         Returns:
             num_cpus: number of cores to request
             mem_requested: amount of memory to request per core
+            mem_advertised: amount of memory the Condor slot should advertise
         """
         num_cpus = num_cpus_advertised
         mem_requested = mem_advertised
@@ -232,7 +233,7 @@ class SubmitPBS(Submit):
                 num_cpus += 1
                 mem_requested = mem_advertised/num_cpus
         
-        return num_cpus, mem_requested
+        return num_cpus, mem_requested, mem_advertised
 
     def write_submit_file(self, filename, state, group_jobs):
         """
@@ -258,7 +259,7 @@ class SubmitPBS(Submit):
                 num_gpus = state["gpus"]
                 disk = state["disk"]*1.1
 
-                num_cpus, mem_requested = self.get_cores_for_memory(num_cpus, num_gpus, mem_advertised)
+                num_cpus, mem_requested, mem_advertised = self.get_cores_for_memory(num_cpus, num_gpus, mem_advertised)
 
             walltime = int(self.config["Cluster"]["walltime_hrs"])
 
@@ -398,7 +399,7 @@ class SubmitUGE(SubmitPBS):
         
         UGE can assign variable memory per core, so just pass the request straight through.
         """
-        return num_cpus_advertised, mem_advertised
+        return num_cpus_advertised, mem_advertised, mem_advertised
     
     def write_general_header(self, f, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
