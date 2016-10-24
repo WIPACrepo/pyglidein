@@ -203,6 +203,38 @@ class SubmitPBS(Submit):
         self.write_line(f, '    rm -rf $LOCAL_DIR')
         self.write_line(f, 'fi')
 
+    def get_cores_for_memory(self, num_cpus_advertised, num_gpus_advertised, mem_advertised):
+        """
+        Scale number of cores to satisfy memory request, assuming fixed amount
+        of memory per core.
+        
+        Args:
+            num_cpus_advertised: the number of cores explicitly requested
+            num_gpus_advertised: the number of GPUs explicitly requested
+            mem_advertised: the total amount of memory requested
+        Returns:
+            num_cpus: number of cores to request
+            mem_requested: amount of memory to request per core
+            mem_advertised: amount of memory the Condor slot should advertise
+        """
+        num_cpus = num_cpus_advertised
+        mem_requested = mem_advertised
+        mem_per_core = 2000
+        if 'mem_per_core' in self.config['Cluster']:
+            mem_per_core = self.config['Cluster']['mem_per_core']
+        if num_gpus_advertised:
+            if mem_requested > mem_per_core:
+                # just ask for the max mem, and hope that's good enough
+                mem_requested = mem_per_core
+                mem_advertised = mem_requested
+        else:
+            # It is easier to request more cpus rather than more memory
+            while mem_requested > mem_per_core:
+                num_cpus += 1
+                mem_requested = mem_advertised/num_cpus
+        
+        return num_cpus, mem_requested, mem_advertised
+
     def write_submit_file(self, filename, state, group_jobs):
         """
         Writing the submit file
@@ -224,23 +256,10 @@ class SubmitPBS(Submit):
                 num_cpus = state["cpus"]
                 mem_safety_margin = 1.05*self.get_resource_limit_scale("mem_safety_scale")
                 mem_advertised = int(state["memory"]*mem_safety_margin)
-                mem_requested = mem_advertised
                 num_gpus = state["gpus"]
                 disk = state["disk"]*1.1
 
-                mem_per_core = 2000
-                if 'mem_per_core' in self.config['Cluster']:
-                    mem_per_core = self.config['Cluster']['mem_per_core']
-                if num_gpus:
-                    if mem_requested > mem_per_core:
-                        # just ask for the max mem, and hope that's good enough
-                        mem_requested = mem_per_core
-                        mem_advertised = mem_requested
-                else:
-                    # It is easier to request more cpus rather than more memory
-                    while mem_requested > mem_per_core:
-                        num_cpus += 1
-                        mem_requested = mem_advertised/num_cpus
+                num_cpus, mem_requested, mem_advertised = self.get_cores_for_memory(num_cpus, num_gpus, mem_advertised)
 
             walltime = int(self.config["Cluster"]["walltime_hrs"])
 
@@ -373,6 +392,14 @@ class SubmitUGE(SubmitPBS):
     """UGE is similar to PBS, but with different headers"""
     
     option_tag = "#$"
+    
+    def get_cores_for_memory(self, num_cpus_advertised, num_gpus_advertised, mem_advertised):
+        """
+        Scale number of cores to satisfy memory request.
+        
+        UGE can assign variable memory per core, so just pass the request straight through.
+        """
+        return num_cpus_advertised, mem_advertised, mem_advertised
     
     def write_general_header(self, f, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
