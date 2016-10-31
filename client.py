@@ -27,20 +27,6 @@ def get_ssh_state():
     except Exception:
         logger.warn('error getting ssh state', exc_info=True)
 
-def launch_glidein(cmd, params=[]):
-    """
-    Command to launch a jobs using subprocess
-
-    Args:
-        cmd: Job submission command needed for the respective batch job manager
-        params: List of parameters that are passed to cmd
-    """
-    for p in params:
-        cmd += ' --'+p+' '+str(params[p])
-    print(cmd)
-    if subprocess.call(cmd, shell=True):
-        raise Exception('failed to launch glidein')
-
 def get_running(cmd):
     """Determine how many jobs are running in the queue"""
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
