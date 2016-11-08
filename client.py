@@ -160,13 +160,12 @@ def main():
                         and s[resource] > config_cluster[cfg_name]):
                         break
                 else:
-                    continue
-                if "count" in s and s["count"] > limit:
-                    s["count"] = limit
-                scheduler.submit(s)
-                num = 1 if "count" not in s else s["count"]
-                limit -= num
-                info['glideins_launched'] += num
+                    if "count" in s and s["count"] > limit:
+                        s["count"] = limit
+                    scheduler.submit(s)
+                    num = 1 if "count" not in s else s["count"]
+                    limit -= num
+                    info['glideins_launched'] += num
             logger.info('launched %d glideins', info['glideins_launched'])
         else:
             logger.info('no state, nothing to do')
