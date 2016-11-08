@@ -244,7 +244,7 @@ class SubmitPBS(Submit):
             state: what resource requirements a given glidein has
         """
         with open(filename, 'w') as f:
-            if 'whole_node' in self.config['Cluster']:
+            if self.config['Cluster']['whole_node']:
                 num_cpus = int(self.config['Cluster']['whole_node_cpus'])
                 mem_requested = mem_advertised = int(self.config['Cluster']['whole_node_memory'])
                 disk = int(self.config['Cluster']['whole_node_disk'])
