@@ -108,9 +108,9 @@ def main():
 
     if ('Mode' in config_dict and 'debug' in config_dict['Mode'] and
         config_dict['Mode']['debug']):
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG,format='%(asctime)s %(levelname)s %(message)s')
     else:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
 
     while True:
         if 'ssh_state' in config_glidein and config_glidein['ssh_state']:
