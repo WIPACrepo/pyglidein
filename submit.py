@@ -573,7 +573,10 @@ class SubmitCondor(Submit):
             else:
                 self.write_line(f, "output = /dev/null")
                 self.write_line(f, "error = /dev/null")
-            self.write_line(f, "log = log")
+            if 'log' in self.config['SubmitFile']:
+                self.write_line(f, "log = "+self.config['SubmitFile']['log'])
+            else:
+                self.write_line(f, "log = log")
             self.write_line(f, "notification = never")
             self.write_line(f, "should_transfer_files = YES")
             self.write_line(f, "when_to_transfer_output = ON_EXIT")
