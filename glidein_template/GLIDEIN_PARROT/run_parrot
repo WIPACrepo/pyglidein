@@ -8,7 +8,7 @@
 
 # load GLIDEIN_PARROT_OPTIONS and PARROT_CVMFS_REPO
 GLIDEIN_PARROT_OPTIONS="-p $http_proxy"
-GlideinUseParrotIDBox="true"
+GlideinUseParrotIDBox="false"
 export PARROT_ALLOW_SWITCHING_CVMFS_REPOSITORIES=1
 
 # If possible (i.e. not using glexec), share the tmp area between
