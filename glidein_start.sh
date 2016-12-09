@@ -43,6 +43,14 @@ fi
 # CVMFS is always true with parrot
 CVMFS="True"
 
+# GPU type detection
+GPU_NAMES=""
+if [ $GPUS > 0 ]; then
+    if command -v nvidia-smi >/dev/null; then
+        GPU_NAMES=$(nvidia-smi --query-gpu=name --format=csv,noheader --id=$GPUS);
+    fi
+fi
+
 
 ##
 # Done with config
@@ -76,6 +84,7 @@ export _condor_CONDOR_ADMIN="david.schultz@icecube.wisc.edu"
 export _condor_NUM_CPUS=${CPUS};
 export _condor_MEMORY=${MEMORY};
 export _condor_DISK=${DISK};
+export _condor_GPU_NAMES="\"${GPU_NAMES}\"";
 export _condor_MACHINE_RESOURCE_NAMES="gpus";
 export _condor_MACHINE_RESOURCE_GPUs=${GPUS};
 export _condor_SLOT_TYPE_1="100%"
@@ -84,7 +93,7 @@ export _condor_SLOT_TYPE_1_PARTITIONABLE="True"
 export _condor_SLOT_TYPE_1_CONSUMPTION_POLICY="True"
 export _condor_SLOT_TYPE_1_CONSUMPTION_GPUs="quantize(ifThenElse(target.RequestGpus =!= undefined,target.RequestGpus,0),{0})";
 export _condor_SLOT_WEIGHT="Cpus";
-export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists GLIDEIN_Site GLIDEIN_Max_Walltime"
+export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists GLIDEIN_Site GLIDEIN_Max_Walltime GPU_NAMES"
 export _condor_STARTER_JOB_ENVIRONMENT="\"GLIDEIN_Site=${SITE} GLIDEIN_LOCAL_TMP_DIR=${PWD} GOTO_NUM_THREADS=1\"";
 export _condor_START="ifThenElse(ifThenElse(MY.GPUs =!= undefined,MY.GPUs,0) > 0,ifThenElse(TARGET.RequestGPUs =!= undefined,TARGET.RequestGPUs,0) > 0,TRUE)";
 export _condor_UID_DOMAIN=""
