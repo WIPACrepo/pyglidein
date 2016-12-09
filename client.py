@@ -159,6 +159,10 @@ def main():
                     if (cfg_name in config_cluster
                         and s[resource] > config_cluster[cfg_name]):
                         break
+                    cfg_name = 'min_%s_per_job'%resource
+                    if (cfg_name in config_cluster
+                        and s[resource] < config_cluster[cfg_name]):
+                        break
                 else:
                     if "count" in s and s["count"] > limit:
                         s["count"] = limit
