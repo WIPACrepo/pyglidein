@@ -373,7 +373,10 @@ class SubmitSLURM(SubmitPBS):
         self.write_option(f, '--ntasks-per-node=%d'%num_cpus)
         self.write_option(f, '--mem=%d'%(mem))
         if num_gpus:
-            self.write_option(f, "--gres=gpu:%d"%num_gpus)
+            gpu_submit = '--gres=gpu:%d'
+            if 'gpu_submit' in self.config['SubmitFile']:
+                gpu_submit = self.config['SubmitFile']
+            self.write_option(f, gpu_submit%num_gpus)
         if "partition" in self.config['Cluster']:
             self.write_option(f, "--partition=%s" % self.config['Cluster']["partition"])
         self.write_option(f, "--time=%d:00:00" % walltime_hours)
