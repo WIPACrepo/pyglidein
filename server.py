@@ -211,7 +211,7 @@ def get_condor_version():
 def condor_q(cfg):
     """Get the status of the HTCondor queue"""
     logger.info('condor_q')
-    cmd = ['condor_q', '-autoformat:,', 'RequestCPUs', 'RequestMemory',
+    cmd = ['condor_q', '-global', '-autoformat:,', 'RequestCPUs', 'RequestMemory',
            'RequestDisk', 'RequestGPUs', '-format', '"%s"', 'Requirements',
            '-constraint', '"JobStatus =?= 1"']
     if cfg['options'].constraint:
