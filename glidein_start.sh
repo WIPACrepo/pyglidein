@@ -45,9 +45,10 @@ CVMFS="True"
 
 # GPU type detection
 GPU_NAMES=""
-if [ $GPUS > 0 ]; then
+if [ $GPUS != 0 ]; then
     if command -v nvidia-smi >/dev/null; then
-        GPU_NAMES=$(nvidia-smi --query-gpu=name --format=csv,noheader --id=$GPUS);
+        GPU2=$(echo "$GPUS"|sed 's/CUDA//g');
+        GPU_NAMES=$(nvidia-smi --query-gpu=name --format=csv,noheader --id=$GPU2);
     fi
 fi
 
