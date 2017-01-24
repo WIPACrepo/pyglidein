@@ -16,16 +16,16 @@ if [ -z $CACHE_DIR ]; then
 fi
 
 if [ -z $WALLTIME ]; then
-    # 14 hours
-    WALLTIME=50400
+    # 20 hours
+    WALLTIME=72000
 fi
 if [ -z $RETIRETIME ]; then
     # 20 minutes
     RETIRETIME=1200
 fi
 if [ -z $NOCLAIMTIME ]; then
-    # 10 minutes
-    NOCLAIMTIME=600
+    # 20 minutes
+    NOCLAIMTIME=1200
 fi
 
 if [ -z $CPUS ]; then
@@ -65,6 +65,7 @@ cd glidein
 
 export _condor_OASIS_CVMFS_Exists="${CVMFS}"
 export _condor_ICECUBE_CVMFS_Exists="${CVMFS}"
+export _condor_HAS_CVMFS_icecube_opensciencegrid_org="${CVMFS}"
 
 export _condor_CONDOR_HOST="$CLUSTER"
 export _condor_COLLECTOR_HOST="${CLUSTER}:9618?sock=collector"
@@ -94,7 +95,7 @@ export _condor_SLOT_TYPE_1_PARTITIONABLE="True"
 export _condor_SLOT_TYPE_1_CONSUMPTION_POLICY="True"
 export _condor_SLOT_TYPE_1_CONSUMPTION_GPUs="quantize(ifThenElse(target.RequestGpus =!= undefined,target.RequestGpus,0),{0})";
 export _condor_SLOT_WEIGHT="Cpus";
-export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists GLIDEIN_Site GLIDEIN_Max_Walltime GPU_NAMES"
+export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists HAS_CVMFS_icecube_opensciencegrid_org GLIDEIN_Site GLIDEIN_Max_Walltime GPU_NAMES"
 export _condor_STARTER_JOB_ENVIRONMENT="\"GLIDEIN_Site=${SITE} GLIDEIN_LOCAL_TMP_DIR=${PWD} GOTO_NUM_THREADS=1\"";
 export _condor_START="ifThenElse(ifThenElse(MY.GPUs =!= undefined,MY.GPUs,0) > 0,ifThenElse(TARGET.RequestGPUs =!= undefined,TARGET.RequestGPUs,0) > 0,TRUE)";
 export _condor_UID_DOMAIN=""
