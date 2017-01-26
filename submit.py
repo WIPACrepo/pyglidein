@@ -377,7 +377,7 @@ class SubmitSLURM(SubmitPBS):
         if num_gpus:
             gpu_submit = '--gres=gpu:%d'
             if 'gpu_submit' in self.config['SubmitFile']:
-                gpu_submit = self.config['SubmitFile']
+                gpu_submit = self.config['SubmitFile']['gpu_submit']
             self.write_option(f, gpu_submit%num_gpus)
         if "partition" in self.config['Cluster']:
             self.write_option(f, "--partition=%s" % self.config['Cluster']["partition"])
