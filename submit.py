@@ -191,6 +191,8 @@ class SubmitPBS(Submit):
             f.write('SITE=$SITE ')
         if 'cluster' in self.config['Glidein']:
             f.write('CLUSTER=$CLUSTER ')
+        if 'cvmfs_job_wrapper' in self.config['SubmitFile']:
+            f.write('CVMFS_JOB_WRAPPER=1 ')
         if "CustomEnv" in self.config:
             for k, v in self.config["CustomEnv"].items():
                 f.write(k + '=' + v + ' ')
@@ -542,6 +544,8 @@ class SubmitCondor(Submit):
                 f.write('SITE=$SITE ')
             if 'cluster' in self.config['Glidein']:
                 f.write('CLUSTER=$CLUSTER ')
+            if 'cvmfs_job_wrapper' in self.config['SubmitFile']:
+                f.write('CVMFS_JOB_WRAPPER=1 ')
             if "CustomEnv" in self.config:
                 for k, v in self.config["CustomEnv"].items():
                     f.write(k + '=' + v + ' ')

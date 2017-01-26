@@ -122,13 +122,15 @@ export _condor_LOCAL_DIR=$PWD
 export _condor_SBIN=$PWD/glideinExec/sbin
 export _condor_LIB=$PWD/glideinExec/lib
 
-# make a job wrapper
-cat > $PWD/job_wrapper.sh << "EOF"
+if [ -n "$CVMFS_JOB_WRAPPER" ]; then
+    # make a job wrapper
+    cat > $PWD/job_wrapper.sh << "EOF"
 #!/bin/sh
 eval `/cvmfs/icecube.opensciencegrid.org/py2-v1/setup.sh`
 $@
 EOF
-chmod +x $PWD/job_wrapper.sh
+    chmod +x $PWD/job_wrapper.sh
+fi
 
 export PATH=$PATH:$_condor_SBIN:$PWD/glideinExec/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$_condor_LIB
