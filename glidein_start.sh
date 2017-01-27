@@ -80,7 +80,11 @@ export _condor_MaxJobRetirementTime=${WALLTIME}
 export _condor_SLOT1_RetirementTime="ifThenElse(MonitorSelfAge + ${RETIRETIME} > ${WALLTIME}, ${RETIRETIME}, MonitorSelfAge + ${RETIRETIME} - ${WALLTIME})";
 export _condor_DAEMON_SHUTDOWN="ifThenElse(MonitorSelfAge > ${WALLTIME}, True, False)";
 export _condor_NOT_RESPONDING_TIMEOUT="${NOCLAIMTIME}*2";
+export _condor_POLLING_INTERVAL="60";
 export _condor_HISTORY="UNDEFINED";
+export _condor_SLOTS_CONNECTED_TO_CONSOLE="0";
+export _condor_SLOTS_CONNECTED_TO_KEYBOARD="0";
+export _condor_RUNBENCHMARKS="False";
 export _condor_USE_PROCESS_GROUPS="False"
 export _condor_CONDOR_ADMIN="david.schultz@icecube.wisc.edu"
 export _condor_NUM_CPUS=${CPUS};
@@ -98,6 +102,7 @@ export _condor_SLOT_WEIGHT="Cpus";
 export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists HAS_CVMFS_icecube_opensciencegrid_org GLIDEIN_Site GLIDEIN_Max_Walltime GPU_NAMES"
 export _condor_STARTER_JOB_ENVIRONMENT="\"GLIDEIN_Site=${SITE} GLIDEIN_LOCAL_TMP_DIR=${PWD} GOTO_NUM_THREADS=1\"";
 export _condor_START="ifThenElse(ifThenElse(MY.GPUs =!= undefined,MY.GPUs,0) > 0,ifThenElse(TARGET.RequestGPUs =!= undefined,TARGET.RequestGPUs,0) > 0,TRUE)";
+export _condor_RANK="ImageSize";
 export _condor_UID_DOMAIN=""
 #export _condor_FILESYSTEM_DOMAIN=${DOMAIN}
 export _condor_MAIL=/bin/mail;
