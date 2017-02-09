@@ -114,11 +114,20 @@ export _condor_UPDATE_COLLECTOR_WITH_TCP="True"
 export _campusfactory_CAMPUSFACTORY_LOCATION=$PWD
 export _condor_USER_JOB_WRAPPER=$PWD/user_job_wrapper.sh
 
-if [ ! -e $GLIDEIN_DIR/glidein.tar.gz ]; then
-  wget -nv http://prod-exe.icecube.wisc.edu/glidein.tar.gz
-  GLIDEIN_DIR=$PWD
+# detect CVMFS and get the OS type
+OS_ARCH="RHEL_6_x86_64"
+. $GLIDEIN_DIR/os_arch.sh
+
+if [ -e $GLIDEIN_DIR/glidein.tar.gz ]; then
+  tar xzf $GLIDEIN_DIR/glidein.tar.gz
+else
+  if wget -nv http://prod-exe.icecube.wisc.edu/glidein-$OS_ARCH.tar.gz ; then
+    tar xzf glidein-$OS_ARCH.tar.gz
+  else
+    wget -nv http://prod-exe.icecube.wisc.edu/glidein.tar.gz
+    tar xzf glidein.tar.gz
+  fi
 fi
-tar xzf $GLIDEIN_DIR/glidein.tar.gz
 
 export campus_factory_dir=$PWD
 
