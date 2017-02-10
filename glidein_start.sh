@@ -129,6 +129,34 @@ else
   fi
 fi
 
+# test for cvmfs
+CVMFS="false"
+if [ -e /cvmfs/icecube.opensciencegrid.org/py2-v1/setup.sh ]; then
+    CVMFS="true"
+else
+    # test parrot
+    if [ -z $http_proxy ]; then
+        http_proxy=http://squid.icecube.wisc.edu:3128
+    fi
+    cat > $PWD/parrot_job_env.sh << "EOF"
+#!/bin/sh
+$@
+EOF
+    chmod +x $PWD/parrot_job_env.sh
+    if /usr/bin/env -i \
+       GLIDEIN_PARROT=${PWD}/GLIDEIN_PARROT \
+       _CONDOR_SCRATCH_DIR=${PWD} \
+       _CONDOR_SLOT="" \
+       http_proxy=${http_proxy} \
+       GLIDEIN_PARROT/run_parrot ls /cvmfs/icecube.opensciencegrid.org/py2-v1/setup.sh >/dev/null 2>/dev/null ; then
+        CVMFS="true"
+    fi
+fi
+if [ "$CVMFS" = "false" ]; then
+    echo "CVMFS missing. This glidein won't work, so kill."
+    exit 1
+fi
+
 export campus_factory_dir=$PWD
 
 export CONDOR_CONFIG=$PWD/glidein_condor_config
