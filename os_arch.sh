@@ -1,32 +1,43 @@
 #!/bin/sh
 
 if [ -x /usr/bin/lsb_release ]; then
-    DISTRIB=`lsb_release -si`
+    DISTRIB=`lsb_release -si|tr '[:upper:]' '[:lower:]'`
     VERSION=`lsb_release -sr`
+elif [ -e /etc/os-release ]; then
+    DISTRIB=`cat /etc/os-release|grep '^ID='|cut -d '=' -f 2|sed s/\"//g|tr '[:upper:]' '[:lower:]'`
+    VERSION=`cat /etc/os-release|grep '^VERSION='|cut -d '=' -f 2|cut -d ' ' -f 1|sed s/\"//g`
+elif [ -e /etc/redhat-release ]; then
+    DISTRIB="centos"
+    VERSION=`cat /etc/redhat-release|sed s/\ /\\n/g|grep '\.'`
 else
-    DISTRIB=`uname -s`
+    DISTRIB=`uname -s|tr '[:upper:]' '[:lower:]'`
     VERSION=`uname -r`
 fi
 ARCH=`uname -m`
 
 # Map binary compatible operating systems and versions onto one another
 case $DISTRIB in
-    "RedHatEnterpriseClient" | "RedHatEnterpriseServer" | "ScientificSL" | "Scientific" | "CentOS" | "ScientificFermi" | "ScientificCERNSLC")
+    "redhatenterpriseclient" | "redhatenterpriseserver" | "scientificsl" | "scientific" | "centos" | "scientificfermi" | "scientificcernslc")
         DISTRIB="RHEL"
-        VERSION=`lsb_release -sr | cut -d '.' -f 1`
+        VERSION=`echo "${VERSION}" | cut -d '.' -f 1`
         ;;
-    "Ubuntu")
-        VERSION=`lsb_release -sr | cut -d '.' -f 1,2`
-        case $VERSION in
-            "15.04" | "14.10")
-                VERSION="14.04"
-                ;;
-            "13.10" | "13.04" | "12.10")
-                VERSION="12.04"
-                ;;
-        esac
+    "ubuntu")
+        DISTRIB="Ubuntu"
+        if echo $VERSION | grep -q '16\.\?'; then
+            VERSION="16.04"
+        elif echo $VERSION | grep -q '15\.10'; then
+            VERSION="15.10"
+        elif echo $VERSION | grep -q '15\.\?'; then
+            VERSION="14.04"
+        elif echo $VERSION | grep -q '14\.\?'; then
+            VERSION="14.04"
+        elif echo $VERSION | grep -q '13\.\?'; then
+            VERSION="12.04"
+        elif echo $VERSION | grep -q '12\.\?'; then
+            VERSION="12.04"
+        fi
         ;;
-    "Debian")
+    "debian")
         DISTRIB="Ubuntu"
         if [ "$VERSION" = "testing" ]; then
             VERSION="16.04"
@@ -34,20 +45,18 @@ case $DISTRIB in
             VERSION="16.04"
         elif echo $VERSION | grep -q '8\.\?'; then
             VERSION="14.04"
-        elif echo $VERSION | grep -q '7\.\?'; then
-            VERSION="11.04"
-        elif echo $VERSION | grep -q '6\.\?'; then
-            VERSION="10.04"
         fi
         ;;
-    "FreeBSD")
+    "freebsd")
+        DISTRIB="FreeBSD"
         VERSION=`uname -r | cut -d '.' -f 1`
         ARCH=`uname -p`
         ;;
-    "Darwin")
+    "darwin")
+        DISTRIB="OSX"
         VERSION=`uname -r | cut -d '.' -f 1`
         ;;
-    "Linux")
+    "linux")
         # Damn. Try harder with the heuristics.
         if echo $VERSION | grep -q '\.el7\.\?'; then
             DISTRIB="RHEL"
