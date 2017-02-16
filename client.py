@@ -117,6 +117,8 @@ def main():
             state = get_ssh_state()
         else:
             state = get_state(config_glidein['address'])
+        if 'uuid' in config_glidein:
+            options.uuid = config_glidein['uuid']
         info = {'uuid': options.uuid,
                 'glideins_running': 0,
                 'glideins_launched': 0,
