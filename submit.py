@@ -240,21 +240,23 @@ class SubmitPBS(Submit):
         
         return num_cpus, mem_requested, mem_advertised
 
-    def write_submit_file(self, filename, state, group_jobs):
+    def write_submit_file(self, filename, state, group_jobs, cluster_config):
         """
         Writing the submit file
 
         Args:
             filename: name of PBS script to create
             state: what resource requirements a given glidein has
+            group_jobs: if True, group jobs into arrays
+            cluster_config: the Cluster config dict (or that of an alternate partition)
         """
         with open(filename, 'w') as f:
-            if self.config['Cluster']['whole_node']:
-                num_cpus = int(self.config['Cluster']['whole_node_cpus'])
-                mem_requested = mem_advertised = int(self.config['Cluster']['whole_node_memory'])
-                disk = int(self.config['Cluster']['whole_node_disk'])
-                if 'whole_node_gpus' in self.config['Cluster']:
-                    num_gpus = int(self.config['Cluster']['whole_node_gpus'])
+            if cluster_config['whole_node']:
+                num_cpus = int(cluster_config['whole_node_cpus'])
+                mem_requested = mem_advertised = int(cluster_config['whole_node_memory'])
+                disk = int(cluster_config['whole_node_disk'])
+                if 'whole_node_gpus' in cluster_config:
+                    num_gpus = int(cluster_config['whole_node_gpus'])
                 else:
                     num_gpus = 0
             else:
@@ -304,7 +306,7 @@ class SubmitPBS(Submit):
             if "custom_end" in self.config["SubmitFile"]:
                 self.write_line(f, self.config["SubmitFile"]["custom_end"])
 
-    def submit(self, state):
+    def submit(self, state, partition="Cluster"):
         """
         Writing submit file and submitting a job for PBS-like batch managers
 
@@ -315,14 +317,14 @@ class SubmitPBS(Submit):
         if 'filename' in self.config["SubmitFile"]:
             submit_filename = self.config["SubmitFile"]["filename"]
         
-        group_jobs = ("group_jobs" in self.config["Cluster"] and
-                      self.config["Cluster"]["group_jobs"] and
+        group_jobs = ("group_jobs" in self.config[partition] and
+                      self.config[partition]["group_jobs"] and
                       "count" in state)
 
-        self.write_submit_file(submit_filename, state, group_jobs)
+        self.write_submit_file(submit_filename, state, group_jobs, self.config[partition])
         num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
         for i in xrange(num_submits):
-            cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
+            cmd = self.config[partition]["submit_command"] + " " + submit_filename
             print(cmd)
             if not ('Mode' in self.config and 'dryrun' in self.config['Mode'] and
                     self.config['Mode']['dryrun']):
@@ -427,8 +429,8 @@ class SubmitUGE(SubmitPBS):
         """
         self.write_line(f, "#!/bin/bash")
         self.write_option(f, '-S /bin/bash')
-        self.write_option(f, '-l h_rss=%dM'%(mem))
-        self.write_option(f, '-l tmpdir_size=%dM'%(max((disk, 1000))))
+        self.write_option(f, '-l h_rss=%dM'%(mem/num_cpus))
+        self.write_option(f, '-l tmpdir_size=%dM'%(max((disk/num_cpus, 1000))))
         if num_gpus:
             self.write_option(f, "-l gpu=%d"%num_gpus)
         if num_cpus > 1:
@@ -644,7 +646,7 @@ class SubmitCondor(Submit):
             else:
                 self.write_line(f, 'queue')
 
-    def submit(self, state):
+    def submit(self, state, partition=None):
         """
         Writing submit file and submitting a HTCondor job
 
