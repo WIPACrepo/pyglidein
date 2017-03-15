@@ -16,6 +16,7 @@ class Config(dict):
         tmp = SafeConfigParser()
         tmp.read(path)
         self._config_options_dict(tmp)
+        self._populate_partitions()
 
     def _config_options_dict(self, config):
         """
@@ -30,6 +31,17 @@ class Config(dict):
                 val = config.get(section, option)
                 try:
                     val = ast.literal_eval(val)
-                except Exception:
+                except Exception as e:
                     pass
                 self[section][option] = val
+
+    def _populate_partitions(self):
+        cluster_config = self.get('Cluster', dict())
+        if 'partitions' in cluster_config:
+            cluster_config['partitions'] = [k.strip() for k in cluster_config['partitions'].split(',')]
+            for k in cluster_config['partitions']:
+                if not k in self:
+                    continue
+                config = dict(cluster_config)
+                config.update(self[k])
+                self[k] = config
