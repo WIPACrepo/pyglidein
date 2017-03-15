@@ -268,7 +268,7 @@ class SubmitPBS(Submit):
 
                 num_cpus, mem_requested, mem_advertised = self.get_cores_for_memory(num_cpus, num_gpus, mem_advertised)
 
-            walltime = int(self.config["Cluster"]["walltime_hrs"])
+            walltime = int(cluster_config["walltime_hrs"])
 
             self.write_general_header(f, mem=mem_requested, num_cpus=num_cpus,
                                       num_gpus=num_gpus, walltime_hours=walltime,
@@ -317,11 +317,12 @@ class SubmitPBS(Submit):
         if 'filename' in self.config["SubmitFile"]:
             submit_filename = self.config["SubmitFile"]["filename"]
         
-        group_jobs = ("group_jobs" in self.config[partition] and
-                      self.config[partition]["group_jobs"] and
+        cluster_config = self.config[partition]
+        group_jobs = ("group_jobs" in cluster_config and
+                      cluster_config["group_jobs"] and
                       "count" in state)
 
-        self.write_submit_file(submit_filename, state, group_jobs, self.config[partition])
+        self.write_submit_file(submit_filename, state, group_jobs, cluster_config)
         num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
         for i in xrange(num_submits):
             cmd = self.config[partition]["submit_command"] + " " + submit_filename
@@ -562,7 +563,7 @@ class SubmitCondor(Submit):
             mode |= 0o111
             os.fchmod(f.fileno(), mode & 0o7777)
 
-    def make_submit_file(self, filename, env_wrapper, state, group_jobs):
+    def make_submit_file(self, filename, env_wrapper, state, group_jobs, cluster_config):
         """
         Creating HTCondor submit file
 
@@ -615,12 +616,12 @@ class SubmitCondor(Submit):
             if "custom_middle" in self.config["SubmitFile"]:
                 self.write_line(f, self.config["SubmitFile"]["custom_middle"])
 
-            if self.config['Cluster']['whole_node']:
-                num_cpus = int(self.config['Cluster']['whole_node_cpus'])
-                mem = int(self.config['Cluster']['whole_node_memory'])
-                disk = int(self.config['Cluster']['whole_node_disk'])
-                if 'whole_node_gpus' in self.config['Cluster']:
-                    num_gpus = int(self.config['Cluster']['whole_node_gpus'])
+            if cluster_config['whole_node']:
+                num_cpus = int(cluster_config['whole_node_cpus'])
+                mem = int(cluster_config['whole_node_memory'])
+                disk = int(cluster_config['whole_node_disk'])
+                if 'whole_node_gpus' in cluster_config:
+                    num_gpus = int(cluster_config['whole_node_gpus'])
                 else:
                     num_gpus = 0
                 self.write_line(f, 'request_cpus=%d' % num_cpus)
@@ -646,7 +647,7 @@ class SubmitCondor(Submit):
             else:
                 self.write_line(f, 'queue')
 
-    def submit(self, state, partition=None):
+    def submit(self, state, partition="Cluster"):
         """
         Writing submit file and submitting a HTCondor job
 
@@ -660,17 +661,19 @@ class SubmitCondor(Submit):
         if 'env_wrapper_name' in self.config['SubmitFile']:
             env_filename = self.config["SubmitFile"]["env_wrapper_name"]
         
-        group_jobs = ("group_jobs" in self.config["Cluster"] and
-                      self.config["Cluster"]["group_jobs"] and 
+        cluster_config = self.config[partition]
+        group_jobs = ("group_jobs" in cluster_config and
+                      cluster_config["group_jobs"] and 
                       "count" in state)
         self.make_env_wrapper(env_filename)
         self.make_submit_file(submit_filename,
                               env_filename,
                               state, 
-                              group_jobs)
+                              group_jobs,
+                              cluster_config)
         num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
         for i in xrange(num_submits):
-            cmd = self.config["Cluster"]["submit_command"] + " " + submit_filename
+            cmd = cluster_config["submit_command"] + " " + submit_filename
             print(cmd)
             if subprocess.call(cmd, shell=True):
                 raise Exception('failed to launch glidein')
