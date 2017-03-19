@@ -99,13 +99,13 @@ export _condor_MACHINE_RESOURCE_GPUs=${GPUS};
 export _condor_SLOT_TYPE_1="100%"
 export _condor_NUM_SLOTS_TYPE_1=1
 export _condor_SLOT_TYPE_1_PARTITIONABLE="True"
-export _condor_SLOT_TYPE_1_CONSUMPTION_POLICY="True"
-export _condor_SLOT_TYPE_1_CONSUMPTION_GPUs="quantize(ifThenElse(target.RequestGpus =!= undefined,target.RequestGpus,0),{0})";
+#export _condor_SLOT_TYPE_1_CONSUMPTION_POLICY="True"
+#export _condor_SLOT_TYPE_1_CONSUMPTION_GPUs="quantize(ifThenElse(target.RequestGpus =!= undefined,target.RequestGpus,0),{0})";
 export _condor_SLOT_WEIGHT="Cpus";
 export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists HAS_CVMFS_icecube_opensciencegrid_org GLIDEIN_Site GLIDEIN_Max_Walltime GPU_NAMES"
 export _condor_STARTER_JOB_ENVIRONMENT="\"GLIDEIN_Site=${SITE} GLIDEIN_LOCAL_TMP_DIR=${PWD} GOTO_NUM_THREADS=1\"";
-export _condor_START="ifThenElse(ifThenElse(MY.GPUs =!= undefined,MY.GPUs,0) > 0,ifThenElse(TARGET.RequestGPUs =!= undefined,TARGET.RequestGPUs,0) > 0,TRUE)";
-export _condor_RANK="ImageSize";
+export _condor_START="((GPUs > 0) ? (isUndefined(RequestGPUs) ? FALSE : (RequestGPUs > 0)) : TRUE)";
+export _condor_RANK="(isUndefined(RequestGPUs) ? 0 : (RequestGPUs * 10000)) + RequestMemory";
 export _condor_UID_DOMAIN=""
 #export _condor_FILESYSTEM_DOMAIN=${DOMAIN}
 export _condor_MAIL=/bin/mail;
