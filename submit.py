@@ -512,7 +512,7 @@ class SubmitLSF(SubmitPBS):
 class SubmitCondor(Submit):
     """Submit an HTCondor job"""
 
-    def make_env_wrapper(self, env_wrapper):
+    def make_env_wrapper(self, env_wrapper, cluster_config):
         """
         Creating wrapper execute script for
         HTCondor submit file
@@ -547,6 +547,8 @@ class SubmitCondor(Submit):
                 f.write('SITE=$SITE ')
             if 'cluster' in self.config['Glidein']:
                 f.write('CLUSTER=$CLUSTER ')
+            walltime = int(cluster_config["walltime_hrs"])*3600
+            f.write('WALLTIME=%d '%walltime)
             if self.config['SubmitFile'].get('cvmfs_job_wrapper', False):
                 f.write('CVMFS_JOB_WRAPPER=1 ')
             if "CustomEnv" in self.config:
@@ -616,7 +618,7 @@ class SubmitCondor(Submit):
             if cluster_config['whole_node']:
                 num_cpus = int(cluster_config['whole_node_cpus'])
                 mem = int(cluster_config['whole_node_memory'])
-                disk = int(cluster_config['whole_node_disk'])
+                disk = int(cluster_config['whole_node_disk'])*1000
                 if 'whole_node_gpus' in cluster_config:
                     num_gpus = int(cluster_config['whole_node_gpus'])
                 else:
@@ -662,14 +664,14 @@ class SubmitCondor(Submit):
         group_jobs = ("group_jobs" in cluster_config and
                       cluster_config["group_jobs"] and 
                       "count" in state)
-        self.make_env_wrapper(env_filename)
+        self.make_env_wrapper(env_filename, cluster_config)
         self.make_submit_file(submit_filename,
                               env_filename,
                               state, 
                               group_jobs,
                               cluster_config)
         num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
-        for i in xrange(num_submits):
+        for i in range(num_submits):
             cmd = cluster_config["submit_command"] + " " + submit_filename
             print(cmd)
             if subprocess.call(cmd, shell=True):
