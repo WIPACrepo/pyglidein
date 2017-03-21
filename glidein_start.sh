@@ -68,7 +68,13 @@ export _condor_ICECUBE_CVMFS_Exists="${CVMFS}"
 export _condor_HAS_CVMFS_icecube_opensciencegrid_org="${CVMFS}"
 
 export _condor_CONDOR_HOST="$CLUSTER"
-export _condor_COLLECTOR_HOST="${CLUSTER}:9618?sock=collector"
+if [ "$CLUSTER" = "glidein-simprod.icecube.wisc.edu" ]; then
+	export _condor_COLLECTOR_HOST="${CLUSTER}:9618?sock=sub-collector-\$RANDOM_CHOICE(1,2,3,4,5)"
+	export _condor_CCB_ADDRESS="${CLUSTER}:9618?sock=sub-collector-\$RANDOM_CHOICE(1,2,3,4,5)"
+else
+	export _condor_COLLECTOR_HOST="${CLUSTER}:9618?sock=collector"
+	export _condor_CCB_ADDRESS="${CLUSTER}:9618?sock=collector"
+fi
 export _condor_ALLOW_CONFIG="$CLUSTER"
 export _condor_ENABLE_RUNTIME_CONFIG="True"
 export _condor_SETTABLE_ATTRS_CONFIG="*"
@@ -111,8 +117,6 @@ export _condor_UID_DOMAIN=""
 export _condor_MAIL=/bin/mail;
 export _condor_IS_OWNER="False"
 export _campusfactory_wntmp=$PWD
-export _condor_CCB_ADDRESS="${CLUSTER}:9618?sock=collector"
-#export _condor_PRIVATE_NETWORK_NAME=${DOMAIN}
 export _condor_UPDATE_COLLECTOR_WITH_TCP="True"
 export _campusfactory_CAMPUSFACTORY_LOCATION=$PWD
 export _condor_USER_JOB_WRAPPER=$PWD/user_job_wrapper.sh
