@@ -73,7 +73,7 @@ def cvmfs_build():
     finally:
         os.chdir(initial_dir)
 
-def parrot_download(version='6.0.9'):
+def parrot_download(version='6.0.14'):
     url = 'http://ccl.cse.nd.edu/software/files/cctools-'+version+'-source.tar.gz'
     subprocess.check_call(['wget', url])
     subprocess.check_call(['tar', '-zxf', 'cctools-'+version+'-source.tar.gz'])
@@ -107,7 +107,7 @@ def parrot_build(version=None):
     finally:
         os.chdir(initial_dir)
 
-def condor_download(version='8.4.9'):
+def condor_download(version='8.6.1'):
     version = version.replace('.','_')
     url = 'https://github.com/htcondor/htcondor/archive/V'+version+'.tar.gz'
     subprocess.check_call(['wget', url])
