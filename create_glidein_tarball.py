@@ -160,9 +160,9 @@ def main():
     parser = OptionParser()
     parser.add_option('--template-dir',dest='template',default='glidein_template',
                       help='Location of template directory')
-    parser.add_option('--htcondor-version',dest='condor',default='8.4.2',
+    parser.add_option('--htcondor-version',dest='condor',default=None,
                       help='HTCondor version to use')
-    parser.add_option('--parrot-version',dest='parrot',default='5.3.4',
+    parser.add_option('--parrot-version',dest='parrot',default=None,
                       help='Parrot (cctools) version to use')
     parser.add_option('-o','--output',dest='output',default='glidein.tar.gz',
                       help='output tarball name')
@@ -176,8 +176,14 @@ def main():
     tarfile_name = os.path.abspath(os.path.expandvars(os.path.expanduser(options.output)))
     try:
         os.chdir(d)
-        parrot_path = parrot_build(version=options.parrot)
-        condor_path = condor_build(version=options.condor)
+        parrot_opts = {}
+        if options.parrot:
+            parrot_opts['version'] = options.parrot
+        parrot_path = parrot_build(**parrot_opts)
+        condor_opts = {}
+        if options.condor:
+            condor_opts['version'] = options.condor
+        condor_path = condor_build(**condor_opts)
         with tarfile.open(tarfile_name,'w:gz') as tar:
             for f in os.listdir(options.template):
                 tar.add(os.path.join(options.template,f),arcname=f)
