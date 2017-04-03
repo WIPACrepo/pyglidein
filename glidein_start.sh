@@ -78,6 +78,7 @@ fi
 export _condor_ALLOW_CONFIG="$CLUSTER"
 export _condor_ENABLE_RUNTIME_CONFIG="True"
 export _condor_SETTABLE_ATTRS_CONFIG="*"
+export _condor_USE_SHARED_PORT="False";
 export _condor_GLIDEIN_Site="\"${SITE}\""
 export _condor_GLIDEIN_HOST="$CLUSTER"
 export _condor_GLIDEIN_Max_Walltime=${WALLTIME};
