@@ -5,6 +5,7 @@ copying what is needed into the tarball.
 
 import sys
 import os
+import stat
 import shutil
 import subprocess
 import tarfile
@@ -186,7 +187,10 @@ def main():
         condor_path = condor_build(**condor_opts)
         with tarfile.open(tarfile_name,'w:gz') as tar:
             for f in os.listdir(options.template):
-                tar.add(os.path.join(options.template,f),arcname=f)
+                path = os.path.join(options.template,f)
+                if not os.path.isdir(path):
+                    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+                tar.add(path,arcname=f)
             tar.add('.',arcname='glideinExec',recursive=False)
             for f in os.listdir(condor_path):
                 tar.add(os.path.join(condor_path,f),arcname=os.path.join('glideinExec',f))
