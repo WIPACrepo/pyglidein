@@ -100,5 +100,7 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# Vi swap files
+*.swp
 
 glidein.tar.gz
