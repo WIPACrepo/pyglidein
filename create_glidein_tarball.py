@@ -31,7 +31,7 @@ def libuuid_build():
         os.mkdir('release_dir')
         options = ['--enable-static',
                    '--disable-shared',
-                   '--prefix',os.path.join(os.getcwd(),'release_dir'),
+                   '--prefix',os.path.join(initial_dir,dirname,'release_dir'),
                   ]
         subprocess.check_call(['./configure']+options)
         subprocess.check_call(['make'])
@@ -41,10 +41,11 @@ def libuuid_build():
         os.chdir(initial_dir)
 
 def cvmfs_download():
-    url = 'https://github.com/cvmfs/cvmfs/archive/libcvmfs-stable.tar.gz'
+    url = 'https://github.com/cvmfs/cvmfs/archive/cvmfs-2.3.5.tar.gz'
+    #url = 'https://github.com/cvmfs/cvmfs/archive/libcvmfs-stable.tar.gz'
     subprocess.check_call(['wget', url])
-    subprocess.check_call(['tar', '-zxf', 'libcvmfs-stable.tar.gz'])
-    return 'cvmfs-libcvmfs-stable'
+    subprocess.check_call(['tar', '-zxf', 'cvmfs-2.3.5.tar.gz'])
+    return 'cvmfs-cvmfs-2.3.5'
 
 def cvmfs_build():
     libuuid = libuuid_build()
@@ -93,8 +94,8 @@ def parrot_build(version='6.0.14'):
                    '--without-system-allpairs',
                    '--without-system-wavefront',
                    '--without-system-makeflow',
-#                   '--without-system-ftp-lite',
-#                   '--without-system-chirp',
+                   #'--without-system-ftp-lite',
+                   #'--without-system-chirp',
                    '--without-system-umbrella',
                    '--without-system-resource_monitor',
                    '--without-system-doc',
@@ -123,7 +124,20 @@ def condor_build(version='8.6.1'):
         if os.path.exists('release_dir'):
             shutil.rmtree('release_dir')
         os.mkdir('release_dir')
+        # skip boost forcefully
+        boost_cmakelists = 'externals/bundles/boost/1.49.0/CMakeLists.txt'
+        lines = open(boost_cmakelists).read()
+        with open(boost_cmakelists,'w') as f:
+            for line in lines.split('\n'):
+                if line.startswith('if (NOT PROPER)'):
+                    f.write('if (FALSE)\n')
+                else:
+                    f.write(line+'\n')
         options = [
+            '-DPROPER=OFF',
+            '-DCMAKE_SKIP_RPATH=ON',
+            '-DDLOPEN_SECURITY_LIBS=FALSE',
+            '-DHAVE_SHARED_PORT=OFF',
             '-DHAVE_BACKFILL=OFF',
             '-DHAVE_BOINC=OFF',
             '-DHAVE_HIBERNATION=OFF',
@@ -138,13 +152,18 @@ def condor_build(version='8.6.1'):
             '-DWITH_COREDUMPER=OFF',
             '-DWITH_CREAM=OFF',
             '-DWITH_GANGLIA=OFF',
-            '-DWITH_GLOBUS=OFF',
+            '-DWITH_GLOBUS=ON',
             '-DWITH_GSOAP=OFF',
+            '-DWITH_VOMS=OFF',
+            '-DWITH_HADOOP=OFF',
+            '-DWITH_LIBCGROUP=OFF',
+            '-DWITH_POSTGRESQL=OFF',
             '-DWITH_LIBDELTACLOUD=OFF',
             '-DWITH_LIBVIRT=OFF',
             '-DWITH_PYTHON_BINDINGS=OFF',
             '-DWITH_UNICOREGAHP=OFF',
-            '-DWITH_VOMS=OFF',
+            '-DWITH_QPID=OFF',
+            '-DWITH_WSO2=OFF',
         ]
         if version > '8.5.2':
             options.append('-DWITH_KRB5=OFF')
