@@ -250,12 +250,13 @@ class SubmitPBS(Submit):
         with open(filename, 'w') as f:
             if cluster_config['whole_node']:
                 num_cpus = int(cluster_config['whole_node_cpus'])
-                mem_requested = mem_advertised = int(cluster_config['whole_node_memory'])
+                mem_advertised = int(cluster_config['whole_node_memory'])
                 disk = int(cluster_config['whole_node_disk'])
                 if 'whole_node_gpus' in cluster_config:
                     num_gpus = int(cluster_config['whole_node_gpus'])
                 else:
                     num_gpus = 0
+                _, mem_requested, mem_advertised = self.get_cores_for_memory(cluster_config, 1, num_gpus, mem_advertised)
             else:
                 num_cpus = state["cpus"]
                 mem_safety_margin = 1.05*self.get_resource_limit_scale("mem_safety_scale")
