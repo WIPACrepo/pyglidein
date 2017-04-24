@@ -256,6 +256,9 @@ class SubmitPBS(Submit):
                     num_gpus = int(cluster_config['whole_node_gpus'])
                 else:
                     num_gpus = 0
+                if 'mem_per_core' not in cluster_config:
+                    # by default assume we gave the correct amount in whole_node_memory
+                    cluster_config['mem_per_core'] = 100000
                 _, mem_requested, mem_advertised = self.get_cores_for_memory(cluster_config, 1, num_gpus, mem_advertised)
             else:
                 num_cpus = state["cpus"]
