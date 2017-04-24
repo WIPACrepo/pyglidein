@@ -113,6 +113,19 @@ export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists HAS_C
 export _condor_STARTER_JOB_ENVIRONMENT="\"GLIDEIN_Site=${SITE} GLIDEIN_LOCAL_TMP_DIR=${PWD} GOTO_NUM_THREADS=1\"";
 export _condor_START="((GPUs > 0) ? (isUndefined(RequestGPUs) ? FALSE : (RequestGPUs > 0)) : TRUE)";
 export _condor_RANK="(isUndefined(RequestGPUs) ? 0 : (RequestGPUs * 10000)) + RequestMemory";
+if [ "$SITE" = "CHTC" ]; then #26450
+	export _condor_MaxJobRetirementTime=0
+	rand=$(shuf -i 1-100 -n 1)
+	if [ "$rand" -lt 45 ]; then
+		export _condor_RANK='100*int(Affiliation is "simprod") + 10*int(Affiliation is "wipac")'
+	elif [ "$rand" -lt 70 ]; then
+		export _condor_RANK='100*int(Affiliation is "simprod") + 10*int(Affiliation is undefined)'
+	elif [ "$rand" -lt 90 ]; then
+		export _condor_RANK='100*int(Affiliation is "wipac") + 10*int(Affiliation is undefined)'
+	else
+		export _condor_RANK='100*int(Affiliation is undefined) + 10*int(Affiliation is "wipac")'
+	fi
+fi
 export _condor_UID_DOMAIN=""
 #export _condor_FILESYSTEM_DOMAIN=${DOMAIN}
 export _condor_MAIL=/bin/mail;
