@@ -137,6 +137,13 @@ else
   fi
 fi
 
+# check the parrot tmp
+if [ "x${GLIDEIN_PARROT_TMP}" != "x" ]; then
+    if [ ! -d ${GLIDEIN_PARROT_TMP} ]; then
+        mkdir ${GLIDEIN_PARROT_TMP}
+    fi
+fi
+
 # test for cvmfs
 CVMFS="false"
 if [ -e /cvmfs/icecube.opensciencegrid.org/py2-v1/setup.sh ]; then
@@ -152,6 +159,7 @@ $@
 EOF
     chmod +x $PWD/parrot_job_env.sh
     if /usr/bin/env -i \
+       GLIDEIN_PARROT_TMP=${GLIDEIN_PARROT_TMP} \
        GLIDEIN_PARROT=${PWD}/GLIDEIN_PARROT \
        _CONDOR_SCRATCH_DIR=${PWD} \
        _CONDOR_SLOT="" \

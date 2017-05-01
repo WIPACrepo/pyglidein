@@ -78,6 +78,7 @@ if [ "$USE_PARROT" = "y" ] && [ -z "$_CONDOR_JOB_PIDS" ]; then
     # We are calling run_parrot here, which calls parrot_run to run the job.
     if [ ! -e $JOB_WRAPPER ]; then
         exec /usr/bin/env -i \
+           GLIDEIN_PARROT_TMP=${GLIDEIN_PARROT_TMP} \
            GLIDEIN_PARROT=${GLIDEIN_PARROT} \
            _CONDOR_SCRATCH_DIR=${_CONDOR_SCRATCH_DIR} \
            _CONDOR_SLOT=${_CONDOR_SLOT} \
@@ -86,6 +87,7 @@ if [ "$USE_PARROT" = "y" ] && [ -z "$_CONDOR_JOB_PIDS" ]; then
         ${GLIDEIN_PARROT}/run_parrot "$@"
     else
         exec /usr/bin/env -i \
+           GLIDEIN_PARROT_TMP=${GLIDEIN_PARROT_TMP} \
            GLIDEIN_PARROT=${GLIDEIN_PARROT} \
            _CONDOR_SCRATCH_DIR=${_CONDOR_SCRATCH_DIR} \
            _CONDOR_SLOT=${_CONDOR_SLOT} \
