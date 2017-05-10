@@ -596,7 +596,7 @@ class SubmitCondor(Submit):
             self.write_line(f, "notification = never")
             self.write_line(f, "should_transfer_files = YES")
             self.write_line(f, "when_to_transfer_output = ON_EXIT")
-            self.write_line(f, "")
+            self.write_line(f, "want_graceful_removal = True")
             self.write_line(f, "executable = %s" % env_wrapper)
             self.write_line(f, "+TransferOutput=\"\"")
 
