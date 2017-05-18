@@ -191,7 +191,7 @@ EOF
 fi
 
 export PATH=$PATH:$_condor_SBIN:$PWD/glideinExec/bin
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$_condor_LIB
+export LD_LIBRARY_PATH=$_condor_LIB:$_condor_LIB/condor:$LD_LIBRARY_PATH
 
 # run condor
 exec glideinExec/sbin/condor_master -dyn -f -r 1200
