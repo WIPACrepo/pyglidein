@@ -9,7 +9,7 @@ WORKDIR /root
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /sbin/tini
 RUN chmod +x /sbin/tini
 
-RUN yum -y install git wget curl libtool-ltdl libgomp
+RUN yum -y install git wget curl libtool-ltdl libgomp redhat-lsb-core freetype
 
 RUN useradd --create-home --shell /bin/bash condor
 
