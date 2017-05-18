@@ -470,8 +470,8 @@ class SubmitLSF(SubmitPBS):
             num_jobs: number of jobs in a job array
         """
         self.write_line(f, "#!/bin/bash")
-        if num_gpus > 0:
-            self.write_option(f, "-R 'rusage[cuda=%d]'" % num_gpus)
+        #if num_gpus > 0:
+        #    self.write_option(f, "-R 'rusage[cuda=%d]'" % num_gpus)
         walltime_line = "-W %d:00" % walltime_hours
 
         # check for additional parameters in config
