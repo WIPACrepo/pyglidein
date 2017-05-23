@@ -147,6 +147,8 @@ class SubmitPBS(Submit):
         if num_gpus:
             self.write_line(f, 'if [ "$CUDA_VISIBLE_DEVICES" -eq "$CUDA_VISIBLE_DEVICES" ] 2>/dev/null ; then')
             self.write_line(f, '  GPUS="CUDA${CUDA_VISIBLE_DEVICES}"')
+            self.write_line(f, 'elif [ "x$CUDA_VISIBLE_DEVICES" = "x" ] ; then')
+            self.write_line(f, '  GPUS=%d'%num_gpus)
             self.write_line(f, 'else')
             self.write_line(f, '  GPUS=$CUDA_VISIBLE_DEVICES')
             self.write_line(f, 'fi')
