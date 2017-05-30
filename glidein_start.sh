@@ -69,8 +69,8 @@ export _condor_HAS_CVMFS_icecube_opensciencegrid_org="${CVMFS}"
 
 export _condor_CONDOR_HOST="$CLUSTER"
 if [ "$CLUSTER" = "glidein-simprod.icecube.wisc.edu" ]; then
-	export _condor_COLLECTOR_HOST="${CLUSTER}:9618?sock=sub-collector-\$RANDOM_CHOICE(1,2,3,4,5)"
-	export _condor_CCB_ADDRESS="${CLUSTER}:9618?sock=sub-collector-\$RANDOM_CHOICE(1,2,3,4,5)"
+	export _condor_COLLECTOR_HOST="${CLUSTER}:9618?sock=sub-collector-\$RANDOM_CHOICE(1,2,3,4,5,6,7,8,9)"
+	export _condor_CCB_ADDRESS="${CLUSTER}:9618?sock=sub-collector-\$RANDOM_CHOICE(1,2,3,4,5,6,7,8,9)"
 else
 	export _condor_COLLECTOR_HOST="${CLUSTER}:9618?sock=collector"
 	export _condor_CCB_ADDRESS="${CLUSTER}:9618?sock=collector"
