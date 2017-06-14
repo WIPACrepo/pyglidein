@@ -23,6 +23,8 @@ case $DISTRIB in
         ;;
     "ubuntu")
         DISTRIB="Ubuntu"
+        if echo $VERSION | grep -q '17\.\?'; then
+            VERSION="16.04"
         if echo $VERSION | grep -q '16\.\?'; then
             VERSION="16.04"
         elif echo $VERSION | grep -q '15\.10'; then
@@ -45,6 +47,22 @@ case $DISTRIB in
             VERSION="16.04"
         elif echo $VERSION | grep -q '8\.\?'; then
             VERSION="14.04"
+        fi
+        ;;
+    "linuxmint")
+        DISTRIB="Ubuntu"
+        if echo $VERSION | grep -q '18\.\?'; then
+            VERSION="16.04"
+        elif echo $VERSION | grep -q '17\.\?'; then
+            VERSION="14.04"
+        elif echo $VERSION | grep -q '16\.\?'; then
+            VERSION="12.04"
+        elif echo $VERSION | grep -q '15\.\?'; then
+            VERSION="12.04"
+        elif echo $VERSION | grep -q '14\.\?'; then
+            VERSION="12.04"
+        elif echo $VERSION | grep -q '13\.\?'; then
+            VERSION="12.04"
         fi
         ;;
     "freebsd")
