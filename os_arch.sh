@@ -25,7 +25,7 @@ case $DISTRIB in
         DISTRIB="Ubuntu"
         if echo $VERSION | grep -q '17\.\?'; then
             VERSION="16.04"
-        if echo $VERSION | grep -q '16\.\?'; then
+        elif echo $VERSION | grep -q '16\.\?'; then
             VERSION="16.04"
         elif echo $VERSION | grep -q '15\.10'; then
             VERSION="15.10"
