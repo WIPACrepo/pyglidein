@@ -103,16 +103,18 @@ class SubmitPBS(Submit):
         """
         self.write_line(f, "#!/bin/bash")
         # Add the necessary gpu request tag if we need gpus.
-        if num_gpus == 0:
-            self.write_option(f, "-l nodes=%d:ppn=%d" %\
-                            (num_nodes, num_cpus))
-        else:
-            self.write_option(f, "-l nodes=%d:ppn=%d:gpus=%d" %\
-                            (num_nodes, num_cpus, num_gpus))
+
+        resource_line = "-l nodes=%d:ppn=%d" % (num_nodes, num_cpus)
+        node_property = cluster_config.get("node_property", False)
+        if node_property:
+            resource_line +=':%s' (node_property)
+        if num_gpus > 0:
+            resource_line += ':gpus=%d' % (num_gpus)
+        self.write_option(f, resource_line)
+
         if cluster_config.get("pmem_only", False):
             self.write_option(f, "-l pmem=%dmb" % mem)
-        elif ("Cluster" in self.config and 'vmem_only' in self.config['Cluster']
-                and self.config["Cluster"]["vmem_only"]):
+        elif cluster_config.get("vmem_only", False):
             self.write_option(f, "-l vmem=%dmb" % mem)
         else:
             self.write_option(f, "-l pmem=%dmb,mem=%dmb" % (mem,mem*num_cpus))
