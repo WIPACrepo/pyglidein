@@ -48,7 +48,7 @@ GPU_NAMES=""
 if [ $GPUS != 0 ]; then
     if command -v nvidia-smi >/dev/null; then
         GPU2=$(echo "$GPUS"|sed 's/CUDA//g');
-        GPU_NAMES=$(nvidia-smi --query-gpu=name --format=csv,noheader --id=$GPU2);
+        GPU_NAMES=$(nvidia-smi --query-gpu=name --format=csv,noheader --id=$GPU2|sed ':a;N;$!ba;s/\n/,/g');
     fi
 fi
 
