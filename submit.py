@@ -111,6 +111,8 @@ class SubmitPBS(Submit):
                             (num_nodes, num_cpus, num_gpus))
         if cluster_config.get("pmem_only", False):
             self.write_option(f, "-l pmem=%dmb" % mem)
+        elif cluster_config.get("pvmem", False):
+            self.write_option(f, "-l pmem=%dmb,vmem=%dmb" % (mem,mem*num_cpus))
         elif ("Cluster" in self.config and 'vmem_only' in self.config['Cluster']
                 and self.config["Cluster"]["vmem_only"]):
             self.write_option(f, "-l vmem=%dmb" % mem)
