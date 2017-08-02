@@ -107,7 +107,7 @@ class SubmitPBS(Submit):
         resource_line = "-l nodes=%d:ppn=%d" % (num_nodes, num_cpus)
         node_property = cluster_config.get("node_property", False)
         if node_property:
-            resource_line +=':%s' (node_property)
+            resource_line +=':%s' % (node_property)
         if num_gpus > 0:
             resource_line += ':gpus=%d' % (num_gpus)
         self.write_option(f, resource_line)
