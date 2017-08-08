@@ -31,7 +31,7 @@ class Submit(object):
     def write_line(self, f, line):
         """
         Wrapper function so we dont have to write \n a million times
-        
+
         Args:
             f: File handle
             line: Line to be written to file
@@ -73,7 +73,7 @@ class Submit(object):
             scale = 1
 
         return scale
-    
+
     def cleanup(self, cmd, direc):
         pass
 
@@ -103,14 +103,21 @@ class SubmitPBS(Submit):
         """
         self.write_line(f, "#!/bin/bash")
         # Add the necessary gpu request tag if we need gpus.
-        if num_gpus == 0:
-            self.write_option(f, "-l nodes=%d:ppn=%d" %\
-                            (num_nodes, num_cpus))
-        else:
-            self.write_option(f, "-l nodes=%d:ppn=%d:gpus=%d" %\
-                            (num_nodes, num_cpus, num_gpus))
+
+        resource_line = "-l nodes=%d:ppn=%d" % (num_nodes, num_cpus)
+        node_property = cluster_config.get("node_property", False)
+        if node_property:
+            resource_line +=':%s' % (node_property)
+        if num_gpus > 0:
+            resource_line += ':gpus=%d' % (num_gpus)
+        self.write_option(f, resource_line)
+
         if cluster_config.get("pmem_only", False):
             self.write_option(f, "-l pmem=%dmb" % mem)
+        elif cluster_config.get("pvmem", False):
+            self.write_option(f, "-l pmem=%dmb,vmem=%dmb" % (mem,mem*num_cpus))
+        elif cluster_config.get("vmem_only", False):
+            self.write_option(f, "-l vmem=%dmb" % mem)
         else:
             self.write_option(f, "-l pmem=%dmb,mem=%dmb" % (mem,mem*num_cpus))
         self.write_option(f, "-l walltime=%d:00:00" % walltime_hours)
@@ -205,7 +212,7 @@ class SubmitPBS(Submit):
             executable = self.config['SubmitFile']['executable']
         self.write_line(f, '%s ./%s' % (executable, glidein_script))
 
-        self.write_line(f, 'if [ $CLEANUP = 1 ]; then')
+        self.write_line(f, 'if [ $CLEANUP -eq 1 ]; then')
         self.write_line(f, '    rm -rf $LOCAL_DIR')
         self.write_line(f, 'fi')
 
@@ -213,7 +220,7 @@ class SubmitPBS(Submit):
         """
         Scale number of cores to satisfy memory request, assuming fixed amount
         of memory per core.
-        
+
         Args:
             num_cpus_advertised: the number of cores explicitly requested
             num_gpus_advertised: the number of GPUs explicitly requested
@@ -236,7 +243,7 @@ class SubmitPBS(Submit):
             while mem_requested > mem_per_core:
                 num_cpus += 1
                 mem_requested = mem_advertised/num_cpus
-        
+
         return num_cpus, mem_requested, mem_advertised
 
     def write_submit_file(self, filename, state, group_jobs, cluster_config):
@@ -295,7 +302,7 @@ class SubmitPBS(Submit):
                 kwargs['glidein_loc'] = self.config["Glidein"]["loc"]
             if "tarball" in self.config["Glidein"]:
                 if "loc" in self.config["Glidein"]:
-                    glidein_tarball = os.path.join(self.config["Glidein"]["loc"], 
+                    glidein_tarball = os.path.join(self.config["Glidein"]["loc"],
                                                    self.config["Glidein"]["tarball"])
                 else:
                     glidein_tarball = self.config["Glidein"]["tarball"]
@@ -319,7 +326,7 @@ class SubmitPBS(Submit):
         submit_filename = 'submit.pbs'
         if 'filename' in self.config["SubmitFile"]:
             submit_filename = self.config["SubmitFile"]["filename"]
-        
+
         cluster_config = self.config[partition]
         group_jobs = ("group_jobs" in cluster_config and
                       cluster_config["group_jobs"] and
@@ -337,7 +344,7 @@ class SubmitPBS(Submit):
 
     def cleanup(self, cmd, direc):
         """
-        Cleans up temporary directories that were created on a network file system that were not 
+        Cleans up temporary directories that were created on a network file system that were not
         deleted by the job itself. Checks whether the job ID used to identify a temporary directory
         is still in the queue. If it is not, the directory gets deleted.
 
@@ -356,11 +363,11 @@ class SubmitPBS(Submit):
 
 class SubmitSLURM(SubmitPBS):
     """SLURM is similar to PBS, but with different headers"""
-    
+
     option_tag = "#SBATCH"
-    
+
     def write_general_header(self, f, cluster_config, mem=3000, walltime_hours=14, disk=1,
-                             num_nodes=1, num_cpus=1, num_gpus=0, 
+                             num_nodes=1, num_cpus=1, num_gpus=0,
                              num_jobs=0):
         """
         Writing the header for a SLURM submission script.
@@ -404,17 +411,17 @@ class SubmitSLURM(SubmitPBS):
 
 class SubmitUGE(SubmitPBS):
     """UGE is similar to PBS, but with different headers"""
-    
+
     option_tag = "#$"
-    
+
     def get_cores_for_memory(self, cluster_config, num_cpus_advertised, num_gpus_advertised, mem_advertised):
         """
         Scale number of cores to satisfy memory request.
-        
+
         UGE can assign variable memory per core, so just pass the request straight through.
         """
         return num_cpus_advertised, mem_advertised, mem_advertised
-    
+
     def write_general_header(self, f, cluster_config, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
                              num_jobs=0):
@@ -665,15 +672,15 @@ class SubmitCondor(Submit):
         env_filename = 'env_wrapper.sh'
         if 'env_wrapper_name' in self.config['SubmitFile']:
             env_filename = self.config["SubmitFile"]["env_wrapper_name"]
-        
+
         cluster_config = self.config[partition]
         group_jobs = ("group_jobs" in cluster_config and
-                      cluster_config["group_jobs"] and 
+                      cluster_config["group_jobs"] and
                       "count" in state)
         self.make_env_wrapper(env_filename, cluster_config)
         self.make_submit_file(submit_filename,
                               env_filename,
-                              state, 
+                              state,
                               group_jobs,
                               cluster_config)
         num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
