@@ -164,6 +164,8 @@ class SubmitPBS(Submit):
 
         if 'site' in self.config['Glidein']:
             self.write_line(f, 'SITE="%s"' % self.config['Glidein']['site'])
+        if 'resourcename' in self.config['Glidein']:
+            self.write_line(f, 'ResourceName="%s"' % self.config['Glidein']['resourcename'])
         if 'cluster' in self.config['Glidein']:
             self.write_line(f, 'CLUSTER="%s"' % self.config['Glidein']['cluster'])
 
@@ -200,6 +202,7 @@ class SubmitPBS(Submit):
         f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME ')
         if 'site' in self.config['Glidein']:
             f.write('SITE=$SITE ')
+        f.write('ResourceName=ResourceName ')
         if 'cluster' in self.config['Glidein']:
             f.write('CLUSTER=$CLUSTER ')
         if self.config['SubmitFile'].get('cvmfs_job_wrapper', False):
@@ -553,11 +556,16 @@ class SubmitCondor(Submit):
             self.write_line(f, 'fi')
             if 'site' in self.config['Glidein']:
                 self.write_line(f, 'SITE="%s"' % self.config['Glidein']['site'])
+            if 'resourcename' in self.config['Glidein']:
+                self.write_line(f, 'ResourceName="%s"' % self.config['Glidein']['resourcename'])
+            else:
+                self.write_line(f, 'ResourceName=$(grep -e "^GLIDEIN_ResourceName" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}"|sed "s/\\"//g")')
             if 'cluster' in self.config['Glidein']:
                 self.write_line(f, 'CLUSTER="%s"' % self.config['Glidein']['cluster'])
             f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK ')
             if 'site' in self.config['Glidein']:
                 f.write('SITE=$SITE ')
+            f.write('ResourceName=$ResourceName ')
             if 'cluster' in self.config['Glidein']:
                 f.write('CLUSTER=$CLUSTER ')
             walltime = int(cluster_config["walltime_hrs"])*3600

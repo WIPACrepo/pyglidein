@@ -9,11 +9,13 @@ class Config(dict):
 
         # read defaults
         tmp = SafeConfigParser()
+        tmp.optionxform = str
         tmp.read(default)
         self._config_options_dict(tmp)
 
         # read file
         tmp = SafeConfigParser()
+        tmp.optionxform = str
         tmp.read(path)
         self._config_options_dict(tmp)
         self._populate_partitions()

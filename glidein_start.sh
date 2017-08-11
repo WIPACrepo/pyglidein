@@ -8,6 +8,9 @@ fi
 if [ -z $SITE ]; then
     SITE="WIPAC"
 fi
+if [ -z $ResourceName ]; then
+    ResourceName="none"
+fi
 if [ -z $CLUSTER ]; then
     CLUSTER="glidein-simprod.icecube.wisc.edu"
 fi
@@ -48,7 +51,7 @@ GPU_NAMES=""
 if [ $GPUS != 0 ]; then
     if command -v nvidia-smi >/dev/null; then
         GPU2=$(echo "$GPUS"|sed 's/CUDA//g');
-        GPU_NAMES=$(nvidia-smi --query-gpu=name --format=csv,noheader --id=$GPU2);
+        GPU_NAMES=$(nvidia-smi --query-gpu=name --format=csv,noheader --id=$GPU2|sed ':a;N;$!ba;s/\n/,/g');
     fi
 fi
 
@@ -80,6 +83,7 @@ export _condor_ENABLE_RUNTIME_CONFIG="True"
 export _condor_SETTABLE_ATTRS_CONFIG="*"
 export _condor_USE_SHARED_PORT="False";
 export _condor_GLIDEIN_Site="\"${SITE}\""
+export _condor_GLIDEIN_SiteResource="\"${ResourceName}\"";
 export _condor_GLIDEIN_HOST="$CLUSTER"
 export _condor_GLIDEIN_Max_Walltime=${WALLTIME};
 export _condor_GLIDEIN_Job_Max_Time=${WALLTIME};
@@ -109,8 +113,8 @@ export _condor_SLOT_TYPE_1_PARTITIONABLE="True"
 #export _condor_SLOT_TYPE_1_CONSUMPTION_POLICY="True"
 #export _condor_SLOT_TYPE_1_CONSUMPTION_GPUs="quantize(ifThenElse(target.RequestGpus =!= undefined,target.RequestGpus,0),{0})";
 export _condor_SLOT_WEIGHT="Cpus";
-export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists HAS_CVMFS_icecube_opensciencegrid_org GLIDEIN_Site GLIDEIN_Max_Walltime GPU_NAMES"
-export _condor_STARTER_JOB_ENVIRONMENT="\"GLIDEIN_Site=${SITE} GLIDEIN_LOCAL_TMP_DIR=${PWD} GOTO_NUM_THREADS=1\"";
+export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists HAS_CVMFS_icecube_opensciencegrid_org GLIDEIN_Site GLIDEIN_SiteResource GLIDEIN_Max_Walltime GPU_NAMES"
+export _condor_STARTER_JOB_ENVIRONMENT="\"GLIDEIN_Site=${SITE} GLIDEIN_SiteResource=${ResourceName} GLIDEIN_LOCAL_TMP_DIR=${PWD} GOTO_NUM_THREADS=1\"";
 export _condor_START="((GPUs > 0) ? (isUndefined(RequestGPUs) ? FALSE : (RequestGPUs > 0)) : TRUE)";
 export _condor_RANK="(isUndefined(RequestGPUs) ? 0 : (RequestGPUs * 10000)) + RequestMemory";
 export _condor_UID_DOMAIN=""
