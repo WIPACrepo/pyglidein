@@ -1,0 +1,3 @@
+#!/bin/bash
+exec 2>&1
+exec chpst -u pyglidein /etc/sv/pyglidein_server/start_pyglidein_server.sh

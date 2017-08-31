@@ -1,0 +1,3 @@
+#!/bin/bash
+exec 2>&1
+exec chpst -u condor /etc/sv/condor/start_condor.sh
