@@ -1,3 +1,27 @@
 #!/bin/bash
 exec 2>&1
-exec chpst -u condor /etc/sv/condor/start_condor.sh
+
+CONDOR_VERSION=8.7.2
+
+# Moving condor password file into place
+cp /pyglidein/glidein_template/passwdfile /home/condor/condor-${CONDOR_VERSION}/local/condor_pool_password
+chown condor:condor /home/condor/condor-${CONDOR_VERSION}/local/condor_pool_password
+chmod 600 /home/condor/condor-${CONDOR_VERSION}/local/condor_pool_password
+
+# Moving condor condor_config.local into place
+cp /etc/sv/condor/condor_config.local /home/condor/condor-${CONDOR_VERSION}/local/condor_config.local
+
+# Setting up Paths based on condor.sh
+CONDOR_CONFIG="/home/condor/condor-${CONDOR_VERSION}/etc/condor_config"
+export CONDOR_CONFIG
+PATH="/home/condor/condor-${CONDOR_VERSION}/bin:/home/condor/condor-${CONDOR_VERSION}/sbin:$PATH"
+export PATH
+if [ "X" != "X${PYTHONPATH-}" ]; then
+  PYTHONPATH="/home/condor/condor-${CONDOR_VERSION}/lib/python:$PYTHONPATH"
+else
+  PYTHONPATH="/home/condor/condor-${CONDOR_VERSION}/lib/python"
+fi
+export PYTHONPATH
+
+
+exec chpst -u condor condor_master -f

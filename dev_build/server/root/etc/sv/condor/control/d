@@ -3,6 +3,13 @@ exec 2>&1
 
 CONDOR_VERSION=8.7.2
 
+# Moving condor password file into place
+cp /pyglidein/glidein_template/passwdfile /home/condor/condor-${CONDOR_VERSION}/local/condor_pool_password
+chown condor:condor /home/condor/condor-${CONDOR_VERSION}/local/condor_pool_password
+
+# Moving condor condor_config.local into place
+cp /etc/sv/condor/condor_config.local /home/condor/condor-${CONDOR_VERSION}/local/condor_config.local
+
 # Setting up Paths based on condor.sh
 CONDOR_CONFIG="/home/condor/condor-${CONDOR_VERSION}/etc/condor_config"
 export CONDOR_CONFIG
@@ -15,4 +22,5 @@ else
 fi
 export PYTHONPATH
 
-exec chpst -u pyglidein /pyglidein/server.py -p 8001 --delay 10
+
+exec chpst -u condor condor_off -master
