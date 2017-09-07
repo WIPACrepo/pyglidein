@@ -1,0 +1,22 @@
+version: "3"
+services:
+  pyglidein-server:
+    image: wipac/pyglidein_server:1.0
+    networks:
+      app_net:
+    hostname: pyglidein-server
+  pyglidein-client:
+    image: wipac/pyglidein_client:1.0
+    networks:
+      app_net:
+    hostname: pyglidein-client
+    privileged: true
+
+networks:
+  app_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        -
+          subnet: 172.22.0.0/24

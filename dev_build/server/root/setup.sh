@@ -17,7 +17,7 @@ yum -y upgrade ca-certificates --disablerepo=epel
 
 # Installing condor
 useradd condor
-su -c "wget http://parrot.cs.wisc.edu//symlink/20170906031501/8/8.7/8.7.2/e0eeea6e2051b8d2a9b5e57d2bbd6f66/condor-8.7.2-x86_64_RedHat7-stripped.tar.gz" - condor
+su -c "wget http://prod-exe.icecube.wisc.edu/htcondor/condor-8.7.2-x86_64_RedHat7-stripped.tar.gz" - condor
 su -c "mkdir ~/condor-8.7.2; cd ~/condor-8.7.2; mkdir local" - condor
 su -c "cd ~/condor-8.7.2; tar -z -x -f ~/condor-8.7.2-*-stripped.tar.gz" - condor
 su -c "cd ~/condor-8.7.2; ./condor-8.7.2-*-stripped/condor_install --local-dir /home/condor/condor-8.7.2/local --make-personal-condor" - condor

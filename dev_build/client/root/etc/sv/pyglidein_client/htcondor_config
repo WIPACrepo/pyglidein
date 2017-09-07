@@ -4,8 +4,8 @@ debug = True
 
 [Glidein]
 # Address where the state of the remote queue can be accessed
-address = http://172.21.0.2:8001/jsonrpc
-cluster = 172.21.0.2
+address = http://pyglidein-server:8001/jsonrpc
+cluster = pyglidein-server
 
 # Whether or not the state of the remote queue was queried
 # from the server or whether it was transmitted through a
