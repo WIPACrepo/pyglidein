@@ -13,7 +13,7 @@ wget
 # Updating ca certs to get epel mirrors to work
 yum -y upgrade ca-certificates --disablerepo=epel
 
- yum -y groupinstall 'Development Tools'
+yum -y groupinstall 'Development Tools'
 
 # Installing condor
 useradd condor
