@@ -56,8 +56,8 @@ attr \
 gdb \
 policycoreutils-python
 
-rpm -ivh https://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-default-1.2-2.noarch.rpm
-rpm -ivh --nodeps https://ecsft.cern.ch/dist/cvmfs/cvmfs-2.2.2/cvmfs-2.2.2-1.el6.x86_64.rpm
+rpm -ivh https://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-default-1.4-1.noarch.rpm
+rpm -ivh --nodeps https://ecsft.cern.ch/dist/cvmfs/cvmfs-2.3.5/cvmfs-2.3.5-1.el7.centos.x86_64.rpm
 
 # Adding automounter configs
 echo "user_allow_other" >> /etc/fuse.conf
