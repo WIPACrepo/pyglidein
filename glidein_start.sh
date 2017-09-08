@@ -198,8 +198,12 @@ export PATH=$PATH:$_condor_SBIN:$PWD/glideinExec/bin
 export LD_LIBRARY_PATH=$_condor_LIB:$_condor_LIB/condor:$LD_LIBRARY_PATH
 
 # run condor
-exec glideinExec/sbin/condor_master -dyn -f -r 1200
-
-# clean up after ourselves
-cd ..
-rm -rf glidein
+trap 'kill -TERM $PID' SIGTERM SIGKILL
+glideinExec/sbin/condor_master -dyn -f -r 1200 &
+PID=$!
+wait $PID
+trap - SIGTERM SIGKILL
+wait $PID
+tar czf logs.tar.gz log.*
+unset http_proxy
+curl --upload-file logs.tar.gz ${PRESIGNED_PUT_URL}

@@ -10,6 +10,7 @@ import getpass
 from optparse import OptionParser
 import glob
 import shutil
+from minio import Minio
 
 from util import json_decode
 from client_util import get_state, monitoring, config_options_dict
@@ -36,15 +37,15 @@ def get_running(cmd):
 def sort_states(state, columns, reverse=True):
     """
     Sort the states according to the list given by prioritize_jobs.
-    
-    prioritize_jobs (or columns in this case) is list of according to 
-    which state should be prioritized for job submission. The position 
-    in the list indicates the prioritization. columns = ["memory", "disk"] 
+
+    prioritize_jobs (or columns in this case) is list of according to
+    which state should be prioritized for job submission. The position
+    in the list indicates the prioritization. columns = ["memory", "disk"]
     with reverse=True means jobs with high memory will be submitted before
-    jobs with lower memory requirements, followed by jobs with high disk vs. 
-    low disk requirement. Jobs with high memory and disk requirements 
-    will be submitted first then jobs with high memory and medium disk 
-    requirements, and so on and so forth. 
+    jobs with lower memory requirements, followed by jobs with high disk vs.
+    low disk requirement. Jobs with high memory and disk requirements
+    will be submitted first then jobs with high memory and medium disk
+    requirements, and so on and so forth.
 
     Args:
         state: List of states
@@ -73,6 +74,21 @@ def sort_states(state, columns, reverse=True):
         return ret
     return sorted(state, key=compare, reverse=reverse)
 
+
+def create_bucket(config_logging):
+    """Creates a new minio bucket for the glidein site if one doesn't exist."""
+
+    client = Minio(config_logging['url'],
+                   access_key=config_logging['access_key'],
+                   secret_key=config_logging['secret_key'],
+                   secure=False
+                   )
+
+    if (client.bucket_exists('wipac')):
+        print ('wipac bucket exists')
+    else:
+        client.make_bucket('wipac')
+
 def main():
     parser = OptionParser()
     parser.add_option('--config', type='string', default='cluster.config',
@@ -85,6 +101,7 @@ def main():
     config_dict = Config(options.config)
     config_glidein = config_dict['Glidein']
     config_cluster = config_dict['Cluster']
+    config_logging = config_dict['Logging']
 
     # Importing the correct class to handle the submit
     sched_type = config_cluster["scheduler"].lower()
@@ -109,6 +126,9 @@ def main():
         logging.basicConfig(level=logging.DEBUG,format='%(asctime)s %(levelname)s %(message)s')
     else:
         logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
+
+    # Creating logging bucket if logging enabled
+    create_bucket(config_logging)
 
     while True:
         if 'ssh_state' in config_glidein and config_glidein['ssh_state']:
@@ -135,14 +155,14 @@ def main():
                     logger.warn('error getting running job count', exc_info=True)
                     continue
                 info['glideins_launched'][partition] = 0
-                limit = min(config_cluster["limit_per_submit"], 
+                limit = min(config_cluster["limit_per_submit"],
                             config_cluster["max_total_jobs"] - info['glideins_running'][partition],
                             max(config_cluster.get("max_idle_jobs", 1000) - idle, 0))
-                # Prioitize job submission. By default, prioritize submission of gpu and high memory jobs. 
+                # Prioitize job submission. By default, prioritize submission of gpu and high memory jobs.
                 state = sort_states(state, config_cluster["prioritize_jobs"])
                 for s in state:
                     if sched_type == "pbs":
-                        s["memory"] = s["memory"]*1024/1000 
+                        s["memory"] = s["memory"]*1024/1000
                     if limit <= 0:
                         logger.info('reached limit')
                         break

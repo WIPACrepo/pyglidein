@@ -11,6 +11,17 @@ services:
       app_net:
     hostname: pyglidein-client
     privileged: true
+  minio:
+    image: minio/minio
+    networks:
+      app_net:
+    hostname: minio
+    environment:
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+    command: server /data
+
+
 
 networks:
   app_net:

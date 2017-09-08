@@ -10,6 +10,10 @@ import logging
 import tempfile
 import shutil
 import glob
+import datetime
+import uuid
+from minio import Minio
+from minio.error import ResponseError
 
 class Submit(object):
     """
@@ -76,6 +80,22 @@ class Submit(object):
 
     def cleanup(self, cmd, direc):
         pass
+
+    def get_presigned_put_url(self):
+        config_logging = self.config['Logging']
+
+        client = Minio(config_logging['url'],
+                       access_key=config_logging['access_key'],
+                       secret_key=config_logging['secret_key'],
+                       secure=False
+                       )
+
+        try:
+            return client.presigned_put_object('wipac',
+                                               '%s.tar.gz' % uuid.uuid4(),
+                                               datetime.timedelta(days=3))
+        except ResponseError as err:
+            print(err)
 
 class SubmitPBS(Submit):
     """Submit a PBS / Torque job"""
@@ -562,7 +582,7 @@ class SubmitCondor(Submit):
                 self.write_line(f, 'ResourceName=$(grep -e "^GLIDEIN_ResourceName" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}"|sed "s/\\"//g")')
             if 'cluster' in self.config['Glidein']:
                 self.write_line(f, 'CLUSTER="%s"' % self.config['Glidein']['cluster'])
-            f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK ')
+            f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL ')
             if 'site' in self.config['Glidein']:
                 f.write('SITE=$SITE ')
             f.write('ResourceName=$ResourceName ')
@@ -583,7 +603,7 @@ class SubmitCondor(Submit):
             mode |= 0o111
             os.fchmod(f.fileno(), mode & 0o7777)
 
-    def make_submit_file(self, filename, env_wrapper, state, group_jobs, cluster_config):
+    def make_submit_file(self, filename, env_wrapper, state, group_jobs, cluster_config, presigned_put_url):
         """
         Creating HTCondor submit file
 
@@ -660,6 +680,8 @@ class SubmitCondor(Submit):
                 if state["gpus"] != 0:
                     self.write_line(f, 'request_gpus=%d' % int(state["gpus"]))
 
+            self.write_line(f, 'environment = "PRESIGNED_PUT_URL=%s"' % presigned_put_url)
+
             if "custom_footer" in self.config["SubmitFile"]:
                 self.write_line(f, self.config["SubmitFile"]["custom_footer"])
             if group_jobs:
@@ -686,14 +708,15 @@ class SubmitCondor(Submit):
                       cluster_config["group_jobs"] and
                       "count" in state)
         self.make_env_wrapper(env_filename, cluster_config)
-        self.make_submit_file(submit_filename,
-                              env_filename,
-                              state,
-                              group_jobs,
-                              cluster_config)
         num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
         for i in range(num_submits):
+            presigned_put_url = self.get_presigned_put_url()
+            self.make_submit_file(submit_filename,
+                                  env_filename,
+                                  state,
+                                  group_jobs,
+                                  cluster_config,
+                                  presigned_put_url)
             cmd = cluster_config["submit_command"] + " " + submit_filename
             print(cmd)
-            if subprocess.call(cmd, shell=True):
-                raise Exception('failed to launch glidein')
+            subprocess.check_call(cmd, shell=True)

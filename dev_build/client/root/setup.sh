@@ -37,6 +37,7 @@ chmod 777 /pyglidein
 chmod 777 /pyglidein/out
 yum -y install python-pip
 pip install tornado
+pip install minio
 
 # Installing Runit
 wget http://smarden.org/runit/runit-2.1.2.tar.gz

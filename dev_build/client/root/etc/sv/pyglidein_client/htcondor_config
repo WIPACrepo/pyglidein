@@ -88,4 +88,10 @@ http_proxy = http://squid.icecube.wisc.edu:3128
 
 [Glidein]
 # run every 60 seconds
-delay = 60
+delay = 10
+
+[Logging]
+send_startd_logs = True
+url = minio:9000
+access_key = minio
+secret_key = minio123
