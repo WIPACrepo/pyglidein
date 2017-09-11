@@ -11,6 +11,9 @@ services:
       app_net:
     hostname: pyglidein-client
     privileged: true
+    volumes:
+      - "/home/hskarlupka/code/pyglidein/client.py:/pyglidein/client.py"
+      - "/home/hskarlupka/code/pyglidein/submit.py:/pyglidein/submit.py"
   minio:
     image: minio/minio
     networks:

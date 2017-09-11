@@ -89,9 +89,11 @@ http_proxy = http://squid.icecube.wisc.edu:3128
 [Glidein]
 # run every 60 seconds
 delay = 10
+site = WIPAC_Dev
 
-[Logging]
+[StartdLogging]
 send_startd_logs = True
 url = minio:9000
+bucket = wipac-dev
 access_key = minio
 secret_key = minio123

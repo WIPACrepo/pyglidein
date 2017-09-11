@@ -204,6 +204,9 @@ PID=$!
 wait $PID
 trap - SIGTERM SIGKILL
 wait $PID
-tar czf logs.tar.gz log.*
-unset http_proxy
-curl --upload-file logs.tar.gz ${PRESIGNED_PUT_URL}
+if [ -n $PRESIGNED_PUT_URL ]
+  then
+    tar czf logs.tar.gz log.*
+    unset http_proxy
+    curl --upload-file logs.tar.gz ${PRESIGNED_PUT_URL}
+fi

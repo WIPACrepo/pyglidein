@@ -2,7 +2,6 @@
 from __future__ import absolute_import, division, print_function
 
 import os
-import sys
 import time
 import platform
 import subprocess
@@ -82,17 +81,19 @@ class Submit(object):
         pass
 
     def get_presigned_put_url(self):
-        config_logging = self.config['Logging']
+        config_startd_logging = self.config['StartdLogging']
 
-        client = Minio(config_logging['url'],
-                       access_key=config_logging['access_key'],
-                       secret_key=config_logging['secret_key'],
+        client = Minio(config_startd_logging['url'],
+                       access_key=config_startd_logging['access_key'],
+                       secret_key=config_startd_logging['secret_key'],
                        secure=False
                        )
 
+        filename = '{}_{}.tar.gz'.format(self.config['Glidein']['site'],
+                                            uuid.uuid4())
         try:
-            return client.presigned_put_object('wipac',
-                                               '%s.tar.gz' % uuid.uuid4(),
+            return client.presigned_put_object(config_startd_logging['bucket'],
+                                               filename,
                                                datetime.timedelta(days=3))
         except ResponseError as err:
             print(err)
@@ -603,7 +604,7 @@ class SubmitCondor(Submit):
             mode |= 0o111
             os.fchmod(f.fileno(), mode & 0o7777)
 
-    def make_submit_file(self, filename, env_wrapper, state, group_jobs, cluster_config, presigned_put_url):
+    def make_submit_file(self, filename, env_wrapper, state, group_jobs, cluster_config, presigned_put_url=None):
         """
         Creating HTCondor submit file
 
@@ -680,7 +681,12 @@ class SubmitCondor(Submit):
                 if state["gpus"] != 0:
                     self.write_line(f, 'request_gpus=%d' % int(state["gpus"]))
 
-            self.write_line(f, 'environment = "PRESIGNED_PUT_URL=%s"' % presigned_put_url)
+            # Creating environment variables
+            environment_variables = ''
+            if presigned_put_url is not None:
+                environment_variables = '"PRESIGNED_PUT_URL=%s"' % presigned_put_url
+            if environment_variables != '':
+                self.write_line(f, 'environment = %s' % environment_variables)
 
             if "custom_footer" in self.config["SubmitFile"]:
                 self.write_line(f, self.config["SubmitFile"]["custom_footer"])
@@ -710,13 +716,20 @@ class SubmitCondor(Submit):
         self.make_env_wrapper(env_filename, cluster_config)
         num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
         for i in range(num_submits):
-            presigned_put_url = self.get_presigned_put_url()
-            self.make_submit_file(submit_filename,
-                                  env_filename,
-                                  state,
-                                  group_jobs,
-                                  cluster_config,
-                                  presigned_put_url)
+            if self.config['StartdLogging']['send_startd_logs'] is True:
+                presigned_put_url = self.get_presigned_put_url()
+                self.make_submit_file(submit_filename,
+                                      env_filename,
+                                      state,
+                                      group_jobs,
+                                      cluster_config,
+                                      presigned_put_url)
+            else:
+                self.make_submit_file(submit_filename,
+                                      env_filename,
+                                      state,
+                                      group_jobs,
+                                      cluster_config)
             cmd = cluster_config["submit_command"] + " " + submit_filename
             print(cmd)
             subprocess.check_call(cmd, shell=True)

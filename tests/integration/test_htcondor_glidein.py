@@ -8,7 +8,7 @@ class TestHTCondorGlidein(unittest.TestCase):
 
     def test_glidein_startd(self):
 
-        glidein_site = 'WIPAC'
+        glidein_site = 'WIPAC_Dev'
 
         # Submitting some sleep jobs
         job = {"executable": "/bin/sleep",

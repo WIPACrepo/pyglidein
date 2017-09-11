@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+import sys
 import time
 import subprocess
 import logging
@@ -75,19 +76,19 @@ def sort_states(state, columns, reverse=True):
     return sorted(state, key=compare, reverse=reverse)
 
 
-def create_bucket(config_logging):
+def create_bucket(config_startd_logging):
     """Creates a new minio bucket for the glidein site if one doesn't exist."""
 
-    client = Minio(config_logging['url'],
-                   access_key=config_logging['access_key'],
-                   secret_key=config_logging['secret_key'],
+    client = Minio(config_startd_logging['url'],
+                   access_key=config_startd_logging['access_key'],
+                   secret_key=config_startd_logging['secret_key'],
                    secure=False
                    )
 
-    if (client.bucket_exists('wipac')):
-        print ('wipac bucket exists')
+    if (client.bucket_exists(config_startd_logging['bucket'])):
+        logger.debug('%s bucket alreay exists' % config_startd_logging['bucket'])
     else:
-        client.make_bucket('wipac')
+        client.make_bucket(config_startd_logging['bucket'])
 
 def main():
     parser = OptionParser()
@@ -101,7 +102,10 @@ def main():
     config_dict = Config(options.config)
     config_glidein = config_dict['Glidein']
     config_cluster = config_dict['Cluster']
-    config_logging = config_dict['Logging']
+    if 'StartdLogging' in config_dict:
+        config_startd_logging = config_dict['StartdLogging']
+    else:
+        config_startdlogging = {}
 
     # Importing the correct class to handle the submit
     sched_type = config_cluster["scheduler"].lower()
@@ -127,8 +131,14 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
 
-    # Creating logging bucket if logging enabled
-    create_bucket(config_logging)
+    # Checking on startd logging configuration if enabled
+    if 'send_startd_logs' in config_startd_logging and config_startd_logging['send_startd_logs'] is True:
+        for config_val in ['url', 'bucket', 'access_key', 'secret_key']:
+            if config_val not in config_startd_logging:
+                logger.error('Missing %s configuration value in StartdLogging Section' % config_val)
+                sys.exit(1)
+        # Creating Bucket for Grid Site
+        create_bucket(config_startd_logging)
 
     while True:
         if 'ssh_state' in config_glidein and config_glidein['ssh_state']:
