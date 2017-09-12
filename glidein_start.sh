@@ -130,6 +130,9 @@ export _condor_USER_JOB_WRAPPER=$PWD/user_job_wrapper.sh
 OS_ARCH="RHEL_6_x86_64"
 . $GLIDEIN_DIR/os_arch.sh
 
+# disable proxy for prod-exe
+export no_proxy=prod-exe.icecube.wisc.edu
+
 if [ -e $GLIDEIN_DIR/glidein.tar.gz ]; then
   tar xzf $GLIDEIN_DIR/glidein.tar.gz
 else
