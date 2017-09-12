@@ -9,7 +9,7 @@ if [ -z $SITE ]; then
     SITE="WIPAC"
 fi
 if [ -z $ResourceName ]; then
-    ResourceName="none"
+    ResourceName=$SITE
 fi
 if [ -z $CLUSTER ]; then
     CLUSTER="glidein-simprod.icecube.wisc.edu"
