@@ -1,0 +1,4 @@
+#!/bin/bash
+exec 2>&1
+cd /pyglidein
+exec chpst -u pyglidein ./client.py --config=/etc/sv/pyglidein_client/pbs_torque_config

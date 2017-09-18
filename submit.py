@@ -108,7 +108,7 @@ class SubmitPBS(Submit):
 
     def write_general_header(self, f, cluster_config, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
-                             num_jobs=0):
+                             num_jobs=0, presigned_put_url=None):
         """
         Writing the header for a PBS submission script.
         Most of the pieces needed to tell PBS what resources
@@ -154,6 +154,9 @@ class SubmitPBS(Submit):
             self.write_option(f, "-e /dev/null")
         if num_jobs > 0:
             self.write_option(f, "-t 0-%d" % num_jobs)
+        if presigned_put_url is not None:
+            self.write_option(f, '-v PRESIGNED_PUT_URL="%s"' % presigned_put_url)
+
 
     def write_glidein_variables(self, f, mem=1000, walltime_hours=12,
                                 num_cpus=1, num_gpus=0, disk=1):
@@ -219,8 +222,8 @@ class SubmitPBS(Submit):
         if not os.path.isfile(os.path.join(glidein_loc, 'os_arch.sh')):
             raise Exception("%s does not exist!"%os.path.join(glidein_loc, 'os_arch.sh'))
         self.write_line(f, 'ln -fs %s %s' % (os.path.join(glidein_loc, 'os_arch.sh'), 'os_arch.sh'))
-
-        f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME ')
+        self.write_line(f, 'trap \'kill -TERM $PID\' SIGTERM SIGKILL')
+        f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL ')
         if 'site' in self.config['Glidein']:
             f.write('SITE=$SITE ')
         f.write('ResourceName=ResourceName ')
@@ -235,7 +238,6 @@ class SubmitPBS(Submit):
         if 'executable' in self.config['SubmitFile']:
             executable = self.config['SubmitFile']['executable']
         self.write_line(f, '%s ./%s' % (executable, glidein_script))
-
         self.write_line(f, 'if [ $CLEANUP -eq 1 ]; then')
         self.write_line(f, '    rm -rf $LOCAL_DIR')
         self.write_line(f, 'fi')
@@ -270,7 +272,7 @@ class SubmitPBS(Submit):
 
         return num_cpus, mem_requested, mem_advertised
 
-    def write_submit_file(self, filename, state, group_jobs, cluster_config):
+    def write_submit_file(self, filename, state, group_jobs, cluster_config, presigned_put_url=None):
         """
         Writing the submit file
 
@@ -307,7 +309,8 @@ class SubmitPBS(Submit):
             self.write_general_header(f, cluster_config, mem=mem_requested, num_cpus=num_cpus,
                                       num_gpus=num_gpus, walltime_hours=walltime,
                                       disk=disk,
-                                      num_jobs = state["count"] if group_jobs else 0)
+                                      num_jobs = state["count"] if group_jobs else 0,
+                                      presigned_put_url=presigned_put_url)
 
             if "custom_header" in self.config["SubmitFile"]:
                 self.write_line(f, self.config["SubmitFile"]["custom_header"])
@@ -359,12 +362,19 @@ class SubmitPBS(Submit):
         self.write_submit_file(submit_filename, state, group_jobs, cluster_config)
         num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
         for i in xrange(num_submits):
+            if self.config['StartdLogging']['send_startd_logs'] is True:
+                presigned_put_url = self.get_presigned_put_url()
+                self.write_submit_file(submit_filename,
+                                       state,
+                                       group_jobs,
+                                       cluster_config,
+                                       presigned_put_url)
             cmd = self.config[partition]["submit_command"] + " " + submit_filename
             print(cmd)
             if not ('Mode' in self.config and 'dryrun' in self.config['Mode'] and
                     self.config['Mode']['dryrun']):
-                if subprocess.call(cmd,shell=True):
-                    raise Exception('failed to launch glidein')
+                subprocess.check_call(cmd, shell=True)
+
 
     def cleanup(self, cmd, direc):
         """

@@ -14,6 +14,12 @@ services:
     volumes:
       - "/home/hskarlupka/code/pyglidein/client.py:/pyglidein/client.py"
       - "/home/hskarlupka/code/pyglidein/submit.py:/pyglidein/submit.py"
+  pyglidein-client-pbs-torque:
+    image: wipac/pyglidein_client_pbs_torque:1.0
+    networks:
+      app_net:
+    hostname: pyglidein-client-pbs-torque
+    privileged: true
   minio:
     image: minio/minio
     networks:
@@ -23,9 +29,6 @@ services:
       MINIO_ACCESS_KEY: minio
       MINIO_SECRET_KEY: minio123
     command: server /data
-
-
-
 networks:
   app_net:
     driver: bridge

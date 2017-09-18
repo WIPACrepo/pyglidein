@@ -12,7 +12,8 @@ class TestHTCondorGlidein(unittest.TestCase):
 
         # Submitting some sleep jobs
         job = {"executable": "/bin/sleep",
-               "arguments": "5m"}
+               "arguments": "5m",
+               "request_memory": "2000"}
 
         sub = htcondor.Submit(job)
         schedd = htcondor.Schedd()
@@ -40,7 +41,8 @@ class TestHTCondorGlidein(unittest.TestCase):
         output_text = "hello pyglidein"
         job = {"executable": "/bin/echo",
                "arguments": output_text,
-               "output": output_file}
+               "output": output_file,
+               "request_memory": "2000"}
 
         sub = htcondor.Submit(job)
         schedd = htcondor.Schedd()
