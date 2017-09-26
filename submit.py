@@ -222,7 +222,7 @@ class SubmitPBS(Submit):
         if not os.path.isfile(os.path.join(glidein_loc, 'os_arch.sh')):
             raise Exception("%s does not exist!"%os.path.join(glidein_loc, 'os_arch.sh'))
         self.write_line(f, 'ln -fs %s %s' % (os.path.join(glidein_loc, 'os_arch.sh'), 'os_arch.sh'))
-        self.write_line(f, 'trap \'kill -TERM $PID\' SIGTERM SIGKILL')
+        self.write_line(f, 'ln -fs %s %s' % (os.path.join(glidein_loc, 'log_shipper.sh'), 'log_shipper.sh'))
         f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL ')
         if 'site' in self.config['Glidein']:
             f.write('SITE=$SITE ')
@@ -658,6 +658,8 @@ class SubmitCondor(Submit):
             if not os.path.isfile(osarch_script):
                 raise Exception("os_arch.sh not found")
             infiles.append(osarch_script)
+            log_shipper_script = os.path.join(os.path.dirname(glidein_script),'log_shipper.sh')
+            infiles.append(log_shipper_script)
             if "tarball" in self.config["Glidein"]:
                 if not os.path.isfile(self.config["Glidein"]["tarball"]):
                     raise Exception("provided tarball does not exist")

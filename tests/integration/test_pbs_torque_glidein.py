@@ -5,7 +5,7 @@ import unittest
 from minio import Minio
 
 
-class TestHTCondorGlidein(unittest.TestCase):
+class TestPBSTorqueGlidein(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):

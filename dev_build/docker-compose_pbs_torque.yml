@@ -7,15 +7,12 @@ services:
     hostname: pyglidein-server
     volumes:
       - "/home/hskarlupka/code/pyglidein/tests:/pyglidein/tests"
-  pyglidein-client:
-    image: wipac/pyglidein_client:1.0
+  pyglidein-client-pbs-torque:
+    image: wipac/pyglidein_client_pbs_torque:1.0
     networks:
       app_net:
-    hostname: pyglidein-client
+    hostname: pyglidein-client-pbs-torque
     privileged: true
-    volumes:
-      - "/home/hskarlupka/code/pyglidein/client.py:/pyglidein/client.py"
-      - "/home/hskarlupka/code/pyglidein/submit.py:/pyglidein/submit.py"
   minio:
     image: minio/minio
     networks:

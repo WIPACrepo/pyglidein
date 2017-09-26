@@ -198,9 +198,17 @@ export PATH=$PATH:$_condor_SBIN:$PWD/glideinExec/bin
 export LD_LIBRARY_PATH=$_condor_LIB:$_condor_LIB/condor:$LD_LIBRARY_PATH
 
 # run condor
-trap 'kill -TERM $PID' SIGTERM SIGKILL
+trap 'kill -TERM $PID; if [ -n $PID_LOG_SHIPPER ]; then kill -TERM $PID_LOG_SHIPPER; fi' SIGTERM SIGKILL
 glideinExec/sbin/condor_master -dyn -f -r 1200 &
 PID=$!
+
+# starting log_shipper
+if [ -n $PRESIGNED_PUT_URL ]
+  then
+    ../log_shipper.sh ${PRESIGNED_PUT_URL} &
+    PID_LOG_SHIPPER=$!
+fi
+
 wait $PID
 trap - SIGTERM SIGKILL
 wait $PID
