@@ -95,7 +95,7 @@ def main():
 
     # Loading secrets.  Fail if permissions wrong.
     if oct(stat.S_IMODE(os.stat(options.secrets).st_mode)) != "0600":
-        print('Set Permissions on {} to 600').format(options.secrets)
+        print('Set Permissions on {} to 600'.format(options.secrets))
         sys.exit(1)
     secrets_dict = Config(options.secrets)
     if 'StartdLogging' in secrets_dict:
