@@ -1,6 +1,7 @@
 #!/bin/bash -ex
 
 # Installing base packages
+yum clean all
 yum -y install \
 cron \
 epel-release \
@@ -28,20 +29,15 @@ chmod 755 /home/condor/condor-8.7.2/condor.sh
 
 # Installing pyglidein
 useradd pyglidein
+chmod 777 /home/pyglidein
 tar xvzf pyglidein.tar.gz
-#TODO: Cleanup how condor handles job outputs
-mkdir /pyglidein/out
 chown -R pyglidein:pyglidein /pyglidein
-#TODO: Cleanup how condor handles job outputs
-chmod 777 /pyglidein
-chmod 777 /pyglidein/out
 yum -y install python-pip
 pip install tornado
 pip install minio
 
 # Downloading pyglidein tarball
-wget -O /pyglidein/glidein.tar.gz -nv http://prod-exe.icecube.wisc.edu/glidein-RHEL_7_x86_64.tar.gz
-
+wget -O /opt/glidein.tar.gz -nv http://prod-exe.icecube.wisc.edu/glidein-RHEL_7_x86_64.tar.gz
 
 # Installing Runit
 wget http://smarden.org/runit/runit-2.1.2.tar.gz

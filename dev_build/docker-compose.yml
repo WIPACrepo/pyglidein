@@ -6,7 +6,8 @@ services:
       app_net:
     hostname: pyglidein-server
     volumes:
-      - "/home/hskarlupka/code/pyglidein/tests:/pyglidein/tests"
+      - "../:/pyglidein"
+      - "~/.pyglidein_secrets_server:/home/condor/.pyglidein_secrets"
   pyglidein-client:
     image: wipac/pyglidein_client:1.0
     networks:
@@ -14,8 +15,8 @@ services:
     hostname: pyglidein-client
     privileged: true
     volumes:
-      - "/home/hskarlupka/code/pyglidein/client.py:/pyglidein/client.py"
-      - "/home/hskarlupka/code/pyglidein/submit.py:/pyglidein/submit.py"
+      - "../:/pyglidein"
+      - "~/.pyglidein_secrets:/home/pyglidein/.pyglidein_secrets"
   minio:
     image: minio/minio
     networks:

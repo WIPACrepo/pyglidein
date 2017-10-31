@@ -9,12 +9,10 @@ import logging
 import socket
 import getpass
 from optparse import OptionParser
-import glob
-import shutil
-from minio import Minio
+import stat
 
 from util import json_decode
-from client_util import get_state, monitoring, config_options_dict
+from client_util import get_state, monitoring
 import submit
 
 from config import Config
@@ -76,24 +74,12 @@ def sort_states(state, columns, reverse=True):
     return sorted(state, key=compare, reverse=reverse)
 
 
-def create_bucket(config_startd_logging):
-    """Creates a new minio bucket for the glidein site if one doesn't exist."""
-
-    client = Minio(config_startd_logging['url'],
-                   access_key=config_startd_logging['access_key'],
-                   secret_key=config_startd_logging['secret_key'],
-                   secure=False
-                   )
-
-    if (client.bucket_exists(config_startd_logging['bucket'])):
-        logger.debug('%s bucket alreay exists' % config_startd_logging['bucket'])
-    else:
-        client.make_bucket(config_startd_logging['bucket'])
-
 def main():
     parser = OptionParser()
     parser.add_option('--config', type='string', default='cluster.config',
                       help="config file for cluster")
+    parser.add_option('--secrets', type='string', default='.pyglidein_secrets',
+                      help="secrets file for cluster")
     parser.add_option('--uuid', type='string',
                       default=getpass.getuser()+'@'+socket.gethostname(),
                       help="Unique id for this client")
@@ -105,20 +91,30 @@ def main():
     if 'StartdLogging' in config_dict:
         config_startd_logging = config_dict['StartdLogging']
     else:
-        config_startdlogging = {}
+        config_startd_logging = {}
+
+    # Loading secrets.  Fail if permissions wrong.
+    if oct(stat.S_IMODE(os.stat(options.secrets).st_mode)) != "0600":
+        print('Set Permissions on {} to 600').format(options.secrets)
+        sys.exit(1)
+    secrets_dict = Config(options.secrets)
+    if 'StartdLogging' in secrets_dict:
+        secrets_startd_logging = secrets_dict['StartdLogging']
+    else:
+        secrets_startd_logging = {}
 
     # Importing the correct class to handle the submit
     sched_type = config_cluster["scheduler"].lower()
     if sched_type == "htcondor":
-        scheduler = submit.SubmitCondor(config_dict)
+        scheduler = submit.SubmitCondor(config_dict, secrets_dict)
     elif sched_type == "pbs":
-        scheduler = submit.SubmitPBS(config_dict)
+        scheduler = submit.SubmitPBS(config_dict, secrets_dict)
     elif sched_type == "slurm":
-        scheduler = submit.SubmitSLURM(config_dict)
+        scheduler = submit.SubmitSLURM(config_dict, secrets_dict)
     elif sched_type == "uge":
-        scheduler = submit.SubmitUGE(config_dict)
+        scheduler = submit.SubmitUGE(config_dict, secrets_dict)
     elif sched_type == "lsf":
-        scheduler = submit.SubmitLSF(config_dict)
+        scheduler = submit.SubmitLSF(config_dict, secrets_dict)
     else:
         raise Exception('scheduler not supported')
 
@@ -132,13 +128,16 @@ def main():
         logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
 
     # Checking on startd logging configuration if enabled
-    if 'send_startd_logs' in config_startd_logging and config_startd_logging['send_startd_logs'] is True:
-        for config_val in ['url', 'bucket', 'access_key', 'secret_key']:
+    if ('send_startd_logs' in config_startd_logging and
+        config_startd_logging['send_startd_logs'] is True):
+        for config_val in ['url', 'bucket']:
             if config_val not in config_startd_logging:
                 logger.error('Missing %s configuration value in StartdLogging Section' % config_val)
                 sys.exit(1)
-        # Creating Bucket for Grid Site
-        create_bucket(config_startd_logging)
+        for secret_val in ['access_key', 'secret_key']:
+            if secret_val not in secrets_startd_logging:
+                logger.error('Missing %s secret value in StartdLogging Section' % secret_val)
+                sys.exit(1)
 
     while True:
         if 'ssh_state' in config_glidein and config_glidein['ssh_state']:

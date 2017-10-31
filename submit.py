@@ -2,31 +2,30 @@
 from __future__ import absolute_import, division, print_function
 
 import os
-import time
-import platform
 import subprocess
 import logging
-import tempfile
 import shutil
 import glob
-import datetime
 import uuid
-from minio import Minio
-from minio.error import ResponseError
+
+from client_util import get_presigned_put_url, get_presigned_get_url
+
 
 class Submit(object):
     """
     Base class for the submit classes
     Mostly to provide future expansion for common functions
     """
-    def __init__(self, config):
+    def __init__(self, config, secrets):
         """
         Initialize
 
         Args:
             config: cluster config dict for cluster
+            secrets: cluster secrets dict for cluster
         """
         self.config = config
+        self.secrets = secrets
 
     def submit(self):
         raise NotImplementedError()
@@ -80,23 +79,6 @@ class Submit(object):
     def cleanup(self, cmd, direc):
         pass
 
-    def get_presigned_put_url(self):
-        config_startd_logging = self.config['StartdLogging']
-
-        client = Minio(config_startd_logging['url'],
-                       access_key=config_startd_logging['access_key'],
-                       secret_key=config_startd_logging['secret_key'],
-                       secure=False
-                       )
-
-        filename = '{}_{}.tar.gz'.format(self.config['Glidein']['site'],
-                                            uuid.uuid4())
-        try:
-            return client.presigned_put_object(config_startd_logging['bucket'],
-                                               filename,
-                                               datetime.timedelta(days=3))
-        except ResponseError as err:
-            print(err)
 
 class SubmitPBS(Submit):
     """Submit a PBS / Torque job"""
@@ -108,7 +90,7 @@ class SubmitPBS(Submit):
 
     def write_general_header(self, f, cluster_config, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
-                             num_jobs=0, presigned_put_url=None):
+                             num_jobs=0, presigned_put_url=None, presigned_get_url=None):
         """
         Writing the header for a PBS submission script.
         Most of the pieces needed to tell PBS what resources
@@ -154,9 +136,10 @@ class SubmitPBS(Submit):
             self.write_option(f, "-e /dev/null")
         if num_jobs > 0:
             self.write_option(f, "-t 0-%d" % num_jobs)
-        if presigned_put_url is not None:
-            self.write_option(f, '-v PRESIGNED_PUT_URL="%s"' % presigned_put_url)
-
+        if presigned_put_url is not None and presigned_get_url:
+            env_vars = '-v PRESIGNED_PUT_URL="{}",PRESIGNED_GET_URL="{}"'.format(presigned_put_url,
+                                                                                 presigned_get_url)
+            self.write_option(f, env_vars)
 
     def write_glidein_variables(self, f, mem=1000, walltime_hours=12,
                                 num_cpus=1, num_gpus=0, disk=1):
@@ -223,7 +206,8 @@ class SubmitPBS(Submit):
             raise Exception("%s does not exist!"%os.path.join(glidein_loc, 'os_arch.sh'))
         self.write_line(f, 'ln -fs %s %s' % (os.path.join(glidein_loc, 'os_arch.sh'), 'os_arch.sh'))
         self.write_line(f, 'ln -fs %s %s' % (os.path.join(glidein_loc, 'log_shipper.sh'), 'log_shipper.sh'))
-        f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL ')
+        f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME '
+                'PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL PRESIGNED_GET_URL=$PRESIGNED_GET_URL ')
         if 'site' in self.config['Glidein']:
             f.write('SITE=$SITE ')
         f.write('ResourceName=ResourceName ')
@@ -272,7 +256,8 @@ class SubmitPBS(Submit):
 
         return num_cpus, mem_requested, mem_advertised
 
-    def write_submit_file(self, filename, state, group_jobs, cluster_config, presigned_put_url=None):
+    def write_submit_file(self, filename, state, group_jobs, cluster_config,
+                          presigned_put_url=None, presigned_get_url=None):
         """
         Writing the submit file
 
@@ -310,7 +295,8 @@ class SubmitPBS(Submit):
                                       num_gpus=num_gpus, walltime_hours=walltime,
                                       disk=disk,
                                       num_jobs = state["count"] if group_jobs else 0,
-                                      presigned_put_url=presigned_put_url)
+                                      presigned_put_url=presigned_put_url,
+                                      presigned_get_url=presigned_get_url)
 
             if "custom_header" in self.config["SubmitFile"]:
                 self.write_line(f, self.config["SubmitFile"]["custom_header"])
@@ -363,12 +349,15 @@ class SubmitPBS(Submit):
         num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
         for i in xrange(num_submits):
             if self.config['StartdLogging']['send_startd_logs'] is True:
-                presigned_put_url = self.get_presigned_put_url()
+                startd_logfile_name = '{}_{}.tar.gz'.format(self.config['Glidein']['site'], uuid.uuid4())
+                presigned_put_url = get_presigned_put_url(startd_logfile_name, self.config, self.secrets)
+                presigned_get_url = get_presigned_get_url(startd_logfile_name, self.config, self.secrets)
                 self.write_submit_file(submit_filename,
                                        state,
                                        group_jobs,
                                        cluster_config,
-                                       presigned_put_url)
+                                       presigned_put_url,
+                                       presigned_get_url)
             cmd = self.config[partition]["submit_command"] + " " + submit_filename
             print(cmd)
             if not ('Mode' in self.config and 'dryrun' in self.config['Mode'] and
@@ -593,7 +582,8 @@ class SubmitCondor(Submit):
                 self.write_line(f, 'ResourceName=$(grep -e "^GLIDEIN_ResourceName" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}"|sed "s/\\"//g")')
             if 'cluster' in self.config['Glidein']:
                 self.write_line(f, 'CLUSTER="%s"' % self.config['Glidein']['cluster'])
-            f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL ')
+            f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK '
+                    'PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL PRESIGNED_GET_URL=$PRESIGNED_GET_URL ')
             if 'site' in self.config['Glidein']:
                 f.write('SITE=$SITE ')
             f.write('ResourceName=$ResourceName ')
@@ -614,7 +604,8 @@ class SubmitCondor(Submit):
             mode |= 0o111
             os.fchmod(f.fileno(), mode & 0o7777)
 
-    def make_submit_file(self, filename, env_wrapper, state, group_jobs, cluster_config, presigned_put_url=None):
+    def make_submit_file(self, filename, env_wrapper, state, group_jobs, cluster_config,
+                         presigned_put_url=None, presigned_get_url=None):
         """
         Creating HTCondor submit file
 
@@ -695,8 +686,10 @@ class SubmitCondor(Submit):
 
             # Creating environment variables
             environment_variables = ''
-            if presigned_put_url is not None:
-                environment_variables = '"PRESIGNED_PUT_URL=%s"' % presigned_put_url
+            if presigned_put_url is not None and presigned_get_url is not None:
+                environment_variables = ('"PRESIGNED_PUT_URL={} '
+                                         'PRESIGNED_GET_URL={}"').format(presigned_put_url,
+                                                                         presigned_get_url)
             if environment_variables != '':
                 self.write_line(f, 'environment = %s' % environment_variables)
 
@@ -729,13 +722,19 @@ class SubmitCondor(Submit):
         num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
         for i in range(num_submits):
             if self.config['StartdLogging']['send_startd_logs'] is True:
-                presigned_put_url = self.get_presigned_put_url()
+                startd_logfile_name = '{}_{}.tar.gz'.format(self.config['Glidein']['site'],
+                                                            uuid.uuid4())
+                presigned_put_url = get_presigned_put_url(startd_logfile_name, self.config,
+                                                          self.secrets)
+                presigned_get_url = get_presigned_get_url(startd_logfile_name, self.config,
+                                                          self.secrets)
                 self.make_submit_file(submit_filename,
                                       env_filename,
                                       state,
                                       group_jobs,
                                       cluster_config,
-                                      presigned_put_url)
+                                      presigned_put_url,
+                                      presigned_get_url)
             else:
                 self.make_submit_file(submit_filename,
                                       env_filename,

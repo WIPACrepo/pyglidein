@@ -43,6 +43,9 @@ fi
 if [ -z $DISK ]; then
     DISK=8000000
 fi
+if [ -z $PRESIGNED_GET_URL ]; then
+  PRESIGNED_GET_URL="none"
+fi
 # CVMFS is always true with parrot
 CVMFS="True"
 
@@ -113,7 +116,7 @@ export _condor_SLOT_TYPE_1_PARTITIONABLE="True"
 #export _condor_SLOT_TYPE_1_CONSUMPTION_POLICY="True"
 #export _condor_SLOT_TYPE_1_CONSUMPTION_GPUs="quantize(ifThenElse(target.RequestGpus =!= undefined,target.RequestGpus,0),{0})";
 export _condor_SLOT_WEIGHT="Cpus";
-export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists HAS_CVMFS_icecube_opensciencegrid_org GLIDEIN_Site GLIDEIN_SiteResource GLIDEIN_Max_Walltime GPU_NAMES"
+export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists HAS_CVMFS_icecube_opensciencegrid_org GLIDEIN_Site GLIDEIN_SiteResource GLIDEIN_Max_Walltime GPU_NAMES PRESIGNED_GET_URL"
 export _condor_STARTER_JOB_ENVIRONMENT="\"GLIDEIN_Site=${SITE} GLIDEIN_SiteResource=${ResourceName} GLIDEIN_LOCAL_TMP_DIR=${PWD} GOTO_NUM_THREADS=1\"";
 export _condor_START="((GPUs > 0) ? (isUndefined(RequestGPUs) ? FALSE : (RequestGPUs > 0)) : TRUE)";
 export _condor_RANK="(isUndefined(RequestGPUs) ? 0 : (RequestGPUs * 10000)) + RequestMemory";
@@ -125,6 +128,7 @@ export _campusfactory_wntmp=$PWD
 export _condor_UPDATE_COLLECTOR_WITH_TCP="True"
 export _campusfactory_CAMPUSFACTORY_LOCATION=$PWD
 export _condor_USER_JOB_WRAPPER=$PWD/user_job_wrapper.sh
+export _condor_PRESIGNED_GET_URL="\"$PRESIGNED_GET_URL\""
 
 # detect CVMFS and get the OS type
 OS_ARCH="RHEL_6_x86_64"
@@ -198,7 +202,7 @@ export PATH=$PATH:$_condor_SBIN:$PWD/glideinExec/bin
 export LD_LIBRARY_PATH=$_condor_LIB:$_condor_LIB/condor:$LD_LIBRARY_PATH
 
 # run condor
-trap 'kill -TERM $PID; if [ -n $PID_LOG_SHIPPER ]; then kill -TERM $PID_LOG_SHIPPER; fi' SIGTERM SIGKILL
+trap 'kill -TERM $PID; if [ -n $PID_LOG_SHIPPER ]; then kill -TERM $PID_LOG_SHIPPER; fi' SIGTERM SIGINT
 glideinExec/sbin/condor_master -dyn -f -r 1200 &
 PID=$!
 

@@ -1,0 +1,90 @@
+{
+  "Description": "Cloud Formation Template to launch a new PyGliden Logging Bucket",
+  "Parameters": {
+    "BucketName": {
+      "Description": "Bucket Name",
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "LoggingUser": {
+      "Type": "AWS::IAM::User",
+      "Properties": {
+      }
+    },
+    "LoggingUserAccessKey": {
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+        "UserName": {"Ref": "LoggingUser"}
+      }
+    },
+    "LoggingBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {"Ref": "BucketName"},
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "DeleteEverythingInThreeMonths",
+              "Prefix": "",
+              "Status": "Enabled",
+              "ExpirationInDays": "90"
+            }
+          ]
+        }
+      }
+    },
+    "LoggingBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {"Ref": "LoggingBucket"},
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action":["s3:GetObject"],
+	            "Effect":"Allow",
+	            "Resource": {"Fn::Join" : ["", ["arn:aws:s3:::", {"Ref" : "LoggingBucket"}, "/*" ]]},
+	            "Principal": {
+                "AWS": {"Fn::GetAtt" : [ "LoggingUser" , "Arn" ]}
+              }
+            },
+            {
+              "Action":["s3:ListBucket"],
+              "Effect":"Allow",
+              "Resource": {"Fn::Join" : ["", ["arn:aws:s3:::", {"Ref" : "LoggingBucket"} ]]},
+              "Principal": {
+                "AWS": {"Fn::GetAtt" : [ "LoggingUser" , "Arn" ]}
+              }
+            },
+            {
+              "Action":["s3:GetBucketLocation"],
+              "Effect":"Allow",
+              "Resource": {"Fn::Join" : ["", ["arn:aws:s3:::", {"Ref" : "LoggingBucket"} ]]},
+              "Principal": {
+                "AWS": {"Fn::GetAtt" : [ "LoggingUser" , "Arn" ]}
+              }
+            },
+            {
+              "Action":["s3:PutObject"],
+              "Effect":"Allow",
+              "Resource": {"Fn::Join" : ["", ["arn:aws:s3:::", {"Ref" : "LoggingBucket"}, "/*" ]]},
+              "Principal": {
+                "AWS": {"Fn::GetAtt" : [ "LoggingUser" , "Arn" ]}
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "AccessKeyId": {
+      "Description": "Access Key Id for Bucket User",
+      "Value": {"Ref": "LoggingUserAccessKey"}
+    },
+    "SecretAccessKey": {
+      "Description": "Secrety Access Key for Bucket User",
+      "Value": {"Fn::GetAtt" : [ "LoggingUserAccessKey" , "SecretAccessKey" ]}
+    }
+  }
+}

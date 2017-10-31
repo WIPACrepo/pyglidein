@@ -19,10 +19,14 @@ delay = -1
 loc = /pyglidein
 
 # Filename of tarball to be extracted
-tarball = glidein.tar.gz
+tarball = /opt/glidein.tar.gz
 
 # Filename of the executable
-executable = glidein_start.sh
+executable = /pyglidein/glidein_start.sh
+
+delay = 10
+site = WIPAC_Dev
+glidein_script = glidein_start.sh
 
 [Cluster]
 # User under which the jobs are being submitted
@@ -78,6 +82,9 @@ idle_cmd = qstat -i -u pyglidein|grep glidein|wc -l
 # `[]` in it, which gridftp takes offense to.
 # groups_jobs = True
 
+whole_node = False
+walltime_hrs = 1
+
 [SubmitFile]
 # Filename of the submit file
 filename = submit.pbs
@@ -90,14 +97,7 @@ env_wrapper_name = env_wrapper.sh
 # Special enviroment variables that need to be set
 http_proxy = http://squid.icecube.wisc.edu:3128
 
-[Glidein]
-# run every 60 seconds
-delay = 10
-site = WIPAC_Dev
-
 [StartdLogging]
 send_startd_logs = True
-url = minio:9000
-bucket = wipac-dev
-access_key = minio
-secret_key = minio123
+url = s3.amazonaws.com
+bucket = pyglidein-logging-wipac-dev

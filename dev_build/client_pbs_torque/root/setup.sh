@@ -1,6 +1,7 @@
 #!/bin/bash -ex
 
 # Installing base packages
+yum clean all
 yum -y install \
 boost-devel \
 epel-release \
@@ -51,7 +52,7 @@ pip install tornado
 pip install minio
 
 # Downloading pyglidein tarball
-wget -O /pyglidein/glidein.tar.gz -nv http://prod-exe.icecube.wisc.edu/glidein-RHEL_7_x86_64.tar.gz
+wget -O /opt/glidein.tar.gz -nv http://prod-exe.icecube.wisc.edu/glidein-RHEL_7_x86_64.tar.gz
 
 # Installing Runit
 wget -nv http://smarden.org/runit/runit-2.1.2.tar.gz

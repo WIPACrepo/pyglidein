@@ -1,25 +1,46 @@
+from __future__ import absolute_import, division, print_function
+
 import htcondor
 import os
+import sys
 import time
 import unittest
-from minio import Minio
+import urllib
+import tarfile
+import glob
+import tempfile
+
+# TODO: Install pyglidein egg instead of appending paths
+sys.path.append('/pyglidein')
+from config import Config
+
+CONFIGURATION = '/pyglidein/dev_build/client/root/etc/sv/pyglidein_client/htcondor_config'
+SECRETS = '/home/condor/.pyglidein_secrets'
 
 
 class TestHTCondorGlidein(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.glidein_site = 'WIPAC_Dev'
-        cls.minio_url = 'minio:9000'
-        cls.minio_bucket = 'wipac-dev'
-        cls.minio_acces_key = 'minio'
-        cls.minio_secret_key = 'minio123'
-        cls.minio_secure = False
+        config_dict = Config(CONFIGURATION)
+        secrets_dict = Config(SECRETS)
+        cls.config = config_dict
+        cls.secrets = secrets_dict
+
+        cls.glidein_site = config_dict['Glidein']['site']
+        cls.minio_url = config_dict['StartdLogging']['url']
+        cls.minio_bucket = config_dict['StartdLogging']['bucket']
+        cls.minio_acces_key = secrets_dict['StartdLogging']['access_key']
+        cls.minio_secret_key = secrets_dict['StartdLogging']['secret_key']
+        cls.minio_secure = True
         cls.pyglidein_client_name = 'pyglidein-client'
 
-    def test_glidein_startd(self):
+        cls.tmpdir = tempfile.mkdtemp()
 
-        glidein_site = 'WIPAC_Dev'
+    def setUp(self):
+        os.chdir(self.tmpdir)
+
+    def test_glidein_startd(self):
 
         # Submitting some sleep jobs
         job = {"executable": "/bin/sleep",
@@ -29,7 +50,7 @@ class TestHTCondorGlidein(unittest.TestCase):
         sub = htcondor.Submit(job)
         schedd = htcondor.Schedd()
         with schedd.transaction() as txn:
-            sub.queue(txn, 100)
+            sub.queue(txn, 8)
 
         # Waiting for the glideins to start
         time.sleep(60)
@@ -41,9 +62,9 @@ class TestHTCondorGlidein(unittest.TestCase):
                         msg='No STARTDs found.')
         for startd in startds:
             self.assertTrue(
-                startd['GLIDEIN_Site'] == glidein_site,
+                startd['GLIDEIN_Site'] == self.glidein_site,
                 msg='GLIDEIN_Site CLASSAD: {} not equal to {}'.format(
-                    startd['GLIDEIN_Site'], glidein_site))
+                    startd['GLIDEIN_Site'], self.glidein_site))
 
     def test_submit_hello_world(self):
 
@@ -61,7 +82,9 @@ class TestHTCondorGlidein(unittest.TestCase):
 
         # Waiting for job to complete
         for i in xrange(0, 5):
-            if sum(1 for _ in schedd.history('ClusterId=={}'.format(cluster_id), ['ClusterId', 'JobStatus'], 1)) == 0:
+            history = schedd.history('ClusterId=={}'.format(cluster_id),
+                                     ['ClusterId', 'JobStatus'], 1)
+            if sum(1 for _ in history) == 0:
                 time.sleep(1)
             else:
                 break
@@ -84,19 +107,23 @@ class TestHTCondorGlidein(unittest.TestCase):
         sub = htcondor.Submit(job)
         schedd = htcondor.Schedd()
         with schedd.transaction() as txn:
-            sub.queue(txn, 100)
+            sub.queue(txn, 1)
 
         # Waiting for the glideins to start
         time.sleep(60)
 
-        client = Minio(self.minio_url,
-                       access_key=self.minio_acces_key,
-                       secret_key=self.minio_secret_key,
-                       secure=self.minio_secure
-                       )
-        objects = client.list_objects(self.minio_bucket, prefix=self.glidein_site, recursive=False)
-        object_count = sum(1 for _ in objects)
-        self.assertTrue(object_count > 0)
+        coll = htcondor.Collector()
+        startd = coll.locateAll(htcondor.DaemonTypes.Startd)[0]
+
+        url = startd['PRESIGNED_GET_URL']
+        log_filename = 'logfile.tar.gz'
+        logfile_opener = urllib.URLopener()
+        logfile_opener.retrieve(url, log_filename)
+        with tarfile.open(log_filename, 'r:gz') as tar:
+            tar.extractall()
+        logdir = glob.glob('log.*')[0]
+        self.assertTrue(os.path.exists(os.path.join(logdir, 'MasterLog')),
+                        msg='Failed to download logfile: {}'.format(url))
 
     def tearDown(self):
 
