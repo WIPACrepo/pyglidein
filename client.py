@@ -2,17 +2,17 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+import sys
 import time
 import subprocess
 import logging
 import socket
 import getpass
 from optparse import OptionParser
-import glob
-import shutil
+import stat
 
 from util import json_decode
-from client_util import get_state, monitoring, config_options_dict
+from client_util import get_state, monitoring
 import submit
 
 from config import Config
@@ -36,15 +36,15 @@ def get_running(cmd):
 def sort_states(state, columns, reverse=True):
     """
     Sort the states according to the list given by prioritize_jobs.
-    
-    prioritize_jobs (or columns in this case) is list of according to 
-    which state should be prioritized for job submission. The position 
-    in the list indicates the prioritization. columns = ["memory", "disk"] 
+
+    prioritize_jobs (or columns in this case) is list of according to
+    which state should be prioritized for job submission. The position
+    in the list indicates the prioritization. columns = ["memory", "disk"]
     with reverse=True means jobs with high memory will be submitted before
-    jobs with lower memory requirements, followed by jobs with high disk vs. 
-    low disk requirement. Jobs with high memory and disk requirements 
-    will be submitted first then jobs with high memory and medium disk 
-    requirements, and so on and so forth. 
+    jobs with lower memory requirements, followed by jobs with high disk vs.
+    low disk requirement. Jobs with high memory and disk requirements
+    will be submitted first then jobs with high memory and medium disk
+    requirements, and so on and so forth.
 
     Args:
         state: List of states
@@ -73,10 +73,13 @@ def sort_states(state, columns, reverse=True):
         return ret
     return sorted(state, key=compare, reverse=reverse)
 
+
 def main():
     parser = OptionParser()
     parser.add_option('--config', type='string', default='cluster.config',
                       help="config file for cluster")
+    parser.add_option('--secrets', type='string', default='.pyglidein_secrets',
+                      help="secrets file for cluster")
     parser.add_option('--uuid', type='string',
                       default=getpass.getuser()+'@'+socket.gethostname(),
                       help="Unique id for this client")
@@ -85,19 +88,38 @@ def main():
     config_dict = Config(options.config)
     config_glidein = config_dict['Glidein']
     config_cluster = config_dict['Cluster']
+    if 'StartdLogging' in config_dict:
+        config_startd_logging = config_dict['StartdLogging']
+    else:
+        config_startd_logging = {}
+
+    # Loading secrets.  Fail if permissions wrong.
+    if os.path.isfile(options.secrets):
+        if os.stat(options.secrets).st_mode & (stat.S_IXGRP | stat.S_IRWXO):
+            print('Set Permissions on {} to 600'.format(options.secrets))
+            sys.exit(1)
+        secrets_dict = Config(options.secrets)
+        if 'StartdLogging' in secrets_dict:
+            secrets_startd_logging = secrets_dict['StartdLogging']
+        else:
+            secrets_startd_logging = {}
+    else:
+        print('Error Accessing Secrets File: {}.  '
+              'Did you set the --secrets flag?'.format(options.secrets))
+        sys.exit(1)
 
     # Importing the correct class to handle the submit
     sched_type = config_cluster["scheduler"].lower()
     if sched_type == "htcondor":
-        scheduler = submit.SubmitCondor(config_dict)
+        scheduler = submit.SubmitCondor(config_dict, secrets_dict)
     elif sched_type == "pbs":
-        scheduler = submit.SubmitPBS(config_dict)
+        scheduler = submit.SubmitPBS(config_dict, secrets_dict)
     elif sched_type == "slurm":
-        scheduler = submit.SubmitSLURM(config_dict)
+        scheduler = submit.SubmitSLURM(config_dict, secrets_dict)
     elif sched_type == "uge":
-        scheduler = submit.SubmitUGE(config_dict)
+        scheduler = submit.SubmitUGE(config_dict, secrets_dict)
     elif sched_type == "lsf":
-        scheduler = submit.SubmitLSF(config_dict)
+        scheduler = submit.SubmitLSF(config_dict, secrets_dict)
     else:
         raise Exception('scheduler not supported')
 
@@ -109,6 +131,18 @@ def main():
         logging.basicConfig(level=logging.DEBUG,format='%(asctime)s %(levelname)s %(message)s')
     else:
         logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
+
+    # Checking on startd logging configuration if enabled
+    if ('send_startd_logs' in config_startd_logging and
+        config_startd_logging['send_startd_logs'] is True):
+        for config_val in ['url', 'bucket']:
+            if config_val not in config_startd_logging:
+                logger.error('Missing %s configuration value in StartdLogging Section' % config_val)
+                sys.exit(1)
+        for secret_val in ['access_key', 'secret_key']:
+            if secret_val not in secrets_startd_logging:
+                logger.error('Missing %s secret value in StartdLogging Section' % secret_val)
+                sys.exit(1)
 
     while True:
         if 'ssh_state' in config_glidein and config_glidein['ssh_state']:
@@ -135,14 +169,14 @@ def main():
                     logger.warn('error getting running job count', exc_info=True)
                     continue
                 info['glideins_launched'][partition] = 0
-                limit = min(config_cluster["limit_per_submit"], 
+                limit = min(config_cluster["limit_per_submit"],
                             config_cluster["max_total_jobs"] - info['glideins_running'][partition],
                             max(config_cluster.get("max_idle_jobs", 1000) - idle, 0))
-                # Prioitize job submission. By default, prioritize submission of gpu and high memory jobs. 
+                # Prioitize job submission. By default, prioritize submission of gpu and high memory jobs.
                 state = sort_states(state, config_cluster["prioritize_jobs"])
                 for s in state:
                     if sched_type == "pbs":
-                        s["memory"] = s["memory"]*1024/1000 
+                        s["memory"] = s["memory"]*1024/1000
                     if limit <= 0:
                         logger.info('reached limit')
                         break

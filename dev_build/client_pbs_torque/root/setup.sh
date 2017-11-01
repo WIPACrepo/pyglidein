@@ -3,13 +3,17 @@
 # Installing base packages
 yum clean all
 yum -y install \
-cron \
+boost-devel \
 epel-release \
 glibc-static \
+iproute \
 libgomp \
+libtool \
 libstdc++-static \
+libxml2-devel \
 perl \
 openssl \
+openssl-devel \
 wget
 
 # Updating ca certs to get epel mirrors to work
@@ -17,21 +21,32 @@ yum -y upgrade ca-certificates --disablerepo=epel
 
 yum -y groupinstall 'Development Tools'
 
-# Installing condor
-useradd condor
-su -c "wget http://prod-exe.icecube.wisc.edu/htcondor/condor-8.7.2-x86_64_RedHat7-stripped.tar.gz" - condor
-su -c "mkdir ~/condor-8.7.2; cd ~/condor-8.7.2; mkdir local" - condor
-su -c "cd ~/condor-8.7.2; tar -z -x -f ~/condor-8.7.2-*-stripped.tar.gz" - condor
-su -c "cd ~/condor-8.7.2; ./condor-8.7.2-*-stripped/condor_install --local-dir /home/condor/condor-8.7.2/local --make-personal-condor" - condor
-rm -f /home/condor/condor-8.7.2-x86_64_RedHat7-stripped.tar.gz
-chmod 755 /home/condor
-chmod 755 /home/condor/condor-8.7.2/condor.sh
+# Installing PBS Torque
+cd /usr/local
+git clone https://github.com/adaptivecomputing/torque.git -b 6.1.1 6.1.1
+cd 6.1.1
+./autogen.sh
+./configure --enable-cpusets --with-default-server=localhost
+make -j 8
+make install
+. /etc/profile.d/torque.sh
+yes | ./torque.setup root localhost
+
+echo "\$pbsserver localhost" >> /var/spool/torque/mom_priv/config
+echo "\$exec_with_exec true" >> /var/spool/torque/mom_priv/config
+echo "localhost" >> /var/spool/torque/server_priv/nodes
+echo "pyglidein-client-pbs-torque np=8" >> /var/spool/torque/server_priv/nodes
 
 # Installing pyglidein
+cd /
 useradd pyglidein
-chmod 777 /home/pyglidein
 tar xvzf pyglidein.tar.gz
+#TODO: Cleanup how condor handles job outputs
+mkdir /pyglidein/out
 chown -R pyglidein:pyglidein /pyglidein
+#TODO: Cleanup how condor handles job outputs
+chmod 777 /pyglidein
+chmod 777 /pyglidein/out
 yum -y install python-pip
 pip install tornado
 pip install minio
@@ -40,7 +55,7 @@ pip install minio
 wget -O /opt/glidein.tar.gz -nv http://prod-exe.icecube.wisc.edu/glidein-RHEL_7_x86_64.tar.gz
 
 # Installing Runit
-wget http://smarden.org/runit/runit-2.1.2.tar.gz
+wget -nv http://smarden.org/runit/runit-2.1.2.tar.gz
 tar xvzf runit-2.1.2.tar.gz
 cd admin/runit-2.1.2/
 ./package/install
@@ -72,19 +87,26 @@ EOF
 
 # Creating service links
 mkdir /etc/service
-ln -s /etc/sv/condor /etc/service/condor
-ln -s /etc/sv/pyglidein_client /etc/service/pyglidein_client
 ln -s /etc/sv/autofs /etc/service/autofs
+ln -s /etc/sv/trqauthd /etc/service/trqauthd
+ln -s /etc/sv/pbs_mom /etc/service/pbs_mom
+ln -s /etc/sv/pbs_server /etc/service/pbs_server
+ln -s /etc/sv/pbs_sched /etc/service/pbs_sched
+ln -s /etc/sv/pyglidein_client /etc/service/pyglidein_client
+#ln -s /etc/sv/autofs /etc/service/autofs
 
 # Creating data directory
 mkdir /data/
 mkdir /data/log
-mkdir /data/log/condor
+mkdir /data/log/trqauthd
+mkdir /data/log/pbs_mom
+mkdir /data/log/pbs_sched
+mkdir /data/log/pbs_server
 mkdir /data/log/pyglidein_client
-mkdir /data/log/autofs
+#mkdir /data/log/autofs
 
 # Removing packages
-yum -y groupremove 'Development Tools'
+#yum -y groupremove 'Development Tools'
 
 # Removing root tarball
 rm -f /root.tar.gz

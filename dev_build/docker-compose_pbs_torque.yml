@@ -8,15 +8,15 @@ services:
     volumes:
       - "../:/pyglidein"
       - "~/.pyglidein_secrets_server:/home/condor/.pyglidein_secrets"
-  pyglidein-client:
-    image: wipac/pyglidein_client:1.0
+  pyglidein-client-pbs-torque:
+    image: wipac/pyglidein_client_pbs_torque:1.0
     networks:
       app_net:
-    hostname: pyglidein-client
-    privileged: true
+    hostname: pyglidein-client-pbs-torque
     volumes:
       - "../:/pyglidein"
       - "~/.pyglidein_secrets:/home/pyglidein/.pyglidein_secrets"
+    privileged: true
   minio:
     image: minio/minio
     networks:

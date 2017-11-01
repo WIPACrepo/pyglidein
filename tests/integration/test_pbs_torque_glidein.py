@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 import htcondor
 import os
 import sys
@@ -14,11 +12,12 @@ import tempfile
 sys.path.append('/pyglidein')
 from config import Config
 
-CONFIGURATION = '/pyglidein/dev_build/client/root/etc/sv/pyglidein_client/htcondor_config'
+CONFIGURATION = ('/pyglidein/dev_build/client_pbs_torque/root/etc/sv/pyglidein_client/'
+                 'pbs_torque_config')
 SECRETS = '/home/condor/.pyglidein_secrets'
 
 
-class TestHTCondorGlidein(unittest.TestCase):
+class TestPBSTorqueGlidein(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -41,7 +40,6 @@ class TestHTCondorGlidein(unittest.TestCase):
         os.chdir(self.tmpdir)
 
     def test_glidein_startd(self):
-
         # Submitting some sleep jobs
         job = {"executable": "/bin/sleep",
                "arguments": "5m",
@@ -85,7 +83,7 @@ class TestHTCondorGlidein(unittest.TestCase):
             history = schedd.history('ClusterId=={}'.format(cluster_id),
                                      ['ClusterId', 'JobStatus'], 1)
             if sum(1 for _ in history) == 0:
-                time.sleep(1)
+                time.sleep(10)
             else:
                 break
 

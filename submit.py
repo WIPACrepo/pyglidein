@@ -2,28 +2,30 @@
 from __future__ import absolute_import, division, print_function
 
 import os
-import sys
-import time
-import platform
 import subprocess
 import logging
-import tempfile
 import shutil
 import glob
+import uuid
+
+from client_util import get_presigned_put_url, get_presigned_get_url
+
 
 class Submit(object):
     """
     Base class for the submit classes
     Mostly to provide future expansion for common functions
     """
-    def __init__(self, config):
+    def __init__(self, config, secrets):
         """
         Initialize
 
         Args:
             config: cluster config dict for cluster
+            secrets: cluster secrets dict for cluster
         """
         self.config = config
+        self.secrets = secrets
 
     def submit(self):
         raise NotImplementedError()
@@ -77,6 +79,7 @@ class Submit(object):
     def cleanup(self, cmd, direc):
         pass
 
+
 class SubmitPBS(Submit):
     """Submit a PBS / Torque job"""
 
@@ -87,7 +90,7 @@ class SubmitPBS(Submit):
 
     def write_general_header(self, f, cluster_config, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
-                             num_jobs=0):
+                             num_jobs=0, presigned_put_url=None, presigned_get_url=None):
         """
         Writing the header for a PBS submission script.
         Most of the pieces needed to tell PBS what resources
@@ -133,6 +136,10 @@ class SubmitPBS(Submit):
             self.write_option(f, "-e /dev/null")
         if num_jobs > 0:
             self.write_option(f, "-t 0-%d" % num_jobs)
+        if presigned_put_url is not None and presigned_get_url:
+            env_vars = '-v PRESIGNED_PUT_URL="{}",PRESIGNED_GET_URL="{}"'.format(presigned_put_url,
+                                                                                 presigned_get_url)
+            self.write_option(f, env_vars)
 
     def write_glidein_variables(self, f, mem=1000, walltime_hours=12,
                                 num_cpus=1, num_gpus=0, disk=1):
@@ -198,8 +205,9 @@ class SubmitPBS(Submit):
         if not os.path.isfile(os.path.join(glidein_loc, 'os_arch.sh')):
             raise Exception("%s does not exist!"%os.path.join(glidein_loc, 'os_arch.sh'))
         self.write_line(f, 'ln -fs %s %s' % (os.path.join(glidein_loc, 'os_arch.sh'), 'os_arch.sh'))
-
-        f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME ')
+        self.write_line(f, 'ln -fs %s %s' % (os.path.join(glidein_loc, 'log_shipper.sh'), 'log_shipper.sh'))
+        f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME '
+                'PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL PRESIGNED_GET_URL=$PRESIGNED_GET_URL ')
         if 'site' in self.config['Glidein']:
             f.write('SITE=$SITE ')
         f.write('ResourceName=ResourceName ')
@@ -214,7 +222,6 @@ class SubmitPBS(Submit):
         if 'executable' in self.config['SubmitFile']:
             executable = self.config['SubmitFile']['executable']
         self.write_line(f, '%s ./%s' % (executable, glidein_script))
-
         self.write_line(f, 'if [ $CLEANUP -eq 1 ]; then')
         self.write_line(f, '    rm -rf $LOCAL_DIR')
         self.write_line(f, 'fi')
@@ -249,7 +256,8 @@ class SubmitPBS(Submit):
 
         return num_cpus, mem_requested, mem_advertised
 
-    def write_submit_file(self, filename, state, group_jobs, cluster_config):
+    def write_submit_file(self, filename, state, group_jobs, cluster_config,
+                          presigned_put_url=None, presigned_get_url=None):
         """
         Writing the submit file
 
@@ -286,7 +294,9 @@ class SubmitPBS(Submit):
             self.write_general_header(f, cluster_config, mem=mem_requested, num_cpus=num_cpus,
                                       num_gpus=num_gpus, walltime_hours=walltime,
                                       disk=disk,
-                                      num_jobs = state["count"] if group_jobs else 0)
+                                      num_jobs = state["count"] if group_jobs else 0,
+                                      presigned_put_url=presigned_put_url,
+                                      presigned_get_url=presigned_get_url)
 
             if "custom_header" in self.config["SubmitFile"]:
                 self.write_line(f, self.config["SubmitFile"]["custom_header"])
@@ -338,12 +348,22 @@ class SubmitPBS(Submit):
         self.write_submit_file(submit_filename, state, group_jobs, cluster_config)
         num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
         for i in xrange(num_submits):
+            if self.config['StartdLogging']['send_startd_logs'] is True:
+                startd_logfile_name = '{}_{}.tar.gz'.format(self.config['Glidein']['site'], uuid.uuid4())
+                presigned_put_url = get_presigned_put_url(startd_logfile_name, self.config, self.secrets)
+                presigned_get_url = get_presigned_get_url(startd_logfile_name, self.config, self.secrets)
+                self.write_submit_file(submit_filename,
+                                       state,
+                                       group_jobs,
+                                       cluster_config,
+                                       presigned_put_url,
+                                       presigned_get_url)
             cmd = self.config[partition]["submit_command"] + " " + submit_filename
             print(cmd)
             if not ('Mode' in self.config and 'dryrun' in self.config['Mode'] and
                     self.config['Mode']['dryrun']):
-                if subprocess.call(cmd,shell=True):
-                    raise Exception('failed to launch glidein')
+                subprocess.check_call(cmd, shell=True)
+
 
     def cleanup(self, cmd, direc):
         """
@@ -562,7 +582,8 @@ class SubmitCondor(Submit):
                 self.write_line(f, 'ResourceName=$(grep -e "^GLIDEIN_ResourceName" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}"|sed "s/\\"//g")')
             if 'cluster' in self.config['Glidein']:
                 self.write_line(f, 'CLUSTER="%s"' % self.config['Glidein']['cluster'])
-            f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK ')
+            f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK '
+                    'PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL PRESIGNED_GET_URL=$PRESIGNED_GET_URL ')
             if 'site' in self.config['Glidein']:
                 f.write('SITE=$SITE ')
             f.write('ResourceName=$ResourceName ')
@@ -583,7 +604,8 @@ class SubmitCondor(Submit):
             mode |= 0o111
             os.fchmod(f.fileno(), mode & 0o7777)
 
-    def make_submit_file(self, filename, env_wrapper, state, group_jobs, cluster_config):
+    def make_submit_file(self, filename, env_wrapper, state, group_jobs, cluster_config,
+                         presigned_put_url=None, presigned_get_url=None):
         """
         Creating HTCondor submit file
 
@@ -627,6 +649,8 @@ class SubmitCondor(Submit):
             if not os.path.isfile(osarch_script):
                 raise Exception("os_arch.sh not found")
             infiles.append(osarch_script)
+            log_shipper_script = os.path.join(os.path.dirname(glidein_script),'log_shipper.sh')
+            infiles.append(log_shipper_script)
             if "tarball" in self.config["Glidein"]:
                 if not os.path.isfile(self.config["Glidein"]["tarball"]):
                     raise Exception("provided tarball does not exist")
@@ -660,6 +684,15 @@ class SubmitCondor(Submit):
                 if state["gpus"] != 0:
                     self.write_line(f, 'request_gpus=%d' % int(state["gpus"]))
 
+            # Creating environment variables
+            environment_variables = ''
+            if presigned_put_url is not None and presigned_get_url is not None:
+                environment_variables = ('"PRESIGNED_PUT_URL={} '
+                                         'PRESIGNED_GET_URL={}"').format(presigned_put_url,
+                                                                         presigned_get_url)
+            if environment_variables != '':
+                self.write_line(f, 'environment = %s' % environment_variables)
+
             if "custom_footer" in self.config["SubmitFile"]:
                 self.write_line(f, self.config["SubmitFile"]["custom_footer"])
             if group_jobs:
@@ -686,14 +719,28 @@ class SubmitCondor(Submit):
                       cluster_config["group_jobs"] and
                       "count" in state)
         self.make_env_wrapper(env_filename, cluster_config)
-        self.make_submit_file(submit_filename,
-                              env_filename,
-                              state,
-                              group_jobs,
-                              cluster_config)
         num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
         for i in range(num_submits):
+            if self.config['StartdLogging']['send_startd_logs'] is True:
+                startd_logfile_name = '{}_{}.tar.gz'.format(self.config['Glidein']['site'],
+                                                            uuid.uuid4())
+                presigned_put_url = get_presigned_put_url(startd_logfile_name, self.config,
+                                                          self.secrets)
+                presigned_get_url = get_presigned_get_url(startd_logfile_name, self.config,
+                                                          self.secrets)
+                self.make_submit_file(submit_filename,
+                                      env_filename,
+                                      state,
+                                      group_jobs,
+                                      cluster_config,
+                                      presigned_put_url,
+                                      presigned_get_url)
+            else:
+                self.make_submit_file(submit_filename,
+                                      env_filename,
+                                      state,
+                                      group_jobs,
+                                      cluster_config)
             cmd = cluster_config["submit_command"] + " " + submit_filename
             print(cmd)
-            if subprocess.call(cmd, shell=True):
-                raise Exception('failed to launch glidein')
+            subprocess.check_call(cmd, shell=True)
