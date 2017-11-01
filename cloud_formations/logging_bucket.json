@@ -4,6 +4,10 @@
     "BucketName": {
       "Description": "Bucket Name",
       "Type": "String"
+    },
+    "Email" : {
+      "Type" : "String",
+      "Description" : "Email address to notify when an API activity has triggered an alarm"
     }
   },
   "Resources": {
@@ -74,6 +78,39 @@
             }
           ]
         }
+      }
+    },
+    "BucketSizeCloudWatchAlarm": {
+      "Type" : "AWS::CloudWatch::Alarm",
+      "Properties" : {
+        "AlarmActions" : [ { "Ref": "AlarmNotificationTopic" } ],
+        "AlarmDescription" : {"Fn::Join": ["-", [{ "Ref": "BucketName"}, "SizeAlarm"]]},
+        "AlarmName" : {"Fn::Join": ["-", [{ "Ref": "BucketName"}, "SizeAlarm"]]},
+        "ComparisonOperator" : "GreaterThanOrEqualToThreshold",
+        "EvaluationPeriods" : 1,
+        "MetricName" : "BucketSizeBytes",
+        "Dimensions": [
+          {
+            "Name":"BucketName",
+            "Value": { "Ref": "BucketName" }
+          }
+        ],
+        "Namespace" : "AWS/S3",
+        "Period" : 60,
+        "Statistic" : "Average",
+        "Threshold" : 10737418240,
+        "Unit" : "Bytes"
+      }
+    },
+    "AlarmNotificationTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "Subscription": [
+          {
+            "Endpoint": { "Ref": "Email" },
+            "Protocol": "email"
+          }
+        ]
       }
     }
   },
