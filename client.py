@@ -94,14 +94,19 @@ def main():
         config_startd_logging = {}
 
     # Loading secrets.  Fail if permissions wrong.
-    if oct(stat.S_IMODE(os.stat(options.secrets).st_mode)) != "0600":
-        print('Set Permissions on {} to 600'.format(options.secrets))
-        sys.exit(1)
-    secrets_dict = Config(options.secrets)
-    if 'StartdLogging' in secrets_dict:
-        secrets_startd_logging = secrets_dict['StartdLogging']
+    if os.path.isfile(options.secrets):
+        if os.stat(options.secrets).st_mode & (stat.S_IXGRP | stat.S_IRWXO):
+            print('Set Permissions on {} to 600'.format(options.secrets))
+            sys.exit(1)
+        secrets_dict = Config(options.secrets)
+        if 'StartdLogging' in secrets_dict:
+            secrets_startd_logging = secrets_dict['StartdLogging']
+        else:
+            secrets_startd_logging = {}
     else:
-        secrets_startd_logging = {}
+        print('Error Accessing Secrets File: {}.  '
+              'Did you set the --secrets flag?'.format(options.secrets))
+        sys.exit(1)
 
     # Importing the correct class to handle the submit
     sched_type = config_cluster["scheduler"].lower()
