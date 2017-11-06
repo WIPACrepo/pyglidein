@@ -10,7 +10,7 @@ from collections import Counter
 import distutils.version
 from datetime import datetime
 
-from util import json_encode, json_decode
+from pyglidein.util import json_encode, json_decode
 import tornado.escape
 tornado.escape.json_encode = json_encode
 tornado.escape.json_decode = json_decode

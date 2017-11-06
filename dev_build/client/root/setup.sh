@@ -30,11 +30,8 @@ chmod 755 /home/condor/condor-8.7.2/condor.sh
 # Installing pyglidein
 useradd pyglidein
 chmod 777 /home/pyglidein
-tar xvzf pyglidein.tar.gz
-chown -R pyglidein:pyglidein /pyglidein
 yum -y install python-pip
-pip install tornado
-pip install minio
+pip install ./pyglidein*
 
 # Downloading pyglidein tarball
 wget -O /opt/glidein.tar.gz -nv http://prod-exe.icecube.wisc.edu/glidein-RHEL_7_x86_64.tar.gz

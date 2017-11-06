@@ -15,4 +15,4 @@ else
 fi
 export PYTHONPATH
 
-exec chpst -u pyglidein /pyglidein/server.py -p 8001 --delay 10
+exec chpst -u pyglidein pyglidein_server -p 8001 --delay 10

@@ -22,12 +22,11 @@ loc = $HOME/glidein
 tarball = /opt/glidein.tar.gz
 
 # Filename of the executable
-executable = /pyglidein/glidein_start.sh
+executable = glidein_start.sh
 
 # run every 10 seconds
 delay = 10
 site = WIPAC_Dev
-glidein_script = /pyglidein/glidein_start.sh
 
 [Cluster]
 # User under which the jobs are being submitted

@@ -11,11 +11,11 @@ import getpass
 from optparse import OptionParser
 import stat
 
-from util import json_decode
-from client_util import get_state, monitoring
-import submit
+from pyglidein.util import json_decode
+from pyglidein.client_util import get_state, monitoring
+import pyglidein.submit as submit
 
-from config import Config
+from pyglidein.config import Config
 
 logger = logging.getLogger('client')
 

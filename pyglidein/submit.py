@@ -8,7 +8,7 @@ import shutil
 import glob
 import uuid
 
-from client_util import get_presigned_put_url, get_presigned_get_url
+from pyglidein.client_util import get_presigned_put_url, get_presigned_get_url
 
 
 class Submit(object):
@@ -47,7 +47,11 @@ class Submit(object):
         Returns:
             String that is the location of the script
         """
-        glidein_script = 'glidein_start.sh'
+        # If the user hasn't set ['Glidein']['glidein_script'] assume they want to use the
+        # glidein_scripts provided by the python package.
+        package_dir = os.path.dirname(os.path.abspath(__file__))
+        glidein_script = os.path.join(package_dir, 'glidein_start.sh')
+        
         if 'glidein_script' in self.config['Glidein']:
             glidein_script = self.config['Glidein']['glidein_script']
         return glidein_script
@@ -176,17 +180,14 @@ class SubmitPBS(Submit):
         if 'cluster' in self.config['Glidein']:
             self.write_line(f, 'CLUSTER="%s"' % self.config['Glidein']['cluster'])
 
-    def write_glidein_part(self, f, local_dir=None, glidein_tarball=None,
-                           glidein_script=None, glidein_loc=None):
+    def write_glidein_part(self, f, local_dir=None, glidein_tarball=None):
         """
         Writing the pieces needed to execute the glidein
 
         Args:
             f: python file object
             local_dir: what is the local directory
-            glidein_loc: directory of the glidein pieces
             glidein_tarball: file name of tarball
-            glidein_script: file name of glidein start script
         """
         self.write_line(f, 'CLEANUP=0')
         self.write_line(f, 'LOCAL_DIR=%s' % local_dir)
@@ -195,17 +196,20 @@ class SubmitPBS(Submit):
         self.write_line(f, '    CLEANUP=1')
         self.write_line(f, 'fi')
         self.write_line(f, 'cd $LOCAL_DIR')
-        if not glidein_loc:
-            glidein_loc = os.getcwd()
         if glidein_tarball:
             self.write_line(f, 'ln -fs %s %s' % (glidein_tarball, os.path.basename(glidein_tarball)))
-        if not os.path.isfile(os.path.join(glidein_loc, glidein_script)):
-            raise Exception("glidein_script %s does not exist!"%os.path.join(glidein_loc, glidein_script))
-        self.write_line(f, 'ln -fs %s %s' % (os.path.join(glidein_loc, glidein_script), glidein_script))
-        if not os.path.isfile(os.path.join(glidein_loc, 'os_arch.sh')):
-            raise Exception("%s does not exist!"%os.path.join(glidein_loc, 'os_arch.sh'))
-        self.write_line(f, 'ln -fs %s %s' % (os.path.join(glidein_loc, 'os_arch.sh'), 'os_arch.sh'))
-        self.write_line(f, 'ln -fs %s %s' % (os.path.join(glidein_loc, 'log_shipper.sh'), 'log_shipper.sh'))
+        glidein_script = self.get_glidein_script()
+        if not os.path.isfile(glidein_script):
+            raise Exception("glidein_script %s does not exist!" % glidein_script)
+        self.write_line(f, 'ln -fs %s %s' % (glidein_script, os.path.basename(glidein_script)))
+        osarch_script = os.path.join(os.path.dirname(glidein_script), 'os_arch.sh')
+        if not os.path.isfile(osarch_script):
+            raise Exception("%s does not exist!" % osarch_script)
+        self.write_line(f, 'ln -fs %s %s' % (osarch_script, 'os_arch.sh'))
+        log_shipper_script = os.path.join(os.path.dirname(glidein_script), 'log_shipper.sh')
+        if not os.path.isfile(log_shipper_script):
+            raise Exception("%s does not exist!" % log_shipper_script)
+        self.write_line(f, 'ln -fs %s %s' % (log_shipper_script, 'log_shipper.sh'))
         f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME '
                 'PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL PRESIGNED_GET_URL=$PRESIGNED_GET_URL ')
         if 'site' in self.config['Glidein']:
@@ -218,10 +222,8 @@ class SubmitPBS(Submit):
         if "CustomEnv" in self.config:
             for k, v in self.config["CustomEnv"].items():
                 f.write(k + '=' + v + ' ')
-        executable = ''
-        if 'executable' in self.config['SubmitFile']:
-            executable = self.config['SubmitFile']['executable']
-        self.write_line(f, '%s ./%s' % (executable, glidein_script))
+        executable = os.path.basename(glidein_script)
+        self.write_line(f, './%s' % executable)
         self.write_line(f, 'if [ $CLEANUP -eq 1 ]; then')
         self.write_line(f, '    rm -rf $LOCAL_DIR')
         self.write_line(f, 'fi')
@@ -309,10 +311,7 @@ class SubmitPBS(Submit):
 
             kwargs = {
                 'local_dir': self.config["SubmitFile"]["local_dir"],
-                'glidein_script': self.get_glidein_script(),
             }
-            if "loc" in self.config["Glidein"]:
-                kwargs['glidein_loc'] = self.config["Glidein"]["loc"]
             if "tarball" in self.config["Glidein"]:
                 if "loc" in self.config["Glidein"]:
                     glidein_tarball = os.path.join(self.config["Glidein"]["loc"],
@@ -597,8 +596,9 @@ class SubmitCondor(Submit):
                 for k, v in self.config["CustomEnv"].items():
                     f.write(k + '=' + v + ' ')
             if 'executable' in self.config['SubmitFile']:
-                f.write(str(self.config['SubmitFile']['executable'])+' ')
-            f.write(str(self.get_glidein_script()))
+                f.write(str(self.config['SubmitFile']['executable']))
+            else:
+                f.write(str(os.path.basename(self.get_glidein_script())))
 
             mode = os.fstat(f.fileno()).st_mode
             mode |= 0o111
@@ -650,6 +650,8 @@ class SubmitCondor(Submit):
                 raise Exception("os_arch.sh not found")
             infiles.append(osarch_script)
             log_shipper_script = os.path.join(os.path.dirname(glidein_script),'log_shipper.sh')
+            if not os.path.isfile(log_shipper_script):
+                raise Exception("log_shipper_script.sh not found")
             infiles.append(log_shipper_script)
             if "tarball" in self.config["Glidein"]:
                 if not os.path.isfile(self.config["Glidein"]["tarball"]):

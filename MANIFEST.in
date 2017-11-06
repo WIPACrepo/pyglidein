@@ -1,0 +1,13 @@
+exclude *.git*
+exclude Dockerfile
+exclude README.md
+exclude RELEASE_NOTES.md
+
+
+prune cloud_formations
+prune configs
+prune dev_build
+prune docs
+prune etc
+prune glidein_template
+prune tests

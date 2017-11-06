@@ -9,7 +9,7 @@ import datetime
 from minio import Minio
 from minio.error import ResponseError
 
-from util import json_encode, json_decode
+from pyglidein.util import json_encode, json_decode
 
 logger = logging.getLogger('client_util')
 
