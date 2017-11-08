@@ -6,8 +6,6 @@ import threading
 import urllib2
 import ast
 import datetime
-from minio import Minio
-from minio.error import ResponseError
 
 from pyglidein.util import json_encode, json_decode
 
@@ -132,6 +130,9 @@ def get_presigned_put_url(filename, config, secrets):
         string: Presigned Put URL
 
     """
+    from minio import Minio
+    from minio.error import ResponseError
+
     config_startd_logging = config['StartdLogging']
     secrets_startd_logging = secrets['StartdLogging']
 
@@ -161,6 +162,9 @@ def get_presigned_get_url(filename, config, secrets):
         string: Presigned Get URL
 
     """
+    from minio import Minio
+    from minio.error import ResponseError
+    
     config_startd_logging = config['StartdLogging']
     secrets_startd_logging = secrets['StartdLogging']
 

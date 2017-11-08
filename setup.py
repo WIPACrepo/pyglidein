@@ -10,15 +10,16 @@ setup(
     author_email='contact-us@icecube.wisc.edu',
     classifiers=[
         'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.6'
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
     ],
-    keywords='htcondor htc glidein',
+    keywords='htcondor dHTC glidein',
     packages=find_packages(),
-    install_requires=['minio', 'tornado'],
+    install_requires=['minio;python_version>"2.6"', 'tornado'],
     package_data={
         'pyglidein': ['glidein_start.sh', 'log_shipper.sh', 'os_arch.sh']
     },
@@ -28,5 +29,5 @@ setup(
             'pyglidein_server=pyglidein.server:main'
         ]
     },
-    python_requires='>=2.7'
+    python_requires='>=2.6'
 )

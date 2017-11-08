@@ -85,7 +85,7 @@ class TestHTCondorGlidein(unittest.TestCase):
             history = schedd.history('ClusterId=={}'.format(cluster_id),
                                      ['ClusterId', 'JobStatus'], 1)
             if sum(1 for _ in history) == 0:
-                time.sleep(1)
+                time.sleep(10)
             else:
                 break
 

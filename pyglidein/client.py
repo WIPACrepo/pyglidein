@@ -131,7 +131,13 @@ def main():
         logging.basicConfig(level=logging.DEBUG,format='%(asctime)s %(levelname)s %(message)s')
     else:
         logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
-
+    
+    # Failing if startd logging is enabled and python version < 2.7
+    if ('send_startd_logs' in config_startd_logging and
+        config_startd_logging['send_startd_logs'] is True and
+        sys.version_info < (2, 7)):
+        logger.error('Python version must be > 2.7 to enable startd logging.')
+        sys.exit(1)
     # Checking on startd logging configuration if enabled
     if ('send_startd_logs' in config_startd_logging and
         config_startd_logging['send_startd_logs'] is True):
