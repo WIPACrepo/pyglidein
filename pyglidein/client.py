@@ -11,11 +11,11 @@ import getpass
 from optparse import OptionParser
 import stat
 
-from util import json_decode
-from client_util import get_state, monitoring
-import submit
+from pyglidein.util import json_decode
+from pyglidein.client_util import get_state, monitoring
+import pyglidein.submit as submit
 
-from config import Config
+from pyglidein.config import Config
 
 logger = logging.getLogger('client')
 
@@ -131,7 +131,13 @@ def main():
         logging.basicConfig(level=logging.DEBUG,format='%(asctime)s %(levelname)s %(message)s')
     else:
         logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
-
+    
+    # Failing if startd logging is enabled and python version < 2.7
+    if ('send_startd_logs' in config_startd_logging and
+        config_startd_logging['send_startd_logs'] is True and
+        sys.version_info < (2, 7)):
+        logger.error('Python version must be > 2.7 to enable startd logging.')
+        sys.exit(1)
     # Checking on startd logging configuration if enabled
     if ('send_startd_logs' in config_startd_logging and
         config_startd_logging['send_startd_logs'] is True):

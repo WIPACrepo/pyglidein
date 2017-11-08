@@ -27,10 +27,9 @@ chmod 755 /home/condor/condor-8.7.2/condor.sh
 
 # Installing pyglidein
 useradd pyglidein
-tar xvzf pyglidein.tar.gz
+chmod 777 /home/pyglidein
 yum -y install python-pip
-pip install tornado
-pip install minio
+pip install ./pyglidein*
 
 # Installing Runit
 wget http://smarden.org/runit/runit-2.1.2.tar.gz

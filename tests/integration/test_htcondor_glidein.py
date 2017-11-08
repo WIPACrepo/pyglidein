@@ -12,7 +12,7 @@ import tempfile
 
 # TODO: Install pyglidein egg instead of appending paths
 sys.path.append('/pyglidein')
-from config import Config
+from pyglidein.config import Config
 
 CONFIGURATION = '/pyglidein/dev_build/client/root/etc/sv/pyglidein_client/htcondor_config'
 SECRETS = '/home/condor/.pyglidein_secrets'
@@ -85,7 +85,7 @@ class TestHTCondorGlidein(unittest.TestCase):
             history = schedd.history('ClusterId=={}'.format(cluster_id),
                                      ['ClusterId', 'JobStatus'], 1)
             if sum(1 for _ in history) == 0:
-                time.sleep(1)
+                time.sleep(10)
             else:
                 break
 

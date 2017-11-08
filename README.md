@@ -19,14 +19,13 @@ for jobs to run in. Jobs then run as normal.
 Install
 -------
 
-To install, just `git clone` the repository to a local directory. These
-are just scripts, so they can be used directly.
+To install, just run `pip install pyglidein`
 
 ### Server
 
 Running the server is fairly simple:
 
-    $ ./server.py -p PORT_NUMBER
+    $ pyglidein_server -p PORT_NUMBER
 
 This will start the server with default options, with the server listening
 on the specified port for requests from the client.
@@ -38,7 +37,7 @@ is best.
 
 The client can be set up in a number of ways, but simple execution is:
 
-    $ ./client.py --config=CLUSTER_CONFIG_FILE
+    $ pyglidein_client --config=CLUSTER_CONFIG_FILE
 
 All settings are stored in the config file. The important settings are:
 

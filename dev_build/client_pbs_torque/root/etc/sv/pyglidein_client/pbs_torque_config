@@ -21,12 +21,8 @@ loc = /pyglidein
 # Filename of tarball to be extracted
 tarball = /opt/glidein.tar.gz
 
-# Filename of the executable
-executable = /pyglidein/glidein_start.sh
-
 delay = 10
 site = WIPAC_Dev
-glidein_script = glidein_start.sh
 
 [Cluster]
 # User under which the jobs are being submitted

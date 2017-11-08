@@ -1,5 +1,7 @@
 #!/bin/bash -ex
 
+OS_VERSION=$(rpm -qa | grep centos-release | cut -d "-" -f 3)
+
 # Installing base packages
 yum clean all
 yum -y install \
@@ -18,26 +20,31 @@ yum -y upgrade ca-certificates --disablerepo=epel
 yum -y groupinstall 'Development Tools'
 
 # Installing condor
+if [ $OS_VERSION -eq 7 ]; then
+  CONDOR_URL=http://prod-exe.icecube.wisc.edu/htcondor/condor-8.7.2-x86_64_RedHat7-stripped.tar.gz
+  CONDOR_VERSION=8.7.2
+elif [ $OS_VERSION -eq 6 ]; then
+  CONDOR_URL=http://parrot.cs.wisc.edu//symlink/20171108031502/8/8.7/8.7.3/419050e2acb5dbbb64a0e2d01a0fae0b/condor-8.7.3-x86_64_RedHat6-stripped.tar.gz
+  CONDOR_VERSION=8.7.3
+fi
 useradd condor
-su -c "wget http://prod-exe.icecube.wisc.edu/htcondor/condor-8.7.2-x86_64_RedHat7-stripped.tar.gz" - condor
-su -c "mkdir ~/condor-8.7.2; cd ~/condor-8.7.2; mkdir local" - condor
-su -c "cd ~/condor-8.7.2; tar -z -x -f ~/condor-8.7.2-*-stripped.tar.gz" - condor
-su -c "cd ~/condor-8.7.2; ./condor-8.7.2-*-stripped/condor_install --local-dir /home/condor/condor-8.7.2/local --make-personal-condor" - condor
-rm -f /home/condor/condor-8.7.2-x86_64_RedHat7-stripped.tar.gz
+su -c "wget ${CONDOR_URL}" - condor
+su -c "mkdir ~/condor-${CONDOR_VERSION}; cd ~/condor-${CONDOR_VERSION}; mkdir local" - condor
+su -c "cd ~/condor-${CONDOR_VERSION}; tar -z -x -f ~/condor-${CONDOR_VERSION}-*-stripped.tar.gz" - condor
+su -c "cd ~/condor-${CONDOR_VERSION}; ./condor-${CONDOR_VERSION}-*-stripped/condor_install --local-dir /home/condor/condor-${CONDOR_VERSION}/local --make-personal-condor" - condor
+rm -f /home/condor/condor-${CONDOR_VERSION}-*-stripped.tar.gz
 chmod 755 /home/condor
-chmod 755 /home/condor/condor-8.7.2/condor.sh
+chmod 755 /home/condor/condor-${CONDOR_VERSION}/condor.sh
 
 # Installing pyglidein
 useradd pyglidein
 chmod 777 /home/pyglidein
-tar xvzf pyglidein.tar.gz
-chown -R pyglidein:pyglidein /pyglidein
 yum -y install python-pip
-pip install tornado
-pip install minio
+pip install --upgrade setuptools
+pip install ./pyglidein*
 
 # Downloading pyglidein tarball
-wget -O /opt/glidein.tar.gz -nv http://prod-exe.icecube.wisc.edu/glidein-RHEL_7_x86_64.tar.gz
+wget -O /opt/glidein.tar.gz -nv http://prod-exe.icecube.wisc.edu/glidein-RHEL_${OS_VERSION}_x86_64.tar.gz
 
 # Installing Runit
 wget http://smarden.org/runit/runit-2.1.2.tar.gz
@@ -58,7 +65,12 @@ gdb \
 policycoreutils-python
 
 rpm -ivh https://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-default-1.4-1.noarch.rpm
-rpm -ivh --nodeps https://ecsft.cern.ch/dist/cvmfs/cvmfs-2.3.5/cvmfs-2.3.5-1.el7.centos.x86_64.rpm
+if [ $OS_VERSION -eq 7 ]; then
+  CVMFS_RPM_NAME=cvmfs-2.3.5-1.el7.centos.x86_64.rpm
+elif [ $OS_VERSION -eq 6 ]; then
+  CVMFS_RPM_NAME=cvmfs-2.3.5-1.el6.x86_64.rpm
+fi
+rpm -ivh --nodeps https://ecsft.cern.ch/dist/cvmfs/cvmfs-2.3.5/${CVMFS_RPM_NAME}
 
 # Adding automounter configs
 echo "user_allow_other" >> /etc/fuse.conf
@@ -83,8 +95,11 @@ mkdir /data/log/condor
 mkdir /data/log/pyglidein_client
 mkdir /data/log/autofs
 
-# Removing packages
-yum -y groupremove 'Development Tools'
+# Removing packages (fails in CentOS 6)
+if [ $OS_VERSION -eq 7 ]
+then
+  yum -y groupremove 'Development Tools'
+fi
 
 # Removing root tarball
 rm -f /root.tar.gz

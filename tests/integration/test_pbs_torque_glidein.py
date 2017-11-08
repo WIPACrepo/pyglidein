@@ -10,7 +10,7 @@ import tempfile
 
 # TODO: Install pyglidein egg instead of appending paths
 sys.path.append('/pyglidein')
-from config import Config
+from pyglidein.config import Config
 
 CONFIGURATION = ('/pyglidein/dev_build/client_pbs_torque/root/etc/sv/pyglidein_client/'
                  'pbs_torque_config')

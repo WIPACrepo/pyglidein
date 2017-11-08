@@ -9,7 +9,7 @@ services:
       - "../:/pyglidein"
       - "~/.pyglidein_secrets_server:/home/condor/.pyglidein_secrets"
   pyglidein-client:
-    image: wipac/pyglidein_client:1.0
+    image: wipac/pyglidein_client_centos${OS_VERSION:-7}:1.0
     networks:
       app_net:
     hostname: pyglidein-client

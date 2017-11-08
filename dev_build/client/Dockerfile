@@ -1,4 +1,6 @@
-FROM centos:7
+ARG OS_VERSION=7
+
+FROM centos:${OS_VERSION}
 
 COPY root.tar.gz /root.tar.gz
 RUN /bin/tar xvzf /root.tar.gz && /setup.sh
