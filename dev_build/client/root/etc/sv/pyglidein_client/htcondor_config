@@ -96,3 +96,6 @@ http_proxy = http://squid.icecube.wisc.edu:3128
 send_startd_logs = True
 url = s3.amazonaws.com
 bucket = pyglidein-logging-wipac-dev
+
+[StardChecks]
+enable_startd_checks = True

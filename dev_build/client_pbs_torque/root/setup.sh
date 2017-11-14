@@ -5,6 +5,7 @@ yum clean all
 yum -y install \
 boost-devel \
 epel-release \
+freetype \
 glibc-static \
 iproute \
 libgomp \
@@ -42,6 +43,7 @@ cd /
 useradd pyglidein
 chmod 777 /home/pyglidein
 yum -y install python-pip
+pip install --upgrade setuptools
 pip install ./pyglidein*
 
 # Downloading pyglidein tarball
@@ -86,7 +88,6 @@ ln -s /etc/sv/pbs_mom /etc/service/pbs_mom
 ln -s /etc/sv/pbs_server /etc/service/pbs_server
 ln -s /etc/sv/pbs_sched /etc/service/pbs_sched
 ln -s /etc/sv/pyglidein_client /etc/service/pyglidein_client
-#ln -s /etc/sv/autofs /etc/service/autofs
 
 # Creating data directory
 mkdir /data/
@@ -96,7 +97,7 @@ mkdir /data/log/pbs_mom
 mkdir /data/log/pbs_sched
 mkdir /data/log/pbs_server
 mkdir /data/log/pyglidein_client
-#mkdir /data/log/autofs
+mkdir /data/log/autofs
 
 # Removing packages
 #yum -y groupremove 'Development Tools'

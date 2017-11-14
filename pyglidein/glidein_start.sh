@@ -130,6 +130,25 @@ export _campusfactory_CAMPUSFACTORY_LOCATION=$PWD
 export _condor_USER_JOB_WRAPPER=$PWD/user_job_wrapper.sh
 export _condor_PRESIGNED_GET_URL="\"$PRESIGNED_GET_URL\""
 
+# STARTD CRON
+if [ -z $DISABLE_STARTD_CHECKS ]; then
+  export _condor_STARTD_CRON_JOBLIST='clsimgpu cvmfs gridftp'
+  export _condor_STARTD_CRON_CLSIMGPU_MODE='OneShot'
+  export _condor_STARTD_CRON_CLSIMGPU_RECONFIG_RERUN='True'
+  export _condor_STARTD_CRON_CLSIMGPU_EXECUTABLE='../../post_cvmfs.sh'
+  export _condor_STARTD_CRON_CLSIMGPU_ARGS='../../clsim_gpu_test.py -n 1'
+  export _condor_STARTD_CRON_CVMFS_MODE='OneShot'
+  export _condor_STARTD_CRON_CVMFS_RECONFIG_RERUN='True'
+  export _condor_STARTD_CRON_CVMFS_EXECUTABLE='../../pre_cvmfs.sh'
+  export _condor_STARTD_CRON_CVMFS_ARGS='../../cvmfs_test.py /cvmfs/icecube.opensciencegrid.org/py2-v1/RHEL_6_x86_64/bin/globus-url-copy 36648bd8463ecfc7464042628905d490'
+  export _condor_STARTD_CRON_GRIDFTP_MODE='OneShot'
+  export _condor_STARTD_CRON_GRIDFTP_RECONFIG_RERUN='True'
+  export _condor_STARTD_CRON_GRIDFTP_EXECUTABLE='../../post_cvmfs.sh'
+  export _condor_STARTD_CRON_GRIDFTP_ARGS='../../gridftp_test.py gridftp.icecube.wisc.edu 2811'
+  export _condor_ALL_DEBUG='D_ALL'
+fi
+
+
 # detect CVMFS and get the OS type
 OS_ARCH="RHEL_6_x86_64"
 . $GLIDEIN_DIR/os_arch.sh

@@ -43,7 +43,7 @@ class TestPBSTorqueGlidein(unittest.TestCase):
         # Submitting some sleep jobs
         job = {"executable": "/bin/sleep",
                "arguments": "5m",
-               "request_memory": "500"}
+               "request_memory": "1024"}
 
         sub = htcondor.Submit(job)
         schedd = htcondor.Schedd()
@@ -71,7 +71,7 @@ class TestPBSTorqueGlidein(unittest.TestCase):
         job = {"executable": "/bin/echo",
                "arguments": output_text,
                "output": output_file,
-               "request_memory": "500"}
+               "request_memory": "1024"}
 
         sub = htcondor.Submit(job)
         schedd = htcondor.Schedd()
@@ -100,7 +100,7 @@ class TestPBSTorqueGlidein(unittest.TestCase):
         # Submitting some sleep jobs
         job = {"executable": "/bin/sleep",
                "arguments": "5m",
-               "request_memory": "500"}
+               "request_memory": "1024"}
 
         sub = htcondor.Submit(job)
         schedd = htcondor.Schedd()
@@ -122,6 +122,39 @@ class TestPBSTorqueGlidein(unittest.TestCase):
         logdir = glob.glob('log.*')[0]
         self.assertTrue(os.path.exists(os.path.join(logdir, 'MasterLog')),
                         msg='Failed to download logfile: {}'.format(url))
+    
+    def test_startd_checks(self):
+
+        startd_resources = ['PYGLIDEIN_RESOURCE_GPU',
+                            'PYGLIDEIN_RESOURCE_CVMFS',
+                            'PYGLIDEIN_RESOURCE_GRIDFTP']
+        startd_metrics = ['PYGLIDEIN_METRIC_TIME_PER_PHOTON']
+
+        coll = htcondor.Collector()
+        startd = coll.locateAll(htcondor.DaemonTypes.Startd)
+        if len(startd) == 0:
+            # Submitting some sleep jobs
+            job = {"executable": "/bin/sleep",
+                   "arguments": "5m",
+                   "request_memory": "1024"}
+
+            sub = htcondor.Submit(job)
+            schedd = htcondor.Schedd()
+            with schedd.transaction() as txn:
+                sub.queue(txn, 1)
+
+            # Waiting for the glideins to start
+            time.sleep(60)
+
+        startd = coll.locateAll(htcondor.DaemonTypes.Startd)[0]
+
+        for resource in startd_resources:
+            self.assertTrue(startd.get(resource, False),
+                            msg='{} does not exist or equals False'.format(resource))
+
+        for metric in startd_metrics:
+            self.assertTrue(startd.get(metric, 0) > 0,
+                            msg='{} does not exist or equals 0'.format(metric))
 
     def tearDown(self):
 

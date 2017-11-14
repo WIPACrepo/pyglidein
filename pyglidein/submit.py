@@ -26,6 +26,11 @@ class Submit(object):
         """
         self.config = config
         self.secrets = secrets
+        self.startd_cron_scripts = ['clsim_gpu_test.py',
+                                    'cvmfs_test.py',
+                                    'gridftp_test.py',
+                                    'post_cvmfs.sh',
+                                    'pre_cvmfs.sh']
 
     def submit(self):
         raise NotImplementedError()
@@ -140,9 +145,13 @@ class SubmitPBS(Submit):
             self.write_option(f, "-e /dev/null")
         if num_jobs > 0:
             self.write_option(f, "-t 0-%d" % num_jobs)
+        env_vars = '-v '
         if presigned_put_url is not None and presigned_get_url:
-            env_vars = '-v PRESIGNED_PUT_URL="{}",PRESIGNED_GET_URL="{}"'.format(presigned_put_url,
-                                                                                 presigned_get_url)
+            env_vars += 'PRESIGNED_PUT_URL="{}",PRESIGNED_GET_URL="{}",'.format(presigned_put_url,
+                                                                                presigned_get_url)
+        if not self.config.get("StartdChecks", {}).get("enable_startd_checks", True):
+            env_vars += 'DISABLE_STARTD_CHECKS=1'
+        if env_vars != '-v ':
             self.write_option(f, env_vars)
 
     def write_glidein_variables(self, f, mem=1000, walltime_hours=12,
@@ -210,8 +219,21 @@ class SubmitPBS(Submit):
         if not os.path.isfile(log_shipper_script):
             raise Exception("%s does not exist!" % log_shipper_script)
         self.write_line(f, 'ln -fs %s %s' % (log_shipper_script, 'log_shipper.sh'))
+        # Adding StartD Cron Scripts
+        if self.config.get("StartdChecks", {}).get("enable_startd_checks", True):
+            startd_cron_scripts_dir = os.path.join(os.path.dirname(glidein_script),
+                                                   'startd_cron_scripts')
+            if not os.path.isdir(startd_cron_scripts_dir):
+                raise Exception("StartD cron scripts directory not found: "
+                                "{}".format(startd_cron_scripts_dir))
+            for script in self.startd_cron_scripts:
+                script_path = os.path.join(startd_cron_scripts_dir, script)
+                if not os.path.isfile(script_path):
+                    raise Exception("Stard cron script not found: {}".format(script))
+                self.write_line(f, 'ln -fs %s %s' % (script_path, script))
         f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME '
-                'PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL PRESIGNED_GET_URL=$PRESIGNED_GET_URL ')
+                'PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL PRESIGNED_GET_URL=$PRESIGNED_GET_URL '
+                'DISABLE_STARTD_CHECKS=$DISABLE_STARTD_CHECKS ')
         if 'site' in self.config['Glidein']:
             f.write('SITE=$SITE ')
         f.write('ResourceName=ResourceName ')
@@ -657,6 +679,18 @@ class SubmitCondor(Submit):
                 if not os.path.isfile(self.config["Glidein"]["tarball"]):
                     raise Exception("provided tarball does not exist")
                 infiles.append(self.config["Glidein"]["tarball"])
+            # Adding StartD Cron Scripts
+            if self.config.get("StartdChecks", {}).get("enable_startd_checks", True):
+                startd_cron_scripts_dir = os.path.join(os.path.dirname(glidein_script),
+                                                       'startd_cron_scripts')
+                if not os.path.isdir(startd_cron_scripts_dir):
+                    raise Exception("StartD cron scripts directory not found: "
+                                    "{}".format(startd_cron_scripts_dir))
+                for script in self.startd_cron_scripts:
+                    script_path = os.path.join(startd_cron_scripts_dir, script)
+                    if not os.path.isfile(script_path):
+                        raise Exception("Stard cron script not found: {}".format(script))
+                    infiles.append(os.path.join(startd_cron_scripts_dir, script))
             self.write_line(f, "transfer_input_files = %s"%(','.join(infiles)))
 
             if "custom_middle" in self.config["SubmitFile"]:
@@ -689,11 +723,13 @@ class SubmitCondor(Submit):
             # Creating environment variables
             environment_variables = ''
             if presigned_put_url is not None and presigned_get_url is not None:
-                environment_variables = ('"PRESIGNED_PUT_URL={} '
-                                         'PRESIGNED_GET_URL={}"').format(presigned_put_url,
-                                                                         presigned_get_url)
+                environment_variables += ('PRESIGNED_PUT_URL={} '
+                                          'PRESIGNED_GET_URL={} ').format(presigned_put_url,
+                                                                          presigned_get_url)
+            if not self.config.get("StartdChecks", {}).get("enable_startd_checks", True):
+                environment_variables += 'DISABLE_STARTD_CHECKS=1'
             if environment_variables != '':
-                self.write_line(f, 'environment = %s' % environment_variables)
+                self.write_line(f, 'environment = "%s"' % environment_variables)
 
             if "custom_footer" in self.config["SubmitFile"]:
                 self.write_line(f, self.config["SubmitFile"]["custom_footer"])

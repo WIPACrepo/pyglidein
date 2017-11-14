@@ -7,6 +7,7 @@ yum clean all
 yum -y install \
 cron \
 epel-release \
+freetype \
 glibc-static \
 libgomp \
 libstdc++-static \
