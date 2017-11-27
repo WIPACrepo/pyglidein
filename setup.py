@@ -21,7 +21,12 @@ setup(
     packages=find_packages(),
     install_requires=['minio;python_version>"2.6"', 'tornado'],
     package_data={
-        'pyglidein': ['glidein_start.sh', 'log_shipper.sh', 'os_arch.sh']
+        'pyglidein': ['glidein_start.sh', 'log_shipper.sh', 'os_arch.sh',
+                      'startd_cron_scripts/clsim_gpu_test.py',
+                      'startd_cron_scripts/cvmfs_test.py',
+                      'startd_cron_scripts/gridftp_test.py',
+                      'startd_cron_scripts/post_cvmfs.sh',
+                      'startd_cron_scripts/pre_cvmfs.sh']
     },
     entry_points={
         'console_scripts': [

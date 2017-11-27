@@ -3,6 +3,7 @@
 # Installing base packages
 yum -y install \
 epel-release \
+freetype \
 glibc-static \
 libgomp \
 libstdc++-static \
@@ -29,6 +30,7 @@ chmod 755 /home/condor/condor-8.7.2/condor.sh
 useradd pyglidein
 chmod 777 /home/pyglidein
 yum -y install python-pip
+pip install --upgrade setuptools
 pip install ./pyglidein*
 
 # Installing Runit
