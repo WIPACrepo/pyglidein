@@ -23,7 +23,7 @@ def main():
         # This line is needed to access the nvidia gpus via OpenCL inside a container.
         # TODO: Is this needed in a grid environment?
         os.environ['LD_LIBRARY_PATH'] = ('/usr/local/nvidia/lib64:' +
-                                         os.environ.get('LD_LIBRARY_PATH', '')
+                                         os.environ.get('LD_LIBRARY_PATH', ''))
 
         cmd = []
         cmd.append(os.path.join('/cvmfs/icecube.opensciencegrid.org/py2-v2',
