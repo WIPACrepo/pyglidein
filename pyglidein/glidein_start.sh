@@ -145,7 +145,6 @@ if [ -z $DISABLE_STARTD_CHECKS ]; then
   export _condor_STARTD_CRON_GRIDFTP_RECONFIG_RERUN='True'
   export _condor_STARTD_CRON_GRIDFTP_EXECUTABLE='../../post_cvmfs.sh'
   export _condor_STARTD_CRON_GRIDFTP_ARGS='../../gridftp_test.py gridftp.icecube.wisc.edu 2811'
-  export _condor_ALL_DEBUG='D_ALL'
 fi
 
 

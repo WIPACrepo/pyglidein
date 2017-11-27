@@ -15,25 +15,26 @@ def main():
 
     usage = "usage: %prog [options]"
     parser = OptionParser(usage)
-    parser.add_option('-n', type='int', default=1,
+    parser.add_option('-n', type='str', default=1,
                       help="Number of simulations to run")
     (options, args) = parser.parse_args()
 
     try:
         # This line is needed to access the nvidia gpus via OpenCL inside a container.
         # TODO: Is this needed in a grid environment?
-        os.environ['LD_LIBRARY_PATH'] = ('/usr/local/nvidia/lib64:'
-                                         '{}'.format(os.environ['LD_LIBRARY_PATH']))
+        os.environ['LD_LIBRARY_PATH'] = ('/usr/local/nvidia/lib64:' +
+                                         os.environ['LD_LIBRARY_PATH'])
 
-        cmd = '{} {}'.format(os.path.join('/cvmfs/icecube.opensciencegrid.org/py2-v2',
-                                          os.environ['OS_ARCH'],
-                                          'metaprojects/simulation/V05-00-07/env-shell.sh'),
-                             os.path.join('/cvmfs/icecube.opensciencegrid.org/py2-v2',
-                                          os.environ['OS_ARCH'],
-                                          'metaprojects/simulation/V05-00-07/clsim/resources',
-                                          'scripts/benchmark.py'))
-        cmd += ' -n {}'.format(options.n)
-        check_output(cmd, shell=True, env=os.environ, stderr=STDOUT)
+        cmd = []
+        cmd.append(os.path.join('/cvmfs/icecube.opensciencegrid.org/py2-v2',
+                                os.environ['OS_ARCH'],
+                                'metaprojects/simulation/V05-00-07/env-shell.sh'))
+        cmd.append(os.path.join('/cvmfs/icecube.opensciencegrid.org/py2-v2',
+                                os.environ['OS_ARCH'],
+                                'metaprojects/simulation/V05-00-07/clsim/resources',
+                                'scripts/benchmark.py'))
+        cmd.extend(['-n', options.n])
+        check_output(cmd, shell=False, env=os.environ, stderr=STDOUT)
 
         tree = ET.parse(OUTPUT_FILE)
         root = tree.getroot()

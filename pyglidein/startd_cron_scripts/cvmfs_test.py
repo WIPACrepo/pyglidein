@@ -19,8 +19,8 @@ def main():
 
     try:
         if os.path.isfile(cvmfs_test_file):
-            cmd = 'md5sum {}'.format(cvmfs_test_file)
-            output = check_output(cmd, shell=True, env=os.environ, stderr=STDOUT)
+            cmd = ['md5sum', cvmfs_test_file]
+            output = check_output(cmd, shell=False, env=os.environ, stderr=STDOUT)
             if cvmfs_md5sum not in output:
                 raise Exception()
         else:
