@@ -37,9 +37,9 @@ is best.
 
 The client can be set up in a number of ways, but simple execution is:
 
-    $ pyglidein_client --config=CLUSTER_CONFIG_FILE
+    $ pyglidein_client --config=CLUSTER_CONFIG_FILE --secrets=SECRETS_CONFIG_FILE
 
-All settings are stored in the config file. The important settings are:
+All settings are stored in the config file. A list of available configuration options can be found [here](docs/configuration_index.md).  A list of available secret options can be found [here](docs/secrets_index.md). The important settings are:
 
     [Glidein]
     # full server url to jsonrpc
