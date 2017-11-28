@@ -6,8 +6,9 @@ Contents
 
 * [server](server.md)
 * [client](client.md)
-  * [submit](client.md#submitpy)
   * [glidein_start](glidein_start.md)
+  * [Startd Logging](startd_logging.md)
+  * [submit](client.md#submitpy)
 * [ssh_helper](ssh_helper.md)
 * [create_glidein_tarball](create_glidein_tarball.md)
 
