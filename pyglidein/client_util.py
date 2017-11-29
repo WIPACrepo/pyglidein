@@ -5,8 +5,9 @@ import logging
 import threading
 import urllib2
 import ast
+import datetime
 
-from util import json_encode, json_decode
+from pyglidein.util import json_encode, json_decode
 
 logger = logging.getLogger('client_util')
 
@@ -115,3 +116,66 @@ def config_options_dict(config):
                 pass
             config_dict[section][option] = val
     return config_dict
+
+
+def get_presigned_put_url(filename, config, secrets):
+    """Generate a presigned put URL using the Minio S3 client.
+
+    Args:
+        filename: Name of file to use in S3
+        config: Pyglidein cluster config dictionary
+        secrets: Pyglidein cluster secrets dictionary
+
+    Returns:
+        string: Presigned Put URL
+
+    """
+    from minio import Minio
+    from minio.error import ResponseError
+
+    config_startd_logging = config['StartdLogging']
+    secrets_startd_logging = secrets['StartdLogging']
+
+    client = Minio(config_startd_logging['url'],
+                   access_key=secrets_startd_logging['access_key'],
+                   secret_key=secrets_startd_logging['secret_key'],
+                   secure=True
+                   )
+
+    try:
+        return client.presigned_put_object(config_startd_logging['bucket'],
+                                           filename,
+                                           datetime.timedelta(days=1))
+    except ResponseError as err:
+        print(err)
+
+
+def get_presigned_get_url(filename, config, secrets):
+    """Generate a presigned get URL using the Minio S3 client.
+
+    Args:
+        filename: Name of file to use in S3
+        config: Pyglidein cluster config dictionary
+        secrets: Pyglidein cluster secrets dictionary
+
+    Returns:
+        string: Presigned Get URL
+
+    """
+    from minio import Minio
+    from minio.error import ResponseError
+    
+    config_startd_logging = config['StartdLogging']
+    secrets_startd_logging = secrets['StartdLogging']
+
+    client = Minio(config_startd_logging['url'],
+                   access_key=secrets_startd_logging['access_key'],
+                   secret_key=secrets_startd_logging['secret_key'],
+                   secure=True
+                   )
+
+    try:
+        return client.presigned_get_object(config_startd_logging['bucket'],
+                                           filename)
+    except ResponseError as err:
+        print(err)

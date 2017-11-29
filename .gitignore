@@ -21,6 +21,8 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+.eggs
+*.tar.gz
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -104,3 +106,5 @@ $RECYCLE.BIN/
 *.swp
 
 glidein.tar.gz
+pyglidein.tar.gz
+root.tar.gz

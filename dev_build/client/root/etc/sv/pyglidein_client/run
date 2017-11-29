@@ -1,0 +1,28 @@
+#!/bin/bash
+exec 2>&1
+
+OS_VERSION=$(rpm -qa | grep centos-release | cut -d "-" -f 3)
+
+if [ $OS_VERSION -eq 7 ]; then
+  CONDOR_VERSION=8.7.2
+elif [ $OS_VERSION -eq 6 ]; then
+  CONDOR_VERSION=8.7.3
+fi
+
+# Setting up Paths based on condor.sh
+CONDOR_CONFIG="/home/condor/condor-${CONDOR_VERSION}/etc/condor_config"
+export CONDOR_CONFIG
+PATH="/home/condor/condor-${CONDOR_VERSION}/bin:/home/condor/condor-${CONDOR_VERSION}/sbin:$PATH"
+export PATH
+if [ "X" != "X${PYTHONPATH-}" ]; then
+  PYTHONPATH="/home/condor/condor-${CONDOR_VERSION}/lib/python:$PYTHONPATH"
+else
+  PYTHONPATH="/home/condor/condor-${CONDOR_VERSION}/lib/python"
+fi
+export PYTHONPATH
+
+cd /home/pyglidein
+# Changing the permissions of the secrets file because its being volumed into the container
+chown pyglidein:pyglidein .pyglidein_secrets
+chmod 600 .pyglidein_secrets
+exec chpst -u pyglidein pyglidein_client --config=/etc/sv/pyglidein_client/htcondor_config

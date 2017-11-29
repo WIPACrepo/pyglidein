@@ -43,6 +43,9 @@ fi
 if [ -z $DISK ]; then
     DISK=8000000
 fi
+if [ -z $PRESIGNED_GET_URL ]; then
+  PRESIGNED_GET_URL="none"
+fi
 # CVMFS is always true with parrot
 CVMFS="True"
 
@@ -113,7 +116,7 @@ export _condor_SLOT_TYPE_1_PARTITIONABLE="True"
 #export _condor_SLOT_TYPE_1_CONSUMPTION_POLICY="True"
 #export _condor_SLOT_TYPE_1_CONSUMPTION_GPUs="quantize(ifThenElse(target.RequestGpus =!= undefined,target.RequestGpus,0),{0})";
 export _condor_SLOT_WEIGHT="Cpus";
-export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists HAS_CVMFS_icecube_opensciencegrid_org GLIDEIN_Site GLIDEIN_SiteResource GLIDEIN_Max_Walltime GPU_NAMES"
+export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists HAS_CVMFS_icecube_opensciencegrid_org GLIDEIN_Site GLIDEIN_SiteResource GLIDEIN_Max_Walltime GPU_NAMES PRESIGNED_GET_URL"
 export _condor_STARTER_JOB_ENVIRONMENT="\"GLIDEIN_Site=${SITE} GLIDEIN_SiteResource=${ResourceName} GLIDEIN_LOCAL_TMP_DIR=${PWD} GOTO_NUM_THREADS=1\"";
 export _condor_START="((GPUs > 0) ? (isUndefined(RequestGPUs) ? FALSE : (RequestGPUs > 0)) : TRUE)";
 export _condor_RANK="(isUndefined(RequestGPUs) ? 0 : (RequestGPUs * 10000)) + RequestMemory";
@@ -125,6 +128,25 @@ export _campusfactory_wntmp=$PWD
 export _condor_UPDATE_COLLECTOR_WITH_TCP="True"
 export _campusfactory_CAMPUSFACTORY_LOCATION=$PWD
 export _condor_USER_JOB_WRAPPER=$PWD/user_job_wrapper.sh
+export _condor_PRESIGNED_GET_URL="\"$PRESIGNED_GET_URL\""
+
+# STARTD CRON
+if [ -z $DISABLE_STARTD_CHECKS ]; then
+  export _condor_STARTD_CRON_JOBLIST='clsimgpu cvmfs gridftp'
+  export _condor_STARTD_CRON_CLSIMGPU_MODE='OneShot'
+  export _condor_STARTD_CRON_CLSIMGPU_RECONFIG_RERUN='True'
+  export _condor_STARTD_CRON_CLSIMGPU_EXECUTABLE='../../post_cvmfs.sh'
+  export _condor_STARTD_CRON_CLSIMGPU_ARGS='../../clsim_gpu_test.py -n 1'
+  export _condor_STARTD_CRON_CVMFS_MODE='OneShot'
+  export _condor_STARTD_CRON_CVMFS_RECONFIG_RERUN='True'
+  export _condor_STARTD_CRON_CVMFS_EXECUTABLE='../../pre_cvmfs.sh'
+  export _condor_STARTD_CRON_CVMFS_ARGS='../../cvmfs_test.py /cvmfs/icecube.opensciencegrid.org/py2-v1/RHEL_6_x86_64/bin/globus-url-copy 36648bd8463ecfc7464042628905d490'
+  export _condor_STARTD_CRON_GRIDFTP_MODE='OneShot'
+  export _condor_STARTD_CRON_GRIDFTP_RECONFIG_RERUN='True'
+  export _condor_STARTD_CRON_GRIDFTP_EXECUTABLE='../../post_cvmfs.sh'
+  export _condor_STARTD_CRON_GRIDFTP_ARGS='../../gridftp_test.py gridftp.icecube.wisc.edu 2811'
+fi
+
 
 # detect CVMFS and get the OS type
 OS_ARCH="RHEL_6_x86_64"
@@ -201,8 +223,23 @@ export PATH=$PATH:$_condor_SBIN:$PWD/glideinExec/bin
 export LD_LIBRARY_PATH=$_condor_LIB:$_condor_LIB/condor:$LD_LIBRARY_PATH
 
 # run condor
-exec glideinExec/sbin/condor_master -dyn -f -r 1200
+trap 'kill -TERM $PID; if [ -n $PID_LOG_SHIPPER ]; then kill -TERM $PID_LOG_SHIPPER; fi' SIGTERM SIGINT
+glideinExec/sbin/condor_master -dyn -f -r 1200 &
+PID=$!
 
-# clean up after ourselves
-cd ..
-rm -rf glidein
+# starting log_shipper
+if [ -n $PRESIGNED_PUT_URL ]
+  then
+    ../log_shipper.sh ${PRESIGNED_PUT_URL} &
+    PID_LOG_SHIPPER=$!
+fi
+
+wait $PID
+trap - SIGTERM SIGKILL
+wait $PID
+if [ -n $PRESIGNED_PUT_URL ]
+  then
+    tar czf logs.tar.gz log.*
+    unset http_proxy
+    curl --upload-file logs.tar.gz ${PRESIGNED_PUT_URL}
+fi

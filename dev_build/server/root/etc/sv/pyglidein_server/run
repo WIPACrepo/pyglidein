@@ -1,0 +1,18 @@
+#!/bin/bash
+exec 2>&1
+
+CONDOR_VERSION=8.7.2
+
+# Setting up Paths based on condor.sh
+CONDOR_CONFIG="/home/condor/condor-${CONDOR_VERSION}/etc/condor_config"
+export CONDOR_CONFIG
+PATH="/home/condor/condor-${CONDOR_VERSION}/bin:/home/condor/condor-${CONDOR_VERSION}/sbin:$PATH"
+export PATH
+if [ "X" != "X${PYTHONPATH-}" ]; then
+  PYTHONPATH="/home/condor/condor-${CONDOR_VERSION}/lib/python:$PYTHONPATH"
+else
+  PYTHONPATH="/home/condor/condor-${CONDOR_VERSION}/lib/python"
+fi
+export PYTHONPATH
+
+exec chpst -u pyglidein pyglidein_server -p 8001 --delay 10

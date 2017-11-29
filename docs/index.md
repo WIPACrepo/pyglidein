@@ -6,10 +6,15 @@ Contents
 
 * [server](server.md)
 * [client](client.md)
-  * [submit](client.md#submitpy)
+  * [Configuration Index](configuration_index.md)
+  * [Secrets Index](secrets_index.md)
   * [glidein_start](glidein_start.md)
-* [ssh_helper](ssh_helper.md)
+  * [Startd Logging](startd_logging.md)
+  * [Startd Monitoring](startd_monitoring.md)
+  * [submit](client.md#submitpy)
 * [create_glidein_tarball](create_glidein_tarball.md)
+* [Python Packaging](packaging.md)
+* [ssh_helper](ssh_helper.md)
 
 Overview
 --------
