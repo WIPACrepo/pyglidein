@@ -168,7 +168,8 @@ class SubmitPBS(Submit):
             disk: disk provided for glidein
         """
         self.write_line(f, "MEMORY=%d" % mem)
-        self.write_line(f, "WALLTIME=%d" % (walltime_hours*3600))
+        # we do not want same walltime as this may lead to hitting the walltime, thus we spot the glidein 5 min earlier (300 sec)
+        self.write_line(f, "WALLTIME=%d" % (walltime_hours*3600 - 300))
         self.write_line(f, "CPUS=%d" % num_cpus)
         self.write_line(f, "DISK=%d" % (disk*1024))
         if num_gpus:
@@ -610,7 +611,8 @@ class SubmitCondor(Submit):
             f.write('ResourceName=$ResourceName ')
             if 'cluster' in self.config['Glidein']:
                 f.write('CLUSTER=$CLUSTER ')
-            walltime = int(cluster_config["walltime_hrs"])*3600
+            # reduce walltime for internal job by 300 sec (5min) to make sure it finished before the outer job hits the walltime
+            walltime = int(cluster_config["walltime_hrs"])*3600-300
             f.write('WALLTIME=%d '%walltime)
             if self.config['SubmitFile'].get('cvmfs_job_wrapper', False):
                 f.write('CVMFS_JOB_WRAPPER=1 ')

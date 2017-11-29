@@ -9,7 +9,7 @@ if [ -z $SITE ]; then
     SITE="WIPAC"
 fi
 if [ -z $ResourceName ]; then
-    ResourceName="none"
+    ResourceName=$SITE
 fi
 if [ -z $CLUSTER ]; then
     CLUSTER="glidein-simprod.icecube.wisc.edu"
@@ -151,6 +151,9 @@ fi
 # detect CVMFS and get the OS type
 OS_ARCH="RHEL_6_x86_64"
 . $GLIDEIN_DIR/os_arch.sh
+
+# disable proxy for prod-exe
+export no_proxy=prod-exe.icecube.wisc.edu
 
 if [ -e $GLIDEIN_DIR/glidein.tar.gz ]; then
   tar xzf $GLIDEIN_DIR/glidein.tar.gz
