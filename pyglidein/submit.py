@@ -413,7 +413,7 @@ class SubmitSLURM(SubmitPBS):
 
     def write_general_header(self, f, cluster_config, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
-                             num_jobs=0):
+                             num_jobs=0, presigned_put_url=None, presigned_get_url=None):
         """
         Writing the header for a SLURM submission script.
         Most of the pieces needed to tell SLURM what resources
@@ -469,7 +469,7 @@ class SubmitUGE(SubmitPBS):
 
     def write_general_header(self, f, cluster_config, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
-                             num_jobs=0):
+                             num_jobs=0, presigned_put_url=None, presigned_get_url=None):
         """
         Writing the header for a SLURM submission script.
         Most of the pieces needed to tell SLURM what resources
@@ -508,7 +508,7 @@ class SubmitLSF(SubmitPBS):
 
     def write_general_header(self, f, cluster_config, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
-                             num_jobs=0):
+                             num_jobs=0, presigned_put_url=None, presigned_get_url=None):
         """
         Writing the header for an LSF submission script.
         Most of the pieces needed to tell LSF what resources
