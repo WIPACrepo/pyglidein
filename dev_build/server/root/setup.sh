@@ -32,6 +32,7 @@ chmod 777 /home/pyglidein
 yum -y install python-pip
 pip install --upgrade setuptools
 pip install ./pyglidein*
+pip install requests
 
 # Installing Runit
 wget http://smarden.org/runit/runit-2.1.2.tar.gz

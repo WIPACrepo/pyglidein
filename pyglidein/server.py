@@ -9,8 +9,12 @@ from optparse import OptionParser
 from collections import Counter
 import distutils.version
 from datetime import datetime
+import re
 
 from pyglidein.util import json_encode, json_decode
+from pyglidein.config import Config
+from pyglidein.metrics_sender_client import MetricsSenderClient
+from pyglidein.client_metrics import ClientMetricsBundle
 import tornado.escape
 tornado.escape.json_encode = json_encode
 tornado.escape.json_decode = json_decode
@@ -46,6 +50,15 @@ job_universe = {
     12:'local',
 }
 
+client_metrics = {
+    'glideins_launched': 'glideins.launched',
+    'glideins_running': 'glideins.running',
+    'glideins_idle': 'glideins.idle',
+    'avg_idle_time': 'glideins.avg_idle_time',
+    'min_idle_time': 'glideins.min_idle_time',
+    'max_idle_time': 'glideins.max_idle_time'
+}
+
 class MyHandler(tornado.web.RequestHandler):
     """Default Handler"""
     def initialize(self, cfg):
@@ -56,6 +69,10 @@ class MyHandler(tornado.web.RequestHandler):
             cfg: the global config
         """
         self.cfg = cfg
+        if self.cfg['metrics_sender_client'] is not None:
+            self.metrics_sender_client = self.cfg['metrics_sender_client']
+        else:
+            self.metrics_sender_client = None
 
     def get(self):
         """GET is invalid and returns an error"""
@@ -71,6 +88,7 @@ class JSONRPCHandler(MyHandler):
 
     Call DB methods using RPC over json.
     """
+
     def post(self):
         """Parses json in the jsonrpc format, returning results in
            jsonrpc format as well.
@@ -108,8 +126,14 @@ class JSONRPCHandler(MyHandler):
                     ret = self.cfg['state']
                 elif method == 'monitoring':
                     client_id = params.pop('uuid')
-                    params['timestamp'] = datetime.utcnow()
-                    self.cfg['monitoring'][client_id] = params
+                    client_id_clean = re.sub(r'\W+', '', client_id)
+                    metrics_bundle = ClientMetricsBundle(client_id_clean,
+                                                         timestamp=params['timestamp'],
+                                                         metrics=params['metrics'])
+                    if self.metrics_sender_client is not None:
+                        self.metrics_sender_client.send(metrics_bundle)
+                    # Continue sending metrics to old web interface
+                    self.cfg['monitoring'][client_id] = metrics_bundle.get_v1_bundle()
                     ret = ''
                 else:
                     self.json_error({'code':-32601, 'message':'Method not found'},
@@ -175,7 +199,7 @@ class DefaultHandler(MyHandler):
         for uuid in self.cfg['monitoring']:
             try:
                 info = self.cfg['monitoring'][uuid]
-                timestamp = info['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+                timestamp = datetime.fromtimestamp(info['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
                 stats = '<br>'.join(str(k)+': '+str(info[k]) for k in info if k != 'timestamp')
                 self.write('<div><span class="uuid">'+str(uuid)+'</span><span class="date">'+timestamp+'</span><span class="stats">'+stats+'</span></div>')
             except Exception:
@@ -270,6 +294,7 @@ def condor_q_helper(cfg):
         t.daemon = True
         t.start()
 
+
 def main():
     parser = OptionParser()
     parser.add_option('-p', '--port', type='int', default=11001,
@@ -282,7 +307,11 @@ def main():
                       help='delay between calls to condor_q (default: 300 seconds)')
     parser.add_option('--debug', action='store_true', default=False,
                       help='Enable debug logging')
+    parser.add_option('--config', type='string', default='pyglidein_server.config',
+                      help="config file for cluster")
     (options, args) = parser.parse_args()
+
+    config = Config(options.config)
 
     if options.debug:
         logging.basicConfig(level=logging.DEBUG)
@@ -291,8 +320,13 @@ def main():
 
     if options.delay < 0 or options.delay > 1000:
         raise Exception('delay out of range')
+        
+    if config.get('metrics', {}).get('enable_metrics', False):
+        metrics_sender_client = MetricsSenderClient(config['metrics'])
+    else: metrics_sender_client = None
 
-    cfg = {'options':options, 'condor_q':False, 'state':[], 'monitoring':{}}
+    cfg = {'options': options, 'config': config, 'condor_q': False, 'state': [], 'monitoring': {},
+           'metrics_sender_client': metrics_sender_client}
 
     # load condor_q
     IOLoop.instance().call_later(5, partial(condor_q_helper, cfg))
