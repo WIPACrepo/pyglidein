@@ -14,6 +14,7 @@ import stat
 from pyglidein.util import json_decode
 from pyglidein.client_util import get_state, monitoring
 import pyglidein.submit as submit
+import pyglidein.client_metrics as client_metrics
 
 from pyglidein.config import Config
 
@@ -30,6 +31,7 @@ def get_ssh_state():
 
 def get_running(cmd):
     """Determine how many jobs are running in the queue"""
+    cmd = os.path.expandvars(cmd)
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     return int(p.communicate()[0].strip())
 
@@ -112,14 +114,19 @@ def main():
     sched_type = config_cluster["scheduler"].lower()
     if sched_type == "htcondor":
         scheduler = submit.SubmitCondor(config_dict, secrets_dict)
+        metrics = client_metrics.ClientMetricsCondor(config_dict, secrets_dict)
     elif sched_type == "pbs":
         scheduler = submit.SubmitPBS(config_dict, secrets_dict)
+        metrics = client_metrics.ClientMetricsPBS(config_dict, secrets_dict)
     elif sched_type == "slurm":
         scheduler = submit.SubmitSLURM(config_dict, secrets_dict)
+        metrics = client_metrics.ClientMetricsPBS(config_dict, secrets_dict)
     elif sched_type == "uge":
         scheduler = submit.SubmitUGE(config_dict, secrets_dict)
+        metrics = client_metrics.ClientMetricsPBS(config_dict, secrets_dict)
     elif sched_type == "lsf":
         scheduler = submit.SubmitLSF(config_dict, secrets_dict)
+        metrics = client_metrics.ClientMetricsPBS(config_dict, secrets_dict)
     else:
         raise Exception('scheduler not supported')
 
@@ -131,7 +138,7 @@ def main():
         logging.basicConfig(level=logging.DEBUG,format='%(asctime)s %(levelname)s %(message)s')
     else:
         logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
-    
+
     # Failing if startd logging is enabled and python version < 2.7
     if ('send_startd_logs' in config_startd_logging and
         config_startd_logging['send_startd_logs'] is True and
@@ -158,9 +165,11 @@ def main():
         if 'uuid' in config_glidein:
             options.uuid = config_glidein['uuid']
         info = {'uuid': options.uuid,
+                'glideins_idle': dict(),
                 'glideins_running': dict(),
                 'glideins_launched': dict(),
                }
+        metrics_bundle = client_metrics.ClientMetricsBundle(options.uuid)
         if state:
             for partition in config_dict['Cluster'].get('partitions', ['Cluster']):
                 config_cluster = config_dict[partition]
@@ -169,8 +178,13 @@ def main():
                 idle = 0
                 try:
                     info['glideins_running'][partition] = get_running(config_cluster["running_cmd"])
+                    metrics_bundle.update_metric('glideins_running', partition,
+                                                 info['glideins_running'][partition])
                     if "idle_cmd" in config_cluster:
                         idle = get_running(config_cluster["idle_cmd"])
+                        info['glideins_idle'][partition] = idle
+                        metrics_bundle.update_metric('glideins_idle', partition,
+                                                     info['glideins_idle'][partition])
                 except Exception:
                     logger.warn('error getting running job count', exc_info=True)
                     continue
@@ -215,15 +229,14 @@ def main():
                         num = 1 if "count" not in s else s["count"]
                         limit -= num
                         info['glideins_launched'][partition] += num
+                metrics_bundle.update_metric('glideins_launched', partition,
+                                             info['glideins_launched'][partition])
                 logger.info('launched %d glideins on %s', info['glideins_launched'][partition], partition)
         else:
             logger.info('no state, nothing to do')
 
-        # send monitoring info to server
-        for k in info.keys():
-            if isinstance(info[k], dict):
-                info[k] = sum(info[k].values())
-        monitoring(config_glidein['address'], info)
+        metrics_bundle.update_metrics(metrics.get_mma_idle_time())
+        metrics.send(metrics_bundle)
 
         if 'delay' not in config_glidein or int(config_glidein['delay']) < 1:
             break

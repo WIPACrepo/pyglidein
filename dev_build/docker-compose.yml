@@ -8,6 +8,8 @@ services:
     volumes:
       - "../:/pyglidein"
       - "~/.pyglidein_secrets_server:/home/condor/.pyglidein_secrets"
+    ports:
+      - "8001:8001"
   pyglidein-client:
     image: wipac/pyglidein_client_centos${OS_VERSION:-7}:1.0
     networks:
@@ -23,15 +25,17 @@ services:
       - /dev/nvidia0:/dev/nvidia0
       - /dev/nvidiactl:/dev/nvidiactl
       - /dev/nvidia-uvm:/dev/nvidia-uvm
-  minio:
-    image: minio/minio
-    networks:
-      app_net:
-    hostname: minio
-    environment:
-      MINIO_ACCESS_KEY: minio
-      MINIO_SECRET_KEY: minio123
-    command: server /data
+  graphite-dev:
+   image: graphiteapp/graphite-statsd
+   networks:
+     app_net:
+   hostname: graphite-dev
+   ports:
+    - "80:80"
+    - "2003-2004:2003-2004"
+    - "2023-2024:2023-2024"
+    - "8125:8125/udp"
+    - "8126:8126"
 networks:
   app_net:
     driver: bridge

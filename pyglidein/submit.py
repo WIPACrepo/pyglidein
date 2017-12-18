@@ -381,7 +381,6 @@ class SubmitPBS(Submit):
                                        presigned_put_url,
                                        presigned_get_url)
             cmd = self.config[partition]["submit_command"] + " " + submit_filename
-            print(cmd)
             if not ('Mode' in self.config and 'dryrun' in self.config['Mode'] and
                     self.config['Mode']['dryrun']):
                 subprocess.check_call(cmd, shell=True)
@@ -782,5 +781,4 @@ class SubmitCondor(Submit):
                                       group_jobs,
                                       cluster_config)
             cmd = cluster_config["submit_command"] + " " + submit_filename
-            print(cmd)
             subprocess.check_call(cmd, shell=True)

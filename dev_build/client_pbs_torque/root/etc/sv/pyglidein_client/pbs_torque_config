@@ -12,9 +12,6 @@ cluster = pyglidein-server
 # a text file
 ssh_state = False
 
-# How long to wait before considering the next set of jobs
-delay = -1
-
 # Location of the tarball, etc.
 loc = /pyglidein
 
@@ -38,7 +35,7 @@ scheduler = PBS
 submit_command = qsub
 
 # Maximum number jobs that be in the queue
-max_total_jobs = 10
+max_total_jobs = 25
 
 # Number of jobs that can be submitted per round
 limit_per_submit = 5

@@ -21,6 +21,9 @@ else
 fi
 export PYTHONPATH
 
+USER="pyglidein"
+export USER
+
 cd /home/pyglidein
 # Changing the permissions of the secrets file because its being volumed into the container
 chown pyglidein:pyglidein .pyglidein_secrets

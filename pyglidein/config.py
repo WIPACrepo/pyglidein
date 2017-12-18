@@ -3,8 +3,10 @@ from ConfigParser import SafeConfigParser
 import os
 import ast
 
+
 class Config(dict):
-    def __init__(self, path, default='etc/client_defaults.cfg'):
+    def __init__(self, path, default=os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                  'etc/client_defaults.cfg')):
         self.path = path
 
         # read defaults
@@ -12,13 +14,14 @@ class Config(dict):
         tmp.optionxform = str
         tmp.read(default)
         self._config_options_dict(tmp)
-
+        
         # read file
         tmp = SafeConfigParser()
         tmp.optionxform = str
         tmp.read(path)
         self._config_options_dict(tmp)
         self._populate_partitions()
+
 
     def _config_options_dict(self, config):
         """
