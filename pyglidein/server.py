@@ -127,9 +127,15 @@ class JSONRPCHandler(MyHandler):
                 elif method == 'monitoring':
                     client_id = params.pop('uuid')
                     client_id_clean = re.sub(r'\W+', '', client_id)
-                    metrics_bundle = ClientMetricsBundle(client_id_clean,
-                                                         timestamp=params['timestamp'],
-                                                         metrics=params['metrics'])
+                    # For Clients > 1.1
+                    if 'timestamp' in params and 'metrics' in params:
+                        metrics_bundle = ClientMetricsBundle(client_id_clean,
+                                                             timestamp=params['timestamp'],
+                                                             metrics=params['metrics'])
+                    # For Clients < 1.1
+                    else:
+                        metrics_bundle = ClientMetricsBundle(client_id_clean,
+                                                             metrics=params)
                     if self.metrics_sender_client is not None:
                         self.metrics_sender_client.send(metrics_bundle)
                     # Continue sending metrics to old web interface
