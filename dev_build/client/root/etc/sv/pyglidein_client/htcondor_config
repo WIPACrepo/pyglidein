@@ -67,6 +67,10 @@ gpu_only = False
 # and so forth.
 prioritize_jobs = ["memory", "disk"]
 
+# Command needed to determine the number of jobs running
+running_cmd = condor_q -all -constraint 'Owner == "${USER}" && JobStatus == 2' -af ClusterID | wc -l
+idle_cmd = condor_q -constraint 'Owner == "${USER}" && JobStatus == 1' -af ClusterId | wc -l
+
 # Group jobs with the same requirements into a
 # single submission.
 # Special note for PBS:
