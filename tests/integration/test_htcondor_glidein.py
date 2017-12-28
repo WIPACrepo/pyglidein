@@ -15,7 +15,7 @@ import requests
 sys.path.append('/pyglidein')
 from pyglidein.config import Config
 
-CONFIGURATION = '/pyglidein/dev_build/client/root/etc/sv/pyglidein_client/htcondor_config'
+CONFIGURATION = '/pyglidein/dev_build/client_condor/root/etc/sv/pyglidein_client/htcondor_config'
 SERVER_CONFIGURATION = os.path.join('/pyglidein/dev_build/server/root/etc/sv/pyglidein_server/',
                                     'pyglidein_server.config')
 SECRETS = '/home/condor/.pyglidein_secrets'

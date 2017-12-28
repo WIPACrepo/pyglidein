@@ -21,6 +21,7 @@ from pyglidein.config import Config
 logger = logging.getLogger('client')
 
 
+
 def get_ssh_state():
     """Getting the state of the remote queue from a text file"""
     try:
