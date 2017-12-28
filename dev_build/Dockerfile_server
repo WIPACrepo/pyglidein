@@ -42,23 +42,23 @@ RUN yum -y install \
     gawk \
     gdb \
     policycoreutils-python \
-&& rpm -ivh https://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-default-1.4-1.noarch.rpm \
-&& if [ $OS_VERSION -eq 7 ]; then CVMFS_RPM_NAME=cvmfs-2.3.5-1.el7.centos.x86_64.rpm; elif [ $OS_VERSION -eq 6 ]; then CVMFS_RPM_NAME=cvmfs-2.3.5-1.el6.x86_64.rpm; fi \
-&& rpm -ivh --nodeps https://ecsft.cern.ch/dist/cvmfs/cvmfs-2.3.5/${CVMFS_RPM_NAME} \
-&& echo "user_allow_other" >> /etc/fuse.conf \
-&& echo "/cvmfs /etc/auto.cvmfs" >> /etc/auto.master \
-&& echo "CVMFS_REPOSITORIES='icecube.opensciencegrid.org'" > /etc/cvmfs/default.local \
-&& echo "CVMFS_HTTP_PROXY='DIRECT'" >> /etc/cvmfs/default.local
+ && rpm -ivh https://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-default-1.4-1.noarch.rpm \
+ && if [ $OS_VERSION -eq 7 ]; then CVMFS_RPM_NAME=cvmfs-2.3.5-1.el7.centos.x86_64.rpm; elif [ $OS_VERSION -eq 6 ]; then CVMFS_RPM_NAME=cvmfs-2.3.5-1.el6.x86_64.rpm; fi \
+ && rpm -ivh --nodeps https://ecsft.cern.ch/dist/cvmfs/cvmfs-2.3.5/${CVMFS_RPM_NAME} \
+ && echo "user_allow_other" >> /etc/fuse.conf \
+ && echo "/cvmfs /etc/auto.cvmfs" >> /etc/auto.master \
+ && echo "CVMFS_REPOSITORIES='icecube.opensciencegrid.org'" > /etc/cvmfs/default.local \
+ && echo "CVMFS_HTTP_PROXY='DIRECT'" >> /etc/cvmfs/default.local
 
 RUN useradd pyglidein \
-&& chmod 777 /home/pyglidein \
-&& yum -y install python-pip \
-&& pip install --upgrade setuptools
+ && chmod 777 /home/pyglidein \
+ && yum -y install python-pip \
+ && pip install --upgrade setuptools
 
 RUN pip install requests
 
 RUN mkdir -p /data/log/condor \
-&& mkdir /data/log/pyglidein_server
+ && mkdir /data/log/pyglidein_server
 
 RUN if [ $OS_VERSION -eq 7 ]; then yum -y groupremove 'Development Tools'; fi
 
