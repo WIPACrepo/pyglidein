@@ -1,7 +1,11 @@
 version: "3"
 services:
   pyglidein-server:
-    image: wipac/pyglidein_server:1.0
+    build:
+      context: .
+      dockerfile: Dockerfile_server
+    image: wipac/pyglidein_server:2.0
+    container_name: pyglidein-server
     networks:
       app_net:
     hostname: pyglidein-server
@@ -11,7 +15,13 @@ services:
     ports:
       - "8001:8001"
   pyglidein-client:
-    image: wipac/pyglidein_client_centos${OS_VERSION:-7}:1.0
+    build:
+      context: .
+      dockerfile: Dockerfile_client_${SCHED:-condor}
+      args:
+        OS_VERSION: ${OS_VERSION:-7}
+    image: wipac/pyglidein_client_${SCHED:-condor}_centos${OS_VERSION:-7}:2.0
+    container_name: pyglidein-client
     networks:
       app_net:
     hostname: pyglidein-client
@@ -27,6 +37,7 @@ services:
       - /dev/nvidia-uvm:/dev/nvidia-uvm
   graphite-dev:
    image: graphiteapp/graphite-statsd
+   container_name: graphite-dev
    networks:
      app_net:
    hostname: graphite-dev

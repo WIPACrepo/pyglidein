@@ -1,0 +1,79 @@
+ARG OS_VERSION=7
+FROM centos:${OS_VERSION}
+
+ARG OS_VERSION=7
+
+RUN yum -y install \
+    boost-devel \
+    epel-release \
+    freetype \
+    glibc-static \
+    iproute \
+    libgomp \
+    libtool \
+    libstdc++-static \
+    libxml2-devel \
+    perl \
+    openssl \
+    openssl-devel \
+    wget
+
+RUN yum -y groupinstall 'Development Tools'
+
+RUN wget http://smarden.org/runit/runit-2.1.2.tar.gz \
+ && tar xvzf runit-2.1.2.tar.gz \
+ && cd admin/runit-2.1.2/ \
+ && ./package/install \
+ && cd / \
+ && rm -f runit-2.1.2.tar.gz
+
+RUN cd /usr/local \
+ && git clone https://github.com/adaptivecomputing/torque.git -b 6.1.1 6.1.1 \
+ && cd 6.1.1 \
+ && ./autogen.sh \
+ && ./configure --enable-cpusets --with-default-server=localhost \
+ && make -j 8 \
+ && make install \
+ && . /etc/profile.d/torque.sh \
+ && yes | ./torque.setup root localhost \
+ && echo "\$pbsserver localhost" >> /var/spool/torque/mom_priv/config \
+ && echo "\$exec_with_exec true" >> /var/spool/torque/mom_priv/config \
+ && echo "localhost" >> /var/spool/torque/server_priv/nodes \
+ && echo "pyglidein-client np=8" >> /var/spool/torque/server_priv/nodes
+ 
+RUN yum -y install \
+    attr \
+    autofs \
+    fuse \
+    fuse-libs \
+    gawk \
+    gdb \
+    policycoreutils-python \
+ && rpm -ivh https://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-default-1.4-1.noarch.rpm \
+ && if [ $OS_VERSION -eq 7 ]; then CVMFS_RPM_NAME=cvmfs-2.3.5-1.el7.centos.x86_64.rpm; elif [ $OS_VERSION -eq 6 ]; then CVMFS_RPM_NAME=cvmfs-2.3.5-1.el6.x86_64.rpm; fi \
+ && rpm -ivh --nodeps https://ecsft.cern.ch/dist/cvmfs/cvmfs-2.3.5/${CVMFS_RPM_NAME} \
+ && echo "user_allow_other" >> /etc/fuse.conf \
+ && echo "/cvmfs /etc/auto.cvmfs" >> /etc/auto.master \
+ && echo "CVMFS_REPOSITORIES='icecube.opensciencegrid.org'" > /etc/cvmfs/default.local \
+ && echo "CVMFS_HTTP_PROXY='DIRECT'" >> /etc/cvmfs/default.local
+
+RUN useradd pyglidein \
+ && chmod 777 /home/pyglidein \
+ && yum -y install python-pip \
+ && pip install --upgrade setuptools
+
+RUN mkdir -p /data/log/trqauthd \
+ && mkdir /data/log/pbs_mom \
+ && mkdir /data/log/pbs_sched \
+ && mkdir /data/log/pbs_server \
+ && mkdir /data/log/pyglidein_client \
+ && mkdir /data/log/autofs
+
+RUN if [ $OS_VERSION -eq 7 ]; then yum -y groupremove 'Development Tools'; fi
+
+RUN wget -O /opt/glidein.tar.gz -nv http://prod-exe.icecube.wisc.edu/glidein-RHEL_${OS_VERSION}_x86_64.tar.gz
+COPY client_pbs_torque/root/ /
+COPY pyglidein-* /
+RUN pip install /pyglidein-*
+
+ENTRYPOINT /usr/local/bin/runsvdir -P /etc/sv

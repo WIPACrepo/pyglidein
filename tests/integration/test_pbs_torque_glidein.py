@@ -180,7 +180,7 @@ class TestPBSTorqueGlidein(unittest.TestCase):
             # Waiting for the glideins to start
             time.sleep(60)
 
-        uuid = 'pyglideinpyglideinclientpbstorque'
+        uuid = 'pyglideinpyglideinclient'
         partition = 'Cluster'
         metrics = [
             'glideins.launched',
