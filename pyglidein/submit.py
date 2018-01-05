@@ -760,7 +760,7 @@ class SubmitCondor(Submit):
         self.make_env_wrapper(env_filename, cluster_config)
         num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
         for i in range(num_submits):
-            if self.config['StartdLogging']['send_startd_logs'] is True:
+            if self.config.get('StartdLogging', {}).get('send_startd_logs', False) is True:
                 startd_logfile_name = '{}_{}.tar.gz'.format(self.config['Glidein']['site'],
                                                             uuid.uuid4())
                 presigned_put_url = get_presigned_put_url(startd_logfile_name, self.config,
