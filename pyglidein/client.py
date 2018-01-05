@@ -96,10 +96,16 @@ def main():
     else:
         config_startd_logging = {}
 
+    if ('Mode' in config_dict and 'debug' in config_dict['Mode'] and
+        config_dict['Mode']['debug']):
+        logging.basicConfig(level=logging.DEBUG,format='%(asctime)s %(levelname)s %(message)s')
+    else:
+        logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
+
     # Loading secrets.  Fail if permissions wrong.
     if os.path.isfile(options.secrets):
         if os.stat(options.secrets).st_mode & (stat.S_IXGRP | stat.S_IRWXO):
-            print('Set Permissions on {} to 600'.format(options.secrets))
+            logger.error('Set Permissions on {} to 600'.format(options.secrets))
             sys.exit(1)
         secrets_dict = Config(options.secrets)
         if 'StartdLogging' in secrets_dict:
@@ -107,8 +113,8 @@ def main():
         else:
             secrets_startd_logging = {}
     else:
-        print('Error Accessing Secrets File: {}.  '
-              'Did you set the --secrets flag?'.format(options.secrets))
+        logger.error('Error Accessing Secrets File: {}.  '.format(options.secrets) +
+                     'Did you set the --secrets flag?')
         sys.exit(1)
 
     # Importing the correct class to handle the submit
@@ -133,12 +139,6 @@ def main():
 
     # if "glidein_cmd" not in config_dict["Glidein"]:
     #     raise Exception('no glidein_cmd')
-
-    if ('Mode' in config_dict and 'debug' in config_dict['Mode'] and
-        config_dict['Mode']['debug']):
-        logging.basicConfig(level=logging.DEBUG,format='%(asctime)s %(levelname)s %(message)s')
-    else:
-        logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
 
     # Failing if startd logging is enabled and python version < 2.7
     if ('send_startd_logs' in config_startd_logging and
