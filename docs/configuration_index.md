@@ -4,6 +4,7 @@ List of available configuration options.
 
 ## [Cluster]
 mem_only: True/False. Set only mem requirement for PBS (default: False).
+set_gpu_req: True/False. Set gpus requirement for PBS (default: True).
 
 ## [StartdChecks]
 
