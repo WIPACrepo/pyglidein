@@ -120,7 +120,7 @@ class SubmitPBS(Submit):
         node_property = cluster_config.get("node_property", False)
         if node_property:
             resource_line +=':%s' % (node_property)
-        if num_gpus > 0:
+        if num_gpus > 0 and cluster_config.get("set_gpu_req", True):
             resource_line += ':gpus=%d' % (num_gpus)
         self.write_option(f, resource_line)
 
