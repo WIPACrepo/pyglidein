@@ -130,6 +130,8 @@ class SubmitPBS(Submit):
             self.write_option(f, "-l pmem=%dmb,vmem=%dmb" % (mem,mem*num_cpus))
         elif cluster_config.get("vmem_only", False):
             self.write_option(f, "-l vmem=%dmb" % mem)
+        elif cluster_config.get("mem_only", False):
+            self.write_option(f, "-l mem=%dmb" % mem)
         else:
             self.write_option(f, "-l pmem=%dmb,mem=%dmb" % (mem,mem*num_cpus))
         self.write_option(f, "-l walltime=%d:00:00" % walltime_hours)

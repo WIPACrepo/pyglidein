@@ -2,6 +2,9 @@
 
 List of available configuration options.
 
+## [Cluster]
+mem_only: True/False. Set only mem requirement for PBS (default: False).
+
 ## [StartdChecks]
 
 * enable_startd_checks: True/False.  Enable or disable Startd monitoring checks. 
