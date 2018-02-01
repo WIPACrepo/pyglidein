@@ -7,6 +7,7 @@ import urllib
 import tarfile
 import glob
 import tempfile
+import requests
 
 # TODO: Install pyglidein egg instead of appending paths
 sys.path.append('/pyglidein')
@@ -14,6 +15,8 @@ from pyglidein.config import Config
 
 CONFIGURATION = ('/pyglidein/dev_build/client_pbs_torque/root/etc/sv/pyglidein_client/'
                  'pbs_torque_config')
+SERVER_CONFIGURATION = os.path.join('/pyglidein/dev_build/server/root/etc/sv/pyglidein_server/',
+                                    'pyglidein_server.config')
 SECRETS = '/home/condor/.pyglidein_secrets'
 
 
@@ -22,6 +25,7 @@ class TestPBSTorqueGlidein(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config_dict = Config(CONFIGURATION)
+        server_config_dict = Config(SERVER_CONFIGURATION)
         secrets_dict = Config(SECRETS)
         cls.config = config_dict
         cls.secrets = secrets_dict
@@ -33,6 +37,8 @@ class TestPBSTorqueGlidein(unittest.TestCase):
         cls.minio_secret_key = secrets_dict['StartdLogging']['secret_key']
         cls.minio_secure = True
         cls.pyglidein_client_name = 'pyglidein-client'
+        cls.metrics_graphite_server = server_config_dict['metrics']['graphite_server']
+        cls.metrics_namespace = server_config_dict['metrics']['namespace']
 
         cls.tmpdir = tempfile.mkdtemp()
 
@@ -155,6 +161,54 @@ class TestPBSTorqueGlidein(unittest.TestCase):
         for metric in startd_metrics:
             self.assertTrue(startd.get(metric, 0) > 0,
                             msg='{} does not exist or equals 0'.format(metric))
+
+    def test_client_metrics(self):
+
+        coll = htcondor.Collector()
+        startd = coll.locateAll(htcondor.DaemonTypes.Startd)
+        if len(startd) == 0:
+            # Submitting some sleep jobs
+            job = {"executable": "/bin/sleep",
+                   "arguments": "5m",
+                   "request_memory": "500"}
+
+            sub = htcondor.Submit(job)
+            schedd = htcondor.Schedd()
+            with schedd.transaction() as txn:
+                sub.queue(txn, 1)
+
+            # Waiting for the glideins to start
+            time.sleep(60)
+
+        uuid = 'pyglideinpyglideinclient'
+        partition = 'Cluster'
+        metrics = [
+            'glideins.launched',
+            'glideins.running',
+            'glideins.idle',
+            'glideins.avg_idle_time',
+            'glideins.min_idle_time',
+            'glideins.max_idle_time'
+        ]
+        for metric in metrics:
+            path = '.'.join([self.metrics_namespace, uuid, partition, metric])
+            url = 'http://{}/render?target={}'.format(self.metrics_graphite_server, path)
+            url += '&format=json&from=-5min'
+            r = requests.get(url)
+            output = r.json()
+            self.assertTrue(len(output) > 0,
+                            msg='{} client metric not found'.format(path))
+            if len(output) > 0:
+                output = output[0]
+                self.assertTrue(len(output['datapoints']) > 0,
+                                msg='No datapoints found for {}.'.format(path))
+                self.assertTrue(output['tags']['name'] == path,
+                                msg='Metrics mismatch for {}.'.format(path))
+                not_zeros = False
+                for datapoint in output['datapoints']:
+                    if datapoint[0] != 0.0:
+                        not_zeros = True
+                self.assertTrue(not_zeros, msg='Add datapoints are zero for {}.'.format(path))
 
     def tearDown(self):
 

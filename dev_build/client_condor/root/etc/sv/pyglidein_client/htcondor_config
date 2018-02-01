@@ -30,7 +30,7 @@ site = WIPAC_Dev
 
 [Cluster]
 # User under which the jobs are being submitted
-user = $USER
+user = pyglidein
 
 # OS of the cluster
 os = RHEL7
@@ -42,10 +42,10 @@ scheduler = HTCondor
 submit_command = condor_submit
 
 # Maximum number jobs that be in the queue
-max_total_jobs = 2
+max_total_jobs = 25
 
 # Number of jobs that can be submitted per round
-limit_per_submit = 1
+limit_per_submit = 5
 
 # Is cvmfs available? True/False
 cvmfs = True
@@ -68,7 +68,8 @@ gpu_only = False
 prioritize_jobs = ["memory", "disk"]
 
 # Command needed to determine the number of jobs running
-running_cmd = condor_q $USER|grep $USER|wc|awk '{print $1}'
+running_cmd = condor_q -all -constraint 'Owner == "${USER}" && JobStatus == 2' -af ClusterID | wc -l
+idle_cmd = condor_q -constraint 'Owner == "${USER}" && JobStatus == 1' -af ClusterId | wc -l
 
 # Group jobs with the same requirements into a
 # single submission.
