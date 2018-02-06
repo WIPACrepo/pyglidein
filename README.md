@@ -18,8 +18,10 @@ for jobs to run in. Jobs then run as normal.
 
 Install
 -------
+RHEL 6 users must first run `pip install setuptools==36.8.0`.  Version 36.8.0 is the last version with RHEL 6 support.
 
-To install, just run `pip install pyglidein`
+To install, just run `pip install pyglidein`.
+
 
 ### Server
 
