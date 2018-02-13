@@ -2,7 +2,7 @@
 
 import os
 from optparse import OptionParser
-from subprocess import check_output, STDOUT
+from subprocess import Popen, PIPE
 
 
 def main():
@@ -20,7 +20,8 @@ def main():
     try:
         if os.path.isfile(cvmfs_test_file):
             cmd = ['md5sum', cvmfs_test_file]
-            output = check_output(cmd, shell=False, env=os.environ, stderr=STDOUT)
+            p = Popen(cmd, stdout=PIPE)
+            output = p.communicate()[0]
             if cvmfs_md5sum not in output:
                 raise Exception()
         else:
