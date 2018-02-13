@@ -99,7 +99,7 @@ class SubmitPBS(Submit):
 
     def write_general_header(self, f, cluster_config, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
-                             num_jobs=0, presigned_put_url=None, presigned_get_url=None):
+                             num_jobs=0):
         """
         Writing the header for a PBS submission script.
         Most of the pieces needed to tell PBS what resources
@@ -148,9 +148,6 @@ class SubmitPBS(Submit):
         if num_jobs > 0:
             self.write_option(f, "-t 0-%d" % num_jobs)
         env_vars = '-v '
-        if presigned_put_url is not None and presigned_get_url:
-            env_vars += 'PRESIGNED_PUT_URL="{}",PRESIGNED_GET_URL="{}",'.format(presigned_put_url,
-                                                                                presigned_get_url)
         if not self.config.get("StartdChecks", {}).get("enable_startd_checks", True):
             env_vars += 'DISABLE_STARTD_CHECKS=1'
         if env_vars != '-v ':
@@ -192,7 +189,8 @@ class SubmitPBS(Submit):
         if 'cluster' in self.config['Glidein']:
             self.write_line(f, 'CLUSTER="%s"' % self.config['Glidein']['cluster'])
 
-    def write_glidein_part(self, f, local_dir=None, glidein_tarball=None):
+    def write_glidein_part(self, f, local_dir=None, glidein_tarball=None, presigned_put_url=None,
+                           presigned_get_url=None):
         """
         Writing the pieces needed to execute the glidein
 
@@ -235,7 +233,6 @@ class SubmitPBS(Submit):
                     raise Exception("Stard cron script not found: {}".format(script))
                 self.write_line(f, 'ln -fs %s %s' % (script_path, script))
         f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME '
-                'PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL PRESIGNED_GET_URL=$PRESIGNED_GET_URL '
                 'DISABLE_STARTD_CHECKS=$DISABLE_STARTD_CHECKS ')
         if 'site' in self.config['Glidein']:
             f.write('SITE=$SITE ')
@@ -244,6 +241,9 @@ class SubmitPBS(Submit):
             f.write('CLUSTER=$CLUSTER ')
         if self.config['SubmitFile'].get('cvmfs_job_wrapper', False):
             f.write('CVMFS_JOB_WRAPPER=1 ')
+        if presigned_put_url is not None and presigned_get_url is not None:
+            f.write('PRESIGNED_PUT_URL="{}" PRESIGNED_GET_URL="{}" '.format(presigned_put_url,
+                                                                            presigned_get_url))
         if "CustomEnv" in self.config:
             for k, v in self.config["CustomEnv"].items():
                 f.write(k + '=' + v + ' ')
@@ -321,9 +321,7 @@ class SubmitPBS(Submit):
             self.write_general_header(f, cluster_config, mem=mem_requested, num_cpus=num_cpus,
                                       num_gpus=num_gpus, walltime_hours=walltime,
                                       disk=disk,
-                                      num_jobs = state["count"] if group_jobs else 0,
-                                      presigned_put_url=presigned_put_url,
-                                      presigned_get_url=presigned_get_url)
+                                      num_jobs = state["count"] if group_jobs else 0)
 
             if "custom_header" in self.config["SubmitFile"]:
                 self.write_line(f, self.config["SubmitFile"]["custom_header"])
@@ -336,6 +334,8 @@ class SubmitPBS(Submit):
 
             kwargs = {
                 'local_dir': self.config["SubmitFile"]["local_dir"],
+                'presigned_put_url': presigned_put_url,
+                'presigned_get_url': presigned_get_url
             }
             if "tarball" in self.config["Glidein"]:
                 if "loc" in self.config["Glidein"]:
@@ -414,7 +414,7 @@ class SubmitSLURM(SubmitPBS):
 
     def write_general_header(self, f, cluster_config, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
-                             num_jobs=0, presigned_put_url=None, presigned_get_url=None):
+                             num_jobs=0):
         """
         Writing the header for a SLURM submission script.
         Most of the pieces needed to tell SLURM what resources
@@ -470,7 +470,7 @@ class SubmitUGE(SubmitPBS):
 
     def write_general_header(self, f, cluster_config, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
-                             num_jobs=0, presigned_put_url=None, presigned_get_url=None):
+                             num_jobs=0):
         """
         Writing the header for a SLURM submission script.
         Most of the pieces needed to tell SLURM what resources
@@ -509,7 +509,7 @@ class SubmitLSF(SubmitPBS):
 
     def write_general_header(self, f, cluster_config, mem=3000, walltime_hours=14, disk=1,
                              num_nodes=1, num_cpus=1, num_gpus=0,
-                             num_jobs=0, presigned_put_url=None, presigned_get_url=None):
+                             num_jobs=0):
         """
         Writing the header for an LSF submission script.
         Most of the pieces needed to tell LSF what resources
