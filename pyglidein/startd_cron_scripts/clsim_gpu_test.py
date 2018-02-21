@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
+import base64
 import os
 from optparse import OptionParser
-from subprocess import check_output, STDOUT
+from subprocess import CalledProcessError, check_output, STDOUT
+import sys
 import xml.etree.ElementTree as ET
 
 OUTPUT_FILE = 'benchmark.xml'
@@ -20,11 +22,6 @@ def main():
     (options, args) = parser.parse_args()
 
     try:
-        # This line is needed to access the nvidia gpus via OpenCL inside a container.
-        # TODO: Is this needed in a grid environment?
-        os.environ['LD_LIBRARY_PATH'] = ('/usr/local/nvidia/lib64:' +
-                                         os.environ.get('LD_LIBRARY_PATH', ''))
-
         cmd = []
         cmd.append(os.path.join('/cvmfs/icecube.opensciencegrid.org/py2-v2',
                                 os.environ['OS_ARCH'],
@@ -34,8 +31,13 @@ def main():
                                 'metaprojects/simulation/V05-00-07/clsim/resources',
                                 'scripts/benchmark.py'))
         cmd.extend(['-n', options.n])
-        check_output(cmd, shell=False, env=os.environ, stderr=STDOUT)
-
+        try:
+            check_output(cmd, shell=False, env=os.environ, stderr=STDOUT)
+        except CalledProcessError as e:
+            print 'PYGLIDEIN_RESOURCE_GPU="{}"'.format(base64.b64encode(e.output))
+            print '- update:true'
+            sys.exit(0)
+        
         tree = ET.parse(OUTPUT_FILE)
         root = tree.getroot()
         for child in root[0][1]:
@@ -44,6 +46,8 @@ def main():
 
         print 'PYGLIDEIN_RESOURCE_GPU=True'
         print '- update:true'
+    except SystemExit:
+        print 'SystemExit'
     except:
         print 'PYGLIDEIN_RESOURCE_GPU=False'
         print '- update:true'
