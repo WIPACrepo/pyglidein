@@ -2,8 +2,7 @@
 
 import os
 from optparse import OptionParser
-from subprocess import CalledProcessError, check_output, STDOUT
-import sys
+from subprocess import check_output, STDOUT
 import xml.etree.ElementTree as ET
 
 OUTPUT_FILE = 'benchmark.xml'
@@ -26,36 +25,29 @@ def main():
         if gpus == '0':
             print 'PYGLIDEIN_RESOURCE_GPU=False'
             print '- update:true'
-            sys.exit(0)
         else:
             gpu = gpus.split(',')[0][4]
             env['CUDA_VISIBLE_DEVICES'] = gpu
-        cmd = []
-        cmd.append(os.path.join('/cvmfs/icecube.opensciencegrid.org/py2-v2',
-                                os.environ['OS_ARCH'],
-                                'metaprojects/simulation/V05-00-07/env-shell.sh'))
-        cmd.append(os.path.join('/cvmfs/icecube.opensciencegrid.org/py2-v2',
-                                os.environ['OS_ARCH'],
-                                'metaprojects/simulation/V05-00-07/clsim/resources',
-                                'scripts/benchmark.py'))
-        cmd.extend(['-n', options.n])
-        try:
+            cmd = []
+            cmd.append(os.path.join('/cvmfs/icecube.opensciencegrid.org/py2-v2',
+                                    os.environ['OS_ARCH'],
+                                    'metaprojects/simulation/V05-00-07/env-shell.sh'))
+            cmd.append(os.path.join('/cvmfs/icecube.opensciencegrid.org/py2-v2',
+                                    os.environ['OS_ARCH'],
+                                    'metaprojects/simulation/V05-00-07/clsim/resources',
+                                    'scripts/benchmark.py'))
+            cmd.extend(['-n', options.n])
+
             check_output(cmd, shell=False, env=env, stderr=STDOUT)
-        except CalledProcessError:
-            print 'PYGLIDEIN_RESOURCE_GPU=False'
+
+            tree = ET.parse(OUTPUT_FILE)
+            root = tree.getroot()
+            for child in root[0][1]:
+                if child.tag == 'item' and child[0].text in CLASSAD_MAP:
+                        print '{}={}'.format(CLASSAD_MAP[child[0].text], child[1].text)
+
+            print 'PYGLIDEIN_RESOURCE_GPU=True'
             print '- update:true'
-            sys.exit(0)
-
-        tree = ET.parse(OUTPUT_FILE)
-        root = tree.getroot()
-        for child in root[0][1]:
-            if child.tag == 'item' and child[0].text in CLASSAD_MAP:
-                    print '{}={}'.format(CLASSAD_MAP[child[0].text], child[1].text)
-
-        print 'PYGLIDEIN_RESOURCE_GPU=True'
-        print '- update:true'
-    except SystemExit:
-        pass
     except:
         print 'PYGLIDEIN_RESOURCE_GPU=False'
         print '- update:true'
