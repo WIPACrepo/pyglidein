@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import base64
 import os
 from optparse import OptionParser
 from subprocess import CalledProcessError, check_output, STDOUT
@@ -22,6 +21,15 @@ def main():
     (options, args) = parser.parse_args()
 
     try:
+        env = os.environ
+        gpus = env.get('GPUS', '0')
+        if gpus == '0':
+            print 'PYGLIDEIN_RESOURCE_GPU=False'
+            print '- update:true'
+            sys.exit(0)
+        else:
+            gpu = gpus.split(',')[0][4]
+            env['CUDA_VISIBLE_DEVICES'] = gpu
         cmd = []
         cmd.append(os.path.join('/cvmfs/icecube.opensciencegrid.org/py2-v2',
                                 os.environ['OS_ARCH'],
@@ -32,12 +40,12 @@ def main():
                                 'scripts/benchmark.py'))
         cmd.extend(['-n', options.n])
         try:
-            check_output(cmd, shell=False, env=os.environ, stderr=STDOUT)
-        except CalledProcessError as e:
-            print 'PYGLIDEIN_RESOURCE_GPU="{}"'.format(base64.b64encode(e.output))
+            check_output(cmd, shell=False, env=env, stderr=STDOUT)
+        except CalledProcessError:
+            print 'PYGLIDEIN_RESOURCE_GPU=False'
             print '- update:true'
             sys.exit(0)
-        
+
         tree = ET.parse(OUTPUT_FILE)
         root = tree.getroot()
         for child in root[0][1]:
@@ -47,9 +55,9 @@ def main():
         print 'PYGLIDEIN_RESOURCE_GPU=True'
         print '- update:true'
     except SystemExit:
-        print 'SystemExit'
+        pass
     except:
-        print 'PYGLIDEIN_RESOURCE_GPU=False'
+        print 'PYGLIDEIN_RESOURCE_GPU={}'.format(env['GPUS'])
         print '- update:true'
 
 
