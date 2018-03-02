@@ -57,7 +57,7 @@ def main():
     except SystemExit:
         pass
     except:
-        print 'PYGLIDEIN_RESOURCE_GPU={}'.format(env['GPUS'])
+        print 'PYGLIDEIN_RESOURCE_GPU=False'
         print '- update:true'
 
 
