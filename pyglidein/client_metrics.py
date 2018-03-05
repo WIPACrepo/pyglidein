@@ -89,12 +89,69 @@ class ClientMetricsCondor(ClientMetrics):
                           '{}: {}s.'.format(partition, metrics['max_idle_time'][partition]))
 
         return metrics
-        
+
+
+class ClientMetricsSlurm(ClientMetrics):
+    """
+    Collect client metrics from a Slurm cluster
+    """
+
+    def get_mma_idle_time(self, partition='Cluster'):
+        DEFAULT_MMA_CMD = 'squeue -u {} -t PENDING -o "%V" -h'.format(self.user)
+
+        now = datetime.utcnow()
+        job_count = 0
+        total = timedelta(0)
+        min_delta = timedelta.max
+        max_delta = timedelta(0)
+        metrics = {
+            'avg_idle_time': {},
+            'min_idle_time': {},
+            'max_idle_time': {}
+        }
+
+        cmd = DEFAULT_MMA_CMD
+        if self.config.get(partition, {}).get('mma_cmd', False):
+            cmd = self.config[partition]['mma_cmd']
+        cmd = os.path.expandvars(cmd)
+        cmd = shlex.split(cmd)
+        output = check_output(cmd, shell=False, env=os.environ, stderr=STDOUT)
+        for line in output.split('\n'):
+            if line != '':
+                qtime = datetime.strptime(line, '%Y-%m-%dT%H:%M:%S')
+                delta = now - qtime
+                if delta < min_delta:
+                    min_delta = delta
+                if delta > max_delta:
+                    max_delta = delta
+                total += delta
+                job_count += 1
+
+        # Updating Metrics
+        if job_count > 0:
+            metrics['avg_idle_time'][partition] = int(total.total_seconds() / job_count)
+            metrics['min_idle_time'][partition] = int(min_delta.total_seconds())
+            metrics['max_idle_time'][partition] = int(max_delta.total_seconds())
+        else:
+            metrics['avg_idle_time'][partition] = 0
+            metrics['min_idle_time'][partition] = 0
+            metrics['max_idle_time'][partition] = 0
+
+        self.logger.debug('avg_idle_time for ' +
+                          '{}: {}s.'.format(partition, metrics['avg_idle_time'][partition]))
+        self.logger.debug('min_idle_time for ' +
+                          '{}: {}s.'.format(partition, metrics['min_idle_time'][partition]))
+        self.logger.debug('max_idle_time for ' +
+                          '{}: {}s.'.format(partition, metrics['max_idle_time'][partition]))
+
+        return metrics
+
+
 class ClientMetricsPBS(ClientMetrics):
     """
     Collect client metrics from a PBS cluster
     """
-    
+
     def get_mma_idle_time(self, partition='Cluster'):
         DEFAULT_MMA_CMD = 'qstat -u {} -f'.format(self.user)
 

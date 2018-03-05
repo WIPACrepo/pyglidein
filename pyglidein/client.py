@@ -127,7 +127,7 @@ def main():
         metrics = client_metrics.ClientMetricsPBS(config_dict, secrets_dict)
     elif sched_type == "slurm":
         scheduler = submit.SubmitSLURM(config_dict, secrets_dict)
-        metrics = client_metrics.ClientMetricsPBS(config_dict, secrets_dict)
+        metrics = client_metrics.ClientMetricsSlurm(config_dict, secrets_dict)
     elif sched_type == "uge":
         scheduler = submit.SubmitUGE(config_dict, secrets_dict)
         metrics = client_metrics.ClientMetricsPBS(config_dict, secrets_dict)
