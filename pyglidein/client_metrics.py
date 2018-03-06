@@ -50,7 +50,7 @@ class ClientMetricsCondor(ClientMetrics):
         import htcondor
         
         schedd = htcondor.Schedd()
-        now = datetime.utcnow()
+        now = datetime.now()
         job_count = 0
         total = timedelta(0)
         min_delta = timedelta.max
@@ -99,7 +99,7 @@ class ClientMetricsSlurm(ClientMetrics):
     def get_mma_idle_time(self, partition='Cluster'):
         DEFAULT_MMA_CMD = 'squeue -u {} -t PENDING -o "%V" -h'.format(self.user)
 
-        now = datetime.utcnow()
+        now = datetime.now()
         job_count = 0
         total = timedelta(0)
         min_delta = timedelta.max
@@ -155,7 +155,7 @@ class ClientMetricsPBS(ClientMetrics):
     def get_mma_idle_time(self, partition='Cluster'):
         DEFAULT_MMA_CMD = 'qstat -u {} -f'.format(self.user)
 
-        now = datetime.utcnow()
+        now = datetime.now()
         job_count = 0
         total = timedelta(0)
         min_delta = timedelta.max
