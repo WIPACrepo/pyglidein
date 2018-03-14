@@ -184,6 +184,16 @@ else
     if [ -z $http_proxy ]; then
         http_proxy=http://squid.icecube.wisc.edu:3128
     fi
+    # Setup startd cron scripts for parrot
+    export _condor_STARTD_CRON_CLSIMGPU_EXECUTABLE='../../glidein/GLIDEIN_PARROT/run_parrot'
+    export _condor_STARTD_CRON_CLSIMGPU_ARGS='../../post_cvmfs.sh ../../clsim_gpu_test.py -n 1'
+    export _condor_STARTD_CRON_CLSIMGPU_ENV="\"GLIDEIN_PARROT_TMP=${GLIDEIN_PARROT_TMP} GLIDEIN_PARROT=${PWD}/GLIDEIN_PARROT _CONDOR_SCRATCH_DIR=${PWD} http_proxy=${http_proxy}\""
+    export _condor_STARTD_CRON_CVMFS_EXECUTABLE='../../glidein/GLIDEIN_PARROT/run_parrot'
+    export _condor_STARTD_CRON_CVMFS_ARGS='../../pre_cvmfs.sh ../../cvmfs_test.py /cvmfs/icecube.opensciencegrid.org/py2-v1/RHEL_6_x86_64/bin/globus-url-copy 36648bd8463ecfc7464042628905d490'
+    export _condor_STARTD_CRON_CVMFS_ENV="\"GLIDEIN_PARROT_TMP=${GLIDEIN_PARROT_TMP} GLIDEIN_PARROT=${PWD}/GLIDEIN_PARROT _CONDOR_SCRATCH_DIR=${PWD} http_proxy=${http_proxy}\""
+    export _condor_STARTD_CRON_GRIDFTP_EXECUTABLE='../../glidein/GLIDEIN_PARROT/run_parrot'
+    export _condor_STARTD_CRON_GRIDFTP_ARGS='../../post_cvmfs.sh ../../gridftp_test.py gridftp.icecube.wisc.edu 2811'
+    export _condor_STARTD_CRON_GRIDFTP_ENV="\"GLIDEIN_PARROT_TMP=${GLIDEIN_PARROT_TMP} GLIDEIN_PARROT=${PWD}/GLIDEIN_PARROT _CONDOR_SCRATCH_DIR=${PWD} http_proxy=${http_proxy}\""
     cat > $PWD/parrot_job_env.sh << "EOF"
 #!/bin/sh
 $@
