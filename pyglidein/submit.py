@@ -583,7 +583,7 @@ class SubmitCondor(Submit):
             self.write_line(f, '#!/bin/sh')
             self.write_line(f, 'CPUS=$(grep -e "^Cpus" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}")')
             self.write_line(f, 'MEMORY=$(grep -e "^Memory" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}")')
-            self.write_line(f, 'DISK=$(grep -e "^Disk" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}")')
+            self.write_line(f, 'DISK=$(grep -e "^Disk =" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}")')
             self.write_line(f, 'GPUS=$(grep -e "^AssignedGPUs" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}"|sed "s/\\"//g")')
             self.write_line(f, 'if ( [ -z $GPUS ] && [ ! -z $CUDA_VISIBLE_DEVICES ] ); then')
             self.write_line(f, '  GPUS=$CUDA_VISIBLE_DEVICES')
