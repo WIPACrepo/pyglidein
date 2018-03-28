@@ -319,10 +319,11 @@ def main():
 
     config = Config(options.config)
 
+    logformat = '%(asctime)s %(levelname)s %(name)s : %(message)s'
     if options.debug:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG, format=logformat)
     else:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO, format=logformat)
 
     if options.delay < 0 or options.delay > 1000:
         raise Exception('delay out of range')
