@@ -204,6 +204,56 @@ class ClientMetricsPBS(ClientMetrics):
 
         return metrics
 
+class ClientMetricsLSF(ClientMetrics):
+    """
+    Collect client metrics from a LSF cluster
+    """
+
+    def get_mma_idle_time(self, partition='Cluster'):
+        DEFAULT_MMA_CMD = 'bhist -a -w -n 5 -u {}'.format(self.user)
+
+        job_count = 0
+        total = 0
+        min_delta = timedelta.max.total_seconds()
+        max_delta = 0
+        metrics = {
+                   'avg_idle_time': {},
+                   'min_idle_time': {},
+                   'max_idle_time': {}
+                   }
+
+        cmd = DEFAULT_MMA_CMD
+        if self.config.get(partition, {}).get('mma_cmd', False):
+            cmd = self.config[partition]['mma_cmd']
+        cmd = os.path.expandvars(cmd)
+        cmd = shlex.split(cmd)
+        output = check_output(cmd, shell=False, env=os.environ, stderr=STDOUT)
+        for line in output.split('\n')[2:]:
+            if len(line.split()) != 10: continue
+            delta = int(line.split()[3])
+            if delta < min_delta:
+                min_delta = delta
+            if delta > max_delta:
+                max_delta = delta
+            total += delta
+            job_count += 1
+
+        # Updating Metrics
+        if job_count > 0:
+            metrics['avg_idle_time'][partition] = int(total / job_count)
+        else:
+            metrics['avg_idle_time'][partition] = 0
+        metrics['min_idle_time'][partition] = int(min_delta)
+        metrics['max_idle_time'][partition] = int(max_delta)
+
+        self.logger.debug('avg_idle_time for ' +
+                          '{}: {}s.'.format(partition, metrics['avg_idle_time'][partition]))
+        self.logger.debug('min_idle_time for ' +
+                          '{}: {}s.'.format(partition, metrics['min_idle_time'][partition]))
+        self.logger.debug('max_idle_time for ' +
+                          '{}: {}s.'.format(partition, metrics['max_idle_time'][partition]))
+
+        return metrics
 
 class ClientMetricsBundle(object):
 
