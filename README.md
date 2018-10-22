@@ -4,6 +4,8 @@ pyglidein
 A python server-client pair for submitting HTCondor glidein jobs on
 remote batch systems.
 
+[![DOI](https://zenodo.org/badge/35975394.svg)](https://zenodo.org/badge/latestdoi/35975394)
+
 Overview
 --------
 
