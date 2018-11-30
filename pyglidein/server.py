@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import absolute_import, division, print_function
 
+import os
 import subprocess
 import threading
 import logging
@@ -315,32 +316,60 @@ def main():
                       help='Enable debug logging')
     parser.add_option('--config', type='string', default='pyglidein_server.config',
                       help="config file for cluster")
+    parser.add_option('-n','--no-daemon',dest='daemon',default=True,action='store_false',help='do not daemonize')
+    parser.add_option('--logfile',default='log',help='filename for logging (daemon mode)')
     (options, args) = parser.parse_args()
 
     config = Config(options.config)
 
     logformat = '%(asctime)s %(levelname)s %(name)s : %(message)s'
-    if options.debug:
-        logging.basicConfig(level=logging.DEBUG, format=logformat)
-    else:
-        logging.basicConfig(level=logging.INFO, format=logformat)
+    kwargs = {
+        'format': logformat,
+        'level': logging.DEBUG if options.debug else logging.INFO,
+    }
+    
+    if options.daemon:
+        kwargs['filename'] = options.logfile
 
     if options.delay < 0 or options.delay > 1000:
         raise Exception('delay out of range')
         
     if config.get('metrics', {}).get('enable_metrics', False):
         metrics_sender_client = MetricsSenderClient(config['metrics'])
-    else: metrics_sender_client = None
+    else:
+        metrics_sender_client = None
 
     cfg = {'options': options, 'config': config, 'condor_q': False, 'state': [], 'monitoring': {},
            'metrics_sender_client': metrics_sender_client}
+    
+    def starter():
+        logging.basicConfig(**kwargs)
 
-    # load condor_q
-    IOLoop.instance().call_later(5, partial(condor_q_helper, cfg))
+        # load condor_q
+        IOLoop.instance().call_later(5, partial(condor_q_helper, cfg))
 
-    # setup server
-    s = server(cfg)
-    s.start()
+        # setup server
+        s = server(cfg)
+        s.start()
+
+    if options.daemon:
+        from pyglidein.daemon import Daemon
+        pid = '/tmp/authorlist.pid'
+        d = Daemon(pidfile=pid, chdir=os.getcwd(),
+                   runner=starter)
+        action = args[0] if args else None
+        if (not action) or action == 'start':
+            d.start()
+        elif action == 'stop':
+            d.stop()
+        elif action == 'restart':
+            d.restart()
+        elif action == 'kill':
+            d.kill()
+        else:
+            raise Exception('unknown action')
+    else:
+        starter()
 
 if __name__ == '__main__':
     main()
