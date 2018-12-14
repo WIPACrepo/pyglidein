@@ -66,7 +66,7 @@ fi
 export GOTO_NUM_THREADS=1
 
 # assume you are already in a scratch directory
-mkdir glidein
+mkdir -p glidein
 cd glidein
 
 export _condor_OASIS_CVMFS_Exists="${CVMFS}"
