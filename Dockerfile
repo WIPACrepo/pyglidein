@@ -39,4 +39,4 @@ ENV SITE=dockerized_pyglidein \
     DISK=8000000 \
     WALLTIME=72000
 
-ENTRYPOINT ["/sbin/tini", "-g", "--", "/home/condor/pyglidein/glidein_start.sh"]
+ENTRYPOINT ["/sbin/tini", "-g", "--", "/home/condor/pyglidein/glidein_start_in_docker.sh"]
