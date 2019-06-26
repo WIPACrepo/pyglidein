@@ -13,7 +13,6 @@ for k in os.environ:
 EOF
 )
 eval $VAR
-EOF
 
 export SINGULARITYENV_LD_LIBRARY_PATH=/.singularity.d/libs/
 
