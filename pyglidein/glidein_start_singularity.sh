@@ -27,13 +27,19 @@ fi
 if [ -d /cvmfs/icecube.opensciencegrid.org ]; then
 
     ARGS="$ARGS -B /cvmfs"
-    CONTAINER=/cvmfs/singularity.opensciencegrid.org/opensciencegrid/osgvo-el7-cuda10:latest
-else
-
-    CONTAINER=docker://opensciencegrid/osgvo-el7-cuda10
-
 fi
 
+if [ "x$CONTAINER" = "x" ]; then
+
+    if  [ -d /cvmfs/singularity.opensciencegrid.org ]; then
+
+	CONTAINER=/cvmfs/singularity.opensciencegrid.org/opensciencegrid/osgvo-el7-cuda10:latest
+    else
+    
+	CONTAINER=docker://opensciencegrid/osgvo-el7-cuda10
+    fi
+
+fi
 
 singularity exec --nv -C -B /tmp $ARGS -B $PWD:/mnt --pwd /mnt $CONTAINER /bin/sh glidein_start.sh
 
