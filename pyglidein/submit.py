@@ -207,19 +207,19 @@ class SubmitPBS(Submit):
         self.write_line(f, 'fi')
         self.write_line(f, 'cd $LOCAL_DIR')
         if glidein_tarball:
-            self.write_line(f, 'ln -fs %s %s' % (glidein_tarball, os.path.basename(glidein_tarball)))
+            self.write_line(f, 'cp %s %s' % (glidein_tarball, os.path.basename(glidein_tarball)))
         glidein_script = self.get_glidein_script()
         if not os.path.isfile(glidein_script):
             raise Exception("glidein_script %s does not exist!" % glidein_script)
-        self.write_line(f, 'ln -fs %s %s' % (glidein_script, os.path.basename(glidein_script)))
+        self.write_line(f, 'cp %s %s' % (glidein_script, os.path.basename(glidein_script)))
         osarch_script = os.path.join(os.path.dirname(glidein_script), 'os_arch.sh')
         if not os.path.isfile(osarch_script):
             raise Exception("%s does not exist!" % osarch_script)
-        self.write_line(f, 'ln -fs %s %s' % (osarch_script, 'os_arch.sh'))
+        self.write_line(f, 'cp %s %s' % (osarch_script, 'os_arch.sh'))
         log_shipper_script = os.path.join(os.path.dirname(glidein_script), 'log_shipper.sh')
         if not os.path.isfile(log_shipper_script):
             raise Exception("%s does not exist!" % log_shipper_script)
-        self.write_line(f, 'ln -fs %s %s' % (log_shipper_script, 'log_shipper.sh'))
+        self.write_line(f, 'cp %s %s' % (log_shipper_script, 'log_shipper.sh'))
         # Adding StartD Cron Scripts
         if self.config.get("StartdChecks", {}).get("enable_startd_checks", True):
             startd_cron_scripts_dir = os.path.join(os.path.dirname(glidein_script),
@@ -231,7 +231,7 @@ class SubmitPBS(Submit):
                 script_path = os.path.join(startd_cron_scripts_dir, script)
                 if not os.path.isfile(script_path):
                     raise Exception("Stard cron script not found: {}".format(script))
-                self.write_line(f, 'ln -fs %s %s' % (script_path, script))
+                self.write_line(f, 'cp %s %s' % (script_path, script))
         f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME '
                 'DISABLE_STARTD_CHECKS=$DISABLE_STARTD_CHECKS ')
         if 'site' in self.config['Glidein']:
@@ -247,8 +247,14 @@ class SubmitPBS(Submit):
         if "CustomEnv" in self.config:
             for k, v in self.config["CustomEnv"].items():
                 f.write(k + '=' + v + ' ')
-        executable = os.path.basename(glidein_script)
-        self.write_line(f, './%s' % executable)
+        if 'executable' in self.config['SubmitFile']:
+            f.write(str(self.config['SubmitFile']['executable']))
+        else:
+            f.write(str(os.path.basename(self.get_glidein_script())))
+
+        #executable = os.path.basename(glidein_script)
+        #self.write_line(f, './%s' % executable)
+        self.write_line(f, '')
         self.write_line(f, 'if [ $CLEANUP -eq 1 ]; then')
         self.write_line(f, '    rm -rf $LOCAL_DIR')
         self.write_line(f, 'fi')

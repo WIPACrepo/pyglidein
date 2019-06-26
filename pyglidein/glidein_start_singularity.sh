@@ -40,7 +40,14 @@ if [ "x$CONTAINER" = "x" ]; then
 
 fi
 
-singularity exec --nv -C -B /tmp $ARGS -B $PWD:/mnt --pwd /mnt $CONTAINER /bin/sh glidein_start.sh
+if [ "x$SINGULARITY_BIN" = "x" ]; then
+    
+    SINGULARITY_BIN="singularity"
+
+fi
+echo $SINGULARITY_BIN
+
+$SINGULARITY_BIN exec --nv --cleanenv -C -B /tmp $ARGS -B $PWD:/mnt --pwd /mnt $CONTAINER /bin/sh glidein_start.sh
 
     
 

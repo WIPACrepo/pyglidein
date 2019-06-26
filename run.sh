@@ -1,5 +1,5 @@
 #!/bin/sh
 
-export PYTHONPATH=~/pyglidein
+export PYTHONPATH=$PWD
 
-python pyglidein/client.py --config=configs/npx-test.config --secrets=secrets
+python pyglidein/client.py --config=configs/cedar.config --secrets=secrets
