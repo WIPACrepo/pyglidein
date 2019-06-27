@@ -8,6 +8,7 @@ Contents
 * [client](client.md)
   * [Configuration Index](configuration_index.md)
   * [Secrets Index](secrets_index.md)
+  * [glidein_start_singularity](glidein_start_singularity.md)
   * [glidein_start](glidein_start.md)
   * [Startd Logging](startd_logging.md)
   * [Startd Monitoring](startd_monitoring.md)
