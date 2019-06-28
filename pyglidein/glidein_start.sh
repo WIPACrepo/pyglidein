@@ -125,7 +125,12 @@ export _condor_SLOT_WEIGHT="Cpus";
 export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists HAS_CVMFS_icecube_opensciencegrid_org GLIDEIN_Site GLIDEIN_SiteResource GLIDEIN_Max_Walltime GPU_NAMES PRESIGNED_GET_URL PYGLIDEIN_PARROT PYGLIDEIN_TIME_TO_LIVE"
 export _condor_STARTER_JOB_ENVIRONMENT="\"GLIDEIN_Site=${SITE} GLIDEIN_SiteResource=${ResourceName} GLIDEIN_LOCAL_TMP_DIR=${PWD} GOTO_NUM_THREADS=1\"";
 export _condor_START="((GPUs > 0) ? (isUndefined(RequestGPUs) ? FALSE : (RequestGPUs > 0)) : TRUE)";
-export _condor_RANK="(isUndefined(RequestGPUs) ? 0 : (RequestGPUs * 10000)) + RequestMemory";
+if [ "x$GROUP" = "x" ]; then
+    export _condor_RANK="(isUndefined(RequestGPUs) ? 0 : (RequestGPUs * 10000)) + RequestMemory";
+else
+    export _condor_RANK="(isUndefined(RequestGPUs) ? 0 : (RequestGPUs * 10000)) + RequestMemory + ((Affiliation =?= \"${GROUP}\") ? 100000 : 0)";
+fi
+
 export _condor_UID_DOMAIN=""
 #export _condor_FILESYSTEM_DOMAIN=${DOMAIN}
 export _condor_MAIL=/bin/mail;

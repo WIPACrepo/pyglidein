@@ -89,3 +89,4 @@ List of available configuration options.
 * http_proxy: The address to a required proxy.
 * SINGULARITY_BIN: The absolute path to singularity (for use in container configs)
 * CONTAINER: The absolute path to the singularity image to use.
+* GROUP: This corresponds to the Affiliation classad in the Condor job. This is for ranking ONLY. (ex. Alberta)
