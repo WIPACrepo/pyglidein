@@ -377,7 +377,7 @@ class SubmitPBS(Submit):
 
         self.write_submit_file(submit_filename, state, group_jobs, cluster_config)
         num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
-        for i in xrange(num_submits):
+        for i in range(num_submits):
             if self.config['StartdLogging']['send_startd_logs'] is True:
                 startd_logfile_name = '{}_{}.tar.gz'.format(self.config['Glidein']['site'], uuid.uuid4())
                 presigned_put_url = get_presigned_put_url(startd_logfile_name, self.config, self.secrets)

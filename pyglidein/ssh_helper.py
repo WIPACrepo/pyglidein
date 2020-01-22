@@ -10,8 +10,6 @@ import logging
 import threading
 from functools import partial
 from optparse import OptionParser
-import urllib
-import urllib2
 import tempfile
 import shutil
 

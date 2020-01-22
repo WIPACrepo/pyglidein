@@ -3,7 +3,10 @@ from __future__ import absolute_import, division, print_function
 
 import logging
 import threading
-import urllib2
+try:
+    from urllib.request import Request,urlopen
+except ImportError:
+    from urllib2 import Request,urlopen
 import ast
 import datetime
 
@@ -46,11 +49,11 @@ class Client(object):
                             'params': kwargs, 'id': Client.newid()})
 
         headers = {'Content-type':'application/json'}
-        request = urllib2.Request(self._address, data=body, headers=headers)
+        request = Request(self._address, data=body, headers=headers)
 
         # make request to server
         try:
-            response = urllib2.urlopen(request, timeout=self._timeout)
+            response = urlopen(request, timeout=self._timeout)
         except Exception:
             logger.warn('error making jsonrpc request', exc_info=True)
             raise

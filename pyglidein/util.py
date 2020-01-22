@@ -55,8 +55,13 @@ JSONConverters = {
     'time':time_converter,
 }
 
+try:
+    all_builtin = (dict,list,tuple,str,unicode,int,long,float,bool)
+except ImportError:
+    all_builtin = (dict,list,tuple,str,bytes,int,float,bool)
+
 def objToJSON(obj):
-    if isinstance(obj,(dict,list,tuple,str,unicode,int,long,float,bool)) or obj is None:
+    if isinstance(obj,all_builtin) or obj is None:
         return obj
     else:
         name = obj.__class__.__name__
@@ -88,7 +93,7 @@ def recursive_unicode(obj):
     Supports lists, tuples, and dictionaries.
     """
     if isinstance(obj, dict):
-        return dict((recursive_unicode(k), recursive_unicode(v)) for (k, v) in obj.iteritems())
+        return dict((recursive_unicode(k), recursive_unicode(v)) for (k, v) in obj.items())
     elif isinstance(obj, list):
         return list(recursive_unicode(i) for i in obj)
     elif isinstance(obj, tuple):
