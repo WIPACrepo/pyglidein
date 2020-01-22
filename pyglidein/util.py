@@ -4,6 +4,7 @@ Some JSON encoding and decoding utilities.
 
 from __future__ import absolute_import, division, print_function
 
+import sys
 import json
 from datetime import date, datetime, time
 import logging
@@ -55,10 +56,10 @@ JSONConverters = {
     'time':time_converter,
 }
 
-try:
-    all_builtin = (dict,list,tuple,str,unicode,int,long,float,bool)
-except ImportError:
+if sys.version_info[0] > 2:
     all_builtin = (dict,list,tuple,str,bytes,int,float,bool)
+else:
+    from .py2_all_builtin import all_builtin
 
 def objToJSON(obj):
     if isinstance(obj,all_builtin) or obj is None:
