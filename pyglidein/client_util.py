@@ -9,6 +9,7 @@ except ImportError:
     from urllib2 import Request,urlopen
 import ast
 import datetime
+import sys
 
 from pyglidein.util import json_encode, json_decode
 
@@ -47,6 +48,9 @@ class Client(object):
         # translate request to json
         body = json_encode({'jsonrpc': '2.0', 'method': methodname,
                             'params': kwargs, 'id': Client.newid()})
+
+        if sys.version_info[0] > 2:
+            body = body.encode()
 
         headers = {'Content-type':'application/json'}
         request = Request(self._address, data=body, headers=headers)
