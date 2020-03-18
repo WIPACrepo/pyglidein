@@ -255,6 +255,9 @@ if [ -n "$PRESIGNED_PUT_URL" ]
   then
     ../log_shipper.sh ${PRESIGNED_PUT_URL} &
     PID_LOG_SHIPPER=$!
+else
+    (sleep 20 && tail -f -n +1 log.*/*Log) &
+    PID_LOG_SHIPPER=$!
 fi
 
 wait $PID
