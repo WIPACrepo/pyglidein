@@ -236,7 +236,8 @@ class SubmitPBS(Submit):
                 'DISABLE_STARTD_CHECKS=$DISABLE_STARTD_CHECKS ')
         if 'site' in self.config['Glidein']:
             f.write('SITE=$SITE ')
-        f.write('ResourceName=ResourceName ')
+        if 'resourcename' in self.config['Glidein']:
+            f.write('ResourceName=$ResourceName ')
         if 'cluster' in self.config['Glidein']:
             f.write('CLUSTER=$CLUSTER ')
         if self.config['SubmitFile'].get('cvmfs_job_wrapper', False):
@@ -615,7 +616,8 @@ class SubmitCondor(Submit):
                     'PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL PRESIGNED_GET_URL=$PRESIGNED_GET_URL ')
             if 'site' in self.config['Glidein']:
                 f.write('SITE=$SITE ')
-            f.write('ResourceName=$ResourceName ')
+            if 'resourcename' in self.config['Glidein']:
+                f.write('ResourceName=$ResourceName ')
             if 'cluster' in self.config['Glidein']:
                 f.write('CLUSTER=$CLUSTER ')
             # reduce walltime for internal job by 300 sec (5min) to make sure it finished before the outer job hits the walltime
