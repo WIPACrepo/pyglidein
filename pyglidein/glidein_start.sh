@@ -251,7 +251,7 @@ glideinExec/sbin/condor_master -dyn -f -r ${WALLTIME} &
 PID=$!
 
 # starting log_shipper
-if [ -n $PRESIGNED_PUT_URL ]
+if [ -n "$PRESIGNED_PUT_URL" ]
   then
     ../log_shipper.sh ${PRESIGNED_PUT_URL} &
     PID_LOG_SHIPPER=$!
@@ -260,7 +260,7 @@ fi
 wait $PID
 trap - SIGTERM SIGKILL
 wait $PID
-if [ -n $PRESIGNED_PUT_URL ]
+if [ -n "$PRESIGNED_PUT_URL" ]
   then
     tar czf logs.tar.gz log.*
     unset http_proxy
