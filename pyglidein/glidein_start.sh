@@ -26,6 +26,10 @@ if [ -z $RETIRETIME ]; then
     # 20 minutes
     RETIRETIME=1200
 fi
+if [ ! $RETIRETIME -lt $WALLTIME ]; then
+    echo "RETIRETIME ($RETIRETIME) must be less than WALLTIME ($WALLTIME)">&2
+    exit 1
+fi
 if [ -z $NOCLAIMTIME ]; then
     # 20 minutes
     NOCLAIMTIME=1200
@@ -247,7 +251,7 @@ export LD_LIBRARY_PATH=$_condor_LIB:$_condor_LIB/condor:$LD_LIBRARY_PATH
 
 # run condor
 trap 'kill -TERM $PID; if [ -n $PID_LOG_SHIPPER ]; then kill -TERM $PID_LOG_SHIPPER; fi' SIGTERM SIGINT
-glideinExec/sbin/condor_master -dyn -f -r ${WALLTIME} &
+glideinExec/sbin/condor_master -dyn -f -r $(((${WALLTIME}-${RETIRETIME})/60)) &
 PID=$!
 
 # starting log_shipper
