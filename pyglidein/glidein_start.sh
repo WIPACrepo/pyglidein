@@ -26,6 +26,10 @@ if [ -z $RETIRETIME ]; then
     # 20 minutes
     RETIRETIME=1200
 fi
+if [ ! $RETIRETIME -lt $WALLTIME ]; then
+    echo "RETIRETIME ($RETIRETIME) must be less than WALLTIME ($WALLTIME)">&2
+    exit 1
+fi
 if [ -z $NOCLAIMTIME ]; then
     # 20 minutes
     NOCLAIMTIME=1200
@@ -99,7 +103,7 @@ export _condor_GLIDEIN_Job_Max_Time=${WALLTIME};
 export _condor_CLAIM_WORKLIFE=${WALLTIME};
 export _condor_PYGLIDEIN_TIME_TO_LIVE="${WALLTIME} - ${RETIRETIME} - MonitorSelfAge";
 export _condor_STARTD_NOCLAIM_SHUTDOWN="ifThenElse(ifThenElse(isUndefined(NumDynamicSlots),False,NumDynamicSlots > 0), ${WALLTIME} - MonitorSelfAge, ${NOCLAIMTIME})";
-export _condor_MaxJobRetirementTime=${WALLTIME}
+export _condor_MaxJobRetirementTime="ifThenElse(PYGLIDEIN_TIME_TO_LIVE < 0, ${RETIRETIME}, PYGLIDEIN_TIME_TO_LIVE)"
 export _condor_SLOT1_RetirementTime="ifThenElse(MonitorSelfAge + ${RETIRETIME} > ${WALLTIME}, ${RETIRETIME}, ${WALLTIME} - ${RETIRETIME} - MonitorSelfAge)";
 export _condor_DAEMON_SHUTDOWN="ifThenElse(MonitorSelfAge > ${WALLTIME}, True, False)";
 export _condor_NOT_RESPONDING_TIMEOUT="${NOCLAIMTIME}*2";
@@ -247,20 +251,23 @@ export LD_LIBRARY_PATH=$_condor_LIB:$_condor_LIB/condor:$LD_LIBRARY_PATH
 
 # run condor
 trap 'kill -TERM $PID; if [ -n $PID_LOG_SHIPPER ]; then kill -TERM $PID_LOG_SHIPPER; fi' SIGTERM SIGINT
-glideinExec/sbin/condor_master -dyn -f -r ${WALLTIME} &
+glideinExec/sbin/condor_master -dyn -f -r $(((${WALLTIME}-${RETIRETIME})/60)) &
 PID=$!
 
 # starting log_shipper
-if [ -n $PRESIGNED_PUT_URL ]
+if [ -n "$PRESIGNED_PUT_URL" ]
   then
     ../log_shipper.sh ${PRESIGNED_PUT_URL} &
+    PID_LOG_SHIPPER=$!
+else
+    (sleep 20 && tail -f -n +1 log.*/*Log) &
     PID_LOG_SHIPPER=$!
 fi
 
 wait $PID
 trap - SIGTERM SIGKILL
 wait $PID
-if [ -n $PRESIGNED_PUT_URL ]
+if [ -n "$PRESIGNED_PUT_URL" ]
   then
     tar czf logs.tar.gz log.*
     unset http_proxy
