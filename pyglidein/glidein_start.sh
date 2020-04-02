@@ -2,6 +2,10 @@
 
 #DOMAIN="npx.icecube.wisc.edu"
 
+if [ -z $GLIDEIN_NAME ];  then
+    GLIDEIN_NAME=`uuid`
+fi
+
 if [ -z $GLIDEIN_DIR ]; then
     GLIDEIN_DIR=${PWD}
 fi
@@ -83,6 +87,8 @@ export _condor_OASIS_CVMFS_Exists="${CVMFS}"
 export _condor_ICECUBE_CVMFS_Exists="${CVMFS}"
 export _condor_HAS_CVMFS_icecube_opensciencegrid_org="${CVMFS}"
 
+export _condor_MASTER_NAME="\"${GLIDEIN_NAME}\""
+export _condor_STARTD_NAME="\"${GLIDEIN_NAME}\""
 export _condor_CONDOR_HOST="$CLUSTER"
 if [ "$CLUSTER" = "glidein-simprod.icecube.wisc.edu" ]; then
 	export _condor_COLLECTOR_HOST="${CLUSTER}:9618?sock=sub-collector-\$RANDOM_CHOICE(1,2,3,4,5,6,7,8,9)"
