@@ -2,8 +2,11 @@
 
 #DOMAIN="npx.icecube.wisc.edu"
 
-if [ -z $GLIDEIN_NAME ];  then
-    GLIDEIN_NAME=`uuid`
+if [ -z $GLIDEIN_NAME ]; then
+    GLIDEIN_NAME=`uuid 2>/dev/null`
+    if [ $? != 0 ]; then
+        GLIDEIN_NAME=`python -c 'import uuid;print(uuid.uuid1())'`
+    fi
 fi
 
 if [ -z $GLIDEIN_DIR ]; then
