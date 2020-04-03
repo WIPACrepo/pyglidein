@@ -56,6 +56,17 @@ if [ "x$SINGULARITY_BIN" = "x" ]; then
 fi
 echo $SINGULARITY_BIN
 
+# Set a unique hostname for the container
+if [ "x$($SINGULARITY_BIN --version | grep 'singularity version 3')" != "x" ]; then
+    if [ -z "$GLIDEIN_NAME" ]; then
+        GLIDEIN_NAME=`uuid 2>/dev/null`
+        if [ $? != 0 ]; then
+            GLIDEIN_NAME=`python -c 'from __future__ import print_function;import uuid;print(uuid.uuid1())'`
+        fi
+    fi
+    ARGS="$ARGS --hostname ${GLIDEIN_NAME}.$(hostname)"
+fi
+
 # Execute the container with appropriate configurations, which
 # will execute the glidein within.
 $SINGULARITY_BIN exec --nv --cleanenv -C -B /tmp $ARGS -B $PWD:/mnt --pwd /mnt $CONTAINER /bin/sh glidein_start.sh
