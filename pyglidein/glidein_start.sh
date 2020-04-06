@@ -90,8 +90,8 @@ export _condor_OASIS_CVMFS_Exists="${CVMFS}"
 export _condor_ICECUBE_CVMFS_Exists="${CVMFS}"
 export _condor_HAS_CVMFS_icecube_opensciencegrid_org="${CVMFS}"
 
-export _condor_MASTER_NAME="\"${GLIDEIN_NAME}\""
-export _condor_STARTD_NAME="\"${GLIDEIN_NAME}\""
+export _condor_MASTER_NAME="$GLIDEIN_NAME"
+export _condor_STARTD_NAME="$GLIDEIN_NAME"
 export _condor_CONDOR_HOST="$CLUSTER"
 if [ "$CLUSTER" = "glidein-simprod.icecube.wisc.edu" ]; then
 	export _condor_COLLECTOR_HOST="${CLUSTER}:9618?sock=sub-collector-\$RANDOM_CHOICE(1,2,3,4,5,6,7,8,9)"
@@ -244,6 +244,22 @@ export CONDOR_CONFIG=$PWD/glidein_condor_config
 export _condor_LOCAL_DIR=$PWD
 export _condor_SBIN=$PWD/glideinExec/sbin
 export _condor_LIB=$PWD/glideinExec/lib
+export _condor_LOG=$PWD/log.${GLIDEIN_NAME}
+export _condor_EXECUTE=$PWD/execute.${GLIDEIN_NAME}
+export _condor_SPOOL=$PWD/spool.${GLIDEIN_NAME}
+
+if [ ! -d $PWD/log.$GLIDEIN_NAME ]; then
+    mkdir $PWD/log.$GLIDEIN_NAME
+fi
+
+if [ ! -d $PWD/execute.$GLIDEIN_NAME ]; then
+    mkdir $PWD/execute.$GLIDEIN_NAME
+fi
+
+if [ ! -d $PWD/spool.$GLIDEIN_NAME ]; then
+    mkdir $PWD/spool.$GLIDEIN_NAME
+fi
+
 
 if [ -n "$CVMFS_JOB_WRAPPER" ]; then
     # make a job wrapper
@@ -260,7 +276,7 @@ export LD_LIBRARY_PATH=$_condor_LIB:$_condor_LIB/condor:$LD_LIBRARY_PATH
 
 # run condor
 trap 'kill -TERM $PID; if [ -n $PID_LOG_SHIPPER ]; then kill -TERM $PID_LOG_SHIPPER; fi' SIGTERM SIGINT
-glideinExec/sbin/condor_master -dyn -f -r $(((${WALLTIME}-${RETIRETIME})/60)) &
+glideinExec/sbin/condor_master -f -r $(((${WALLTIME}-${RETIRETIME})/60)) &
 PID=$!
 
 # starting log_shipper
