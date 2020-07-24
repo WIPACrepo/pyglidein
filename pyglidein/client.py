@@ -72,7 +72,7 @@ def sort_states(state, columns, reverse=True):
             v = row[k]
             if k in col_cache:
                 v *= col_cache[k]
-            ret.append(v)
+                ret.append(v)
         return ret
     return sorted(state, key=compare, reverse=reverse)
 
