@@ -1,9 +1,8 @@
 # A RHEL7+cuda container running a pyglidein
 
-# FROM centos:6
-FROM nvidia/cuda:9.0-runtime-centos7
+FROM nvidia/cuda:10.2-runtime-centos7
 
-MAINTAINER Claudio Kopper <kopper@ualberta.ca>
+MAINTAINER Claudio Kopper <koppercl@msu.edu>
 ENV TINI_VERSION v0.18.0
 
 WORKDIR /root
