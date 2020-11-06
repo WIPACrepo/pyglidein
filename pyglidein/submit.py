@@ -232,7 +232,7 @@ class SubmitPBS(Submit):
                 if not os.path.isfile(script_path):
                     raise Exception("Stard cron script not found: {}".format(script))
                 self.write_line(f, 'cp %s %s' % (script_path, script))
-        f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME '
+        f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME '
                 'DISABLE_STARTD_CHECKS=$DISABLE_STARTD_CHECKS ')
         if 'site' in self.config['Glidein']:
             f.write('SITE=$SITE ')
@@ -612,7 +612,7 @@ class SubmitCondor(Submit):
                 self.write_line(f, 'ResourceName=$(grep -e "^GLIDEIN_ResourceName" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}"|sed "s/\\"//g")')
             if 'cluster' in self.config['Glidein']:
                 self.write_line(f, 'CLUSTER="%s"' % self.config['Glidein']['cluster'])
-            f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK '
+            f.write('env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK '
                     'PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL PRESIGNED_GET_URL=$PRESIGNED_GET_URL ')
             if 'site' in self.config['Glidein']:
                 f.write('SITE=$SITE ')
