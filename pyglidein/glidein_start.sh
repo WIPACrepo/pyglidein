@@ -291,7 +291,7 @@ fi
 
 wait $PID
 trap - SIGTERM SIGKILL
-wait $PID
+
 if [ -n "$PRESIGNED_PUT_URL" ]
   then
     tar czf logs.tar.gz log.*
