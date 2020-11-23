@@ -1,5 +1,5 @@
 """Utilities used by client.py and ssh_helper.py"""
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import logging
 import threading
@@ -9,7 +9,6 @@ except ImportError:
     from urllib2 import Request,urlopen
 import ast
 import datetime
-import sys
 
 from pyglidein.util import json_encode, json_decode
 
@@ -49,8 +48,7 @@ class Client(object):
         body = json_encode({'jsonrpc': '2.0', 'method': methodname,
                             'params': kwargs, 'id': Client.newid()})
 
-        if sys.version_info[0] > 2:
-            body = body.encode()
+        body = body.encode()
 
         headers = {'Content-type':'application/json'}
         request = Request(self._address, data=body, headers=headers)

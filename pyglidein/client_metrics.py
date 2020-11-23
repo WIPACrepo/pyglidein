@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import logging
 import os
 import pwd
@@ -173,7 +175,7 @@ class ClientMetricsPBS(ClientMetrics):
         cmd = shlex.split(cmd)
         output = check_output(cmd, shell=False, env=os.environ, stderr=STDOUT)
         idle = False
-        for line in output.split('\n'):
+        for line in output.decode().split('\n'):
             if 'job_state = Q' in line:
                 idle = True
             elif 'qtime' in line and idle:

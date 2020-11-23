@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
 import subprocess
@@ -237,7 +237,7 @@ class server:
 def get_condor_version():
      p = subprocess.Popen("condor_version", shell=True, stdout=subprocess.PIPE)
      out = p.communicate()[0]
-     return out.split(" ")[1]
+     return out.decode().split(" ")[1]
 
 def condor_q(cfg):
     """Get the status of the HTCondor queue"""
@@ -260,7 +260,7 @@ def condor_q(cfg):
         print(cmd)
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         output = p.communicate()[0]
-        for line in output.splitlines():
+        for line in output.decode().splitlines():
             logger.debug(line)
             try:
                 cpus, memory, disk, gpus, reqs = line.split(', ',4)
