@@ -9,6 +9,7 @@ import os
 import time
 import atexit
 import signal
+from builtins import str
 
 class Daemon(object):
     """
