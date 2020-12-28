@@ -19,7 +19,7 @@ setup(
     ],
     keywords='htcondor dHTC glidein',
     packages=find_packages(),
-    install_requires=['minio;python_version>"2.6"', 'tornado'],
+    install_requires=['minio', 'tornado'],
     package_data={
         'pyglidein': ['etc/client_defaults.cfg',
                       'glidein_start.sh', 'log_shipper.sh', 'os_arch.sh',
