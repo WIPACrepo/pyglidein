@@ -136,7 +136,10 @@ def get_presigned_put_url(filename, config, secrets):
 
     """
     from minio import Minio
-    from minio.error import ResponseError
+    try:
+        from minio.error import ResponseError
+    except ImportError:
+        from minio.error import S3Error as ResponseError
 
     config_startd_logging = config['StartdLogging']
     secrets_startd_logging = secrets['StartdLogging']
@@ -168,7 +171,10 @@ def get_presigned_get_url(filename, config, secrets):
 
     """
     from minio import Minio
-    from minio.error import ResponseError
+    try:
+        from minio.error import ResponseError
+    except ImportError:
+        from minio.error import S3Error as ResponseError
     
     config_startd_logging = config['StartdLogging']
     secrets_startd_logging = secrets['StartdLogging']
