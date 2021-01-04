@@ -3,7 +3,6 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import os
 import subprocess
-import threading
 import logging
 from functools import partial
 from optparse import OptionParser
@@ -22,6 +21,7 @@ tornado.escape.json_decode = json_decode
 
 from tornado.ioloop import IOLoop
 from tornado.httpserver import HTTPServer
+from tornado.process import Subprocess
 import tornado.web
 import tornado.gen
 
@@ -229,18 +229,25 @@ class server:
     def start(self):
         self.http_server = HTTPServer(self.application, xheaders=True)
         self.http_server.listen(self.cfg["options"].port)
-        IOLoop.instance().start()
+        IOLoop.current().start()
     def stop(self):
         self.http_server.stop()
-        IOLoop.instance().stop()
+        IOLoop.current().stop()
 
 def get_condor_version():
      p = subprocess.Popen("condor_version", shell=True, stdout=subprocess.PIPE)
      out = p.communicate()[0]
      return out.decode().split(" ")[1]
 
+@tornado.gen.coroutine
 def condor_q(cfg):
     """Get the status of the HTCondor queue"""
+    # make sure we're not already running a condor_q
+    logger.info("foobar")
+    if cfg['condor_q'] == True:
+        return
+    cfg['condor_q'] = True
+
     logger.info('condor_q')
     cmd = ['condor_q', '-global', '-autoformat:,', 'RequestCPUs', 'RequestMemory',
            'RequestDisk', 'RequestGPUs', '-format', '"%s"', 'Requirements',
@@ -258,8 +265,8 @@ def condor_q(cfg):
     try:
         cmd = ' '.join(cmd)
         print(cmd)
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-        output = p.communicate()[0]
+        p = Subprocess(cmd, shell=True, stdout=Subprocess.STREAM)
+        output = yield p.stdout.read_until_close()
         for line in output.decode().splitlines():
             logger.debug(line)
             try:
@@ -288,18 +295,9 @@ def condor_q(cfg):
             if state is not None:
                 cfg['state'] = state
             cfg['condor_q'] = False
-            IOLoop.instance().call_later(cfg['options'].delay,
-                                         partial(condor_q_helper, cfg))
-        IOLoop.instance().add_callback(cb)
-
-def condor_q_helper(cfg):
-    """Helper to launch condor_q in a separate thread"""
-    # make sure we're not already running a condor_q
-    if not cfg['condor_q']:
-        cfg['condor_q'] = True
-        t = threading.Thread(target=partial(condor_q, cfg))
-        t.daemon = True
-        t.start()
+            IOLoop.current().call_later(cfg['options'].delay,
+                                         partial(condor_q, cfg))
+        IOLoop.current().add_callback(cb)
 
 
 def main():
@@ -346,7 +344,7 @@ def main():
         logging.basicConfig(**kwargs)
 
         # load condor_q
-        IOLoop.instance().call_later(5, partial(condor_q_helper, cfg))
+        IOLoop.current().call_later(5, partial(condor_q, cfg))
 
         # setup server
         s = server(cfg)
