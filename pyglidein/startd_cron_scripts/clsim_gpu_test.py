@@ -3,9 +3,9 @@
 import os
 from optparse import OptionParser
 from subprocess import check_output, STDOUT
-import xml.etree.ElementTree as ET
+import json
 
-OUTPUT_FILE = 'benchmark.xml'
+OUTPUT_FILE = 'benchmark.json'
 
 CLASSAD_MAP = {'I3CLSimModule_makeCLSimHits_makePhotons_clsim_AverageDeviceTimePerPhoton':
                'PYGLIDEIN_METRIC_TIME_PER_PHOTON'}
@@ -15,7 +15,7 @@ def main():
 
     usage = "usage: %prog [options]"
     parser = OptionParser(usage)
-    parser.add_option('-n', type='str', default=10,
+    parser.add_option('-n', type='str', default='10',
                       help="Number of simulations to run")
     (options, args) = parser.parse_args()
 
@@ -36,15 +36,16 @@ def main():
                                     os.environ['OS_ARCH'],
                                     'metaprojects/combo/V01-01-00/clsim/resources',
                                     'scripts/benchmark.py'))
-            cmd.extend(['-n', options.n])
+            cmd.extend(['-n', options.n, '-x', OUTPUT_FILE])
 
             check_output(cmd, shell=False, env=env, stderr=STDOUT)
 
-            tree = ET.parse(OUTPUT_FILE)
-            root = tree.getroot()
-            for child in root[0][1]:
-                if child.tag == 'item' and child[0].text in CLASSAD_MAP:
-                        print '{}={}'.format(CLASSAD_MAP[child[0].text], child[1].text)
+            with open(OUTPUT_FILE) as f:
+                data = json.load(f)
+
+            for el in data:
+                if el in CLASSAD_MAP:
+                        print '{}={}'.format(CLASSAD_MAP[el], data[el])
 
             print 'PYGLIDEIN_RESOURCE_GPU=True'
             print '- update:true'
