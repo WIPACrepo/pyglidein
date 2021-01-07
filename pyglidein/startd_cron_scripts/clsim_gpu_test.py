@@ -15,7 +15,7 @@ def main():
 
     usage = "usage: %prog [options]"
     parser = OptionParser(usage)
-    parser.add_option('-n', type='str', default=1,
+    parser.add_option('-n', type='str', default=10,
                       help="Number of simulations to run")
     (options, args) = parser.parse_args()
 
@@ -29,12 +29,12 @@ def main():
             gpu = gpus.split(',')[0][4]
             env['CUDA_VISIBLE_DEVICES'] = gpu
             cmd = []
-            cmd.append(os.path.join('/cvmfs/icecube.opensciencegrid.org/py2-v2',
+            cmd.append(os.path.join('/cvmfs/icecube.opensciencegrid.org/py3-v4.1.1',
                                     os.environ['OS_ARCH'],
-                                    'metaprojects/simulation/V05-00-07/env-shell.sh'))
-            cmd.append(os.path.join('/cvmfs/icecube.opensciencegrid.org/py2-v2',
+                                    'metaprojects/combo/V01-01-00/env-shell.sh'))
+            cmd.append(os.path.join('/cvmfs/icecube.opensciencegrid.org/py3-v4.1.1',
                                     os.environ['OS_ARCH'],
-                                    'metaprojects/simulation/V05-00-07/clsim/resources',
+                                    'metaprojects/combo/V01-01-00/clsim/resources',
                                     'scripts/benchmark.py'))
             cmd.extend(['-n', options.n])
 
