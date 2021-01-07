@@ -15,7 +15,7 @@ def main():
 
     usage = "usage: %prog [options]"
     parser = OptionParser(usage)
-    parser.add_option('-n', type='str', default='10',
+    parser.add_option('-n', type='str', default='100',
                       help="Number of simulations to run")
     (options, args) = parser.parse_args()
 
