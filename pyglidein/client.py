@@ -191,7 +191,7 @@ def main():
                     continue
                 info['glideins_launched'][partition] = 0
                 limit = min(config_cluster["limit_per_submit"],
-                            config_cluster["max_total_jobs"] - info['glideins_running'][partition],
+                            config_cluster["max_total_jobs"] - info['glideins_running'][partition] - idle,
                             max(config_cluster.get("max_idle_jobs", 1000) - idle, 0))
                 # Prioitize job submission. By default, prioritize submission of gpu and high memory jobs.
                 state = sort_states(state, config_cluster["prioritize_jobs"])
