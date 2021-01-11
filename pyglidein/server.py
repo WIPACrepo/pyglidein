@@ -243,7 +243,6 @@ def get_condor_version():
 def condor_q(cfg):
     """Get the status of the HTCondor queue"""
     # make sure we're not already running a condor_q
-    logger.info("foobar")
     if cfg['condor_q'] == True:
         return
     cfg['condor_q'] = True
