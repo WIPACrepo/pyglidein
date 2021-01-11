@@ -575,6 +575,52 @@ class SubmitLSF(SubmitPBS):
             self.write_option(f, "-o /dev/null")
             self.write_option(f, "-e /dev/null")
 
+class SubmitSGE(SubmitPBS):
+    """SGE is similar to PBS, but with different headers"""
+
+    option_tag = "#$"
+
+    def get_cores_for_memory(self, cluster_config, num_cpus_advertised, num_gpus_advertised, mem_advertised):
+        """
+        Scale number of cores to satisfy memory request.
+
+        SGE can assign variable memory per core, so just pass the request straight through.
+        """
+        return num_cpus_advertised, mem_advertised, mem_advertised
+
+    def write_general_header(self, f, cluster_config, mem=3000, walltime_hours=14, disk=1,
+                             num_nodes=1, num_cpus=1, num_gpus=0,
+                             num_jobs=0):
+        """
+        Writing the header for a SGE submission script.
+        Most of the pieces needed to tell SGE what resources
+        are being requested.
+
+        Args:
+            f: python file object
+            mem: requested memory
+            walltime_hours: requested wall time
+            num_nodes: requested number of nodes
+            num_cpus: requested number of cpus
+            num_gpus: requested number of gpus
+        """
+        self.write_line(f, "#!/bin/bash")
+        self.write_option(f, '-S /bin/bash')
+        self.write_option(f, '-l h_rss=%dM'%(mem//num_cpus))
+        if num_gpus:
+            self.write_option(f, "-l gpu=%d"%num_gpus)
+        if num_cpus > 1:
+            self.write_option(f, "-pe mpi %d"%num_cpus)
+        self.write_option(f, "-l h_rt=%d:00:00" % walltime_hours)
+        if self.config["Mode"]["debug"]:
+            self.write_option(f, "-o %s/out/$JOB_ID.out"%os.getcwd())
+            self.write_option(f, "-e %s/out/$JOB_ID.err"%os.getcwd())
+        else:
+            self.write_option(f, "-o /dev/null")
+            self.write_option(f, "-e /dev/null")
+        if num_jobs > 0:
+            self.write_option(f, "-t 1-%d" % num_jobs)
+
 class SubmitCondor(Submit):
     """Submit an HTCondor job"""
 
