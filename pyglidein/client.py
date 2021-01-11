@@ -134,6 +134,9 @@ def main():
     elif sched_type == "lsf":
         scheduler = submit.SubmitLSF(config_dict, secrets_dict)
         metrics = client_metrics.ClientMetricsLSF(config_dict, secrets_dict)
+    elif sched_type == "sge":
+        scheduler = submit.SubmitSGE(config_dict, secrets_dict)
+        metrics = client_metrics.ClientMetricsPBS(config_dict, secrets_dict)
     else:
         raise Exception('scheduler not supported')
 
