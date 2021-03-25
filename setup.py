@@ -22,8 +22,6 @@ with open(os.path.join(current_path, "pyglidein", "__init__.py")) as f:
 
 setup(
     name='pyglidein',
-    # use_scm_version=True,
-    setup_requires=['setuptools_scm'],
     description='Some python scripts to launch HTCondor glideins',
     url='https://github.com/WIPACrepo/pyglidein',
     author='WIPAC',
