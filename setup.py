@@ -1,9 +1,27 @@
-from setuptools import setup, find_packages
+#!/usr/bin/env python
+"""Setup."""
+
+# fmt:off
+
+import os
+
+from setuptools import find_packages, setup  # type: ignore[import]
+
+kwargs = {}
+
+current_path = os.path.dirname(os.path.realpath(__file__))
+
+with open(os.path.join(current_path, "pyglidein", "__init__.py")) as f:
+    for line in f.readlines():
+        if "__version__" in line:
+            # grab "X.Y.Z" from "__version__ = 'X.Y.Z'" (quote-style insensitive)
+            kwargs["version"] = line.replace('"', "'").split("=")[-1].split("'")[1]
+            break
+    else:
+        raise Exception("cannot find __version__")
 
 setup(
     name='pyglidein',
-    use_scm_version=True,
-    setup_requires=['setuptools_scm'],
     description='Some python scripts to launch HTCondor glideins',
     url='https://github.com/WIPACrepo/pyglidein',
     author='WIPAC',
@@ -35,5 +53,6 @@ setup(
             'pyglidein_server=pyglidein.server:main'
         ]
     },
-    python_requires='>=2.6'
+    python_requires='>=2.6',
+    **kwargs,
 )
