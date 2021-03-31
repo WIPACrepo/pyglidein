@@ -118,10 +118,7 @@ class ClientMetricsSlurm(ClientMetrics):
         cmd = os.path.expandvars(cmd)
         cmd = shlex.split(cmd)
         output = check_output(cmd, shell=False, env=os.environ, stderr=STDOUT)
-        # Python 2-3 compatibility check
-        if type(output) != str:
-            output = str(output, 'utf-8')
-        for line in output.split('\n'):
+        for line in output.decode().split('\n'):
             if line != '':
                 qtime = datetime.strptime(line, '%Y-%m-%dT%H:%M:%S')
                 delta = now - qtime
@@ -233,7 +230,7 @@ class ClientMetricsLSF(ClientMetrics):
         cmd = os.path.expandvars(cmd)
         cmd = shlex.split(cmd)
         output = check_output(cmd, shell=False, env=os.environ, stderr=STDOUT)
-        for line in output.split('\n')[2:]:
+        for line in output.decode().split('\n')[2:]:
             if len(line.split()) != 10: continue
             delta = int(line.split()[3])
             if delta < min_delta:
