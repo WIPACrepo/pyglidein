@@ -118,6 +118,9 @@ class ClientMetricsSlurm(ClientMetrics):
         cmd = os.path.expandvars(cmd)
         cmd = shlex.split(cmd)
         output = check_output(cmd, shell=False, env=os.environ, stderr=STDOUT)
+        # Python 2-3 compatibility check
+        if type(output) != str:
+            output = str(output, 'utf-8')
         for line in output.split('\n'):
             if line != '':
                 qtime = datetime.strptime(line, '%Y-%m-%dT%H:%M:%S')
