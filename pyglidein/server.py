@@ -1,372 +1,48 @@
-#!/usr/bin/env python
-from __future__ import absolute_import, division, print_function, unicode_literals
+import sys
 
-import os
-import subprocess
-import logging
-from functools import partial
-from optparse import OptionParser
-from collections import Counter
-import distutils.version
-from datetime import datetime
-import re
+# get a RestClient
+if sys.version[0] == 3 and sys.version[1] >= 6:
+    from rest_tools.client import RestClient
+else:
+    import requests
+    import os
 
-from pyglidein.util import json_encode, json_decode
-from pyglidein.config import Config
-from pyglidein.metrics_sender_client import MetricsSenderClient
-from pyglidein.client_metrics import ClientMetricsBundle
-import tornado.escape
-tornado.escape.json_encode = json_encode
-tornado.escape.json_decode = json_decode
-
-from tornado.ioloop import IOLoop
-from tornado.httpserver import HTTPServer
-from tornado.process import Subprocess
-import tornado.web
-import tornado.gen
-
-logger = logging.getLogger('server')
-
-job_status = {
-    1:'Idle',
-    2:'Run',
-    3:'Del',
-    4:'OK',
-    5:'Held',
-    6:'Err',
-}
-def get_job_status(st):
-    return job_status[st] if st in job_status else 'Unk'
-
-job_universe = {
-    1:'standard',
-    4:'PVM',
-    5:'vanilla',
-    6:'PVMd',
-    7:'scheduler',
-    8:'MPI',
-    9:'grid',
-    10:'java',
-    11:'parallel',
-    12:'local',
-}
-
-client_metrics = {
-    'glideins_launched': 'glideins.launched',
-    'glideins_running': 'glideins.running',
-    'glideins_idle': 'glideins.idle',
-    'avg_idle_time': 'glideins.avg_idle_time',
-    'min_idle_time': 'glideins.min_idle_time',
-    'max_idle_time': 'glideins.max_idle_time'
-}
-
-class MyHandler(tornado.web.RequestHandler):
-    """Default Handler"""
-    def initialize(self, cfg):
-        """
-        Get some params from the website module
-
-        Args:
-            cfg: the global config
-        """
-        self.cfg = cfg
-        if self.cfg['metrics_sender_client'] is not None:
-            self.metrics_sender_client = self.cfg['metrics_sender_client']
-        else:
-            self.metrics_sender_client = None
-
-    def get(self):
-        """GET is invalid and returns an error"""
-        raise tornado.web.HTTPError(400, 'GET is invalid.  Use POST')
-
-    def post(self):
-        """POST is invalid and returns an error"""
-        raise tornado.web.HTTPError(400, 'POST is invalid.  Use GET')
-
-class JSONRPCHandler(MyHandler):
-    """
-    JSONRPC 2.0 Handler.
-
-    Call DB methods using RPC over json.
-    """
-
-    def post(self):
-        """Parses json in the jsonrpc format, returning results in
-           jsonrpc format as well.
-        """
-        # parse JSON
-        try:
-            request = tornado.escape.json_decode(self.request.body)
-        except Exception as e:
-            raise tornado.web.HTTPError(400, 'POST request is not valid json')
-
-        # check for all parts of jsonrpc 2.0 spec
-        if 'jsonrpc' not in request or request['jsonrpc'] not in ('2.0', 2.0):
-            self.json_error({'code':-32600, 'message':'Invalid Request',
-                             'data':'jsonrpc is not 2.0'})
-        elif 'method' not in request:
-            self.json_error({'code':-32600, 'message':'Invalid Request',
-                             'data':'method not in request'})
-        elif request['method'].startswith('_'):
-            self.json_error({'code':-32600, 'message':'Invalid Request',
-                             'data':'method name cannot start with underscore'})
-        else:
-            method = request['method']
-            if 'params' in request:
-                params = request['params']
+    class RestClient:
+        def __init__(self, address, token=None):
+            self.address = address
+            self.token = token
+        def request_seq(self, method, path, args):
+            if path.startswith('/'):
+                path = path[1:]
+            url = os.path.join(self.address, path)
+            headers = {}
+            if self.token:
+                headers['Authorization'] = 'Bearer ' + self.token
+            if method in ('GET', 'HEAD'):
+                r = requests.query(method, url, params=args, headers=headers)
             else:
-                params = {}
-            if 'id' in request:
-                request_id = request['id']
-            else:
-                request_id = None
-
-            # call method
-            try:
-                if method == 'get_state':
-                    ret = self.cfg['state']
-                elif method == 'monitoring':
-                    client_id = params.pop('uuid')
-                    client_id_clean = re.sub(r'\W+', '', client_id)
-                    # For Clients > 1.1
-                    if 'timestamp' in params and 'metrics' in params:
-                        metrics_bundle = ClientMetricsBundle(client_id_clean,
-                                                             timestamp=params['timestamp'],
-                                                             metrics=params['metrics'])
-                    # For Clients < 1.1
-                    else:
-                        metrics_bundle = ClientMetricsBundle(client_id_clean,
-                                                             metrics=params)
-                    if self.metrics_sender_client is not None:
-                        self.metrics_sender_client.send(metrics_bundle)
-                    # Continue sending metrics to old web interface
-                    self.cfg['monitoring'][client_id] = metrics_bundle.get_v1_bundle()
-                    ret = ''
-                else:
-                    self.json_error({'code':-32601, 'message':'Method not found'},
-                                    request_id=request_id)
-                    return
-            except:
-                self.json_error({'code':-32602, 'message':'Invalid params',
-                                 'data':str(ret)}, request_id=request_id)
-            else:
-                # return response
-                self.write({'jsonrpc':'2.0', 'result':ret, 'id':request_id})
-
-    def json_error(self, error, status=400, request_id=None):
-        """Create a proper jsonrpc error message"""
-        self.set_status(status)
-        if isinstance(error, Exception):
-            error = str(error)
-        logger.info('json_error: %r', error)
-        self.write({'jsonrpc':'2.0', 'error':error, 'id':request_id})
+                r = requests.query(method, url, json=args, headers=headers)
+            r.raise_for_status()
+            return r.json()
 
 
-class DefaultHandler(MyHandler):
-    """Display queue status in html"""
-    def get(self):
-        self.write("""
-<html>
-<head>
-  <title>Queue Status</title>
-  <style>
-    .num {
-      margin-left: 1em;
-    }
-    div.clients>div, div.reqs>div {
-      margin: .2em;
-    }
-    div.clients {
-      margin-bottom: 1em;
-    }
-    div.clients>div>span, div.reqs>div>span {
-      margin-right: .5em;
-      width: 5em;
-      display: inline-block;
-      vertical-align: top;
-    }
-    div.clients>div>span {
-      width: 15em;
-      word-wrap: break-word;
-    }
-  </style>
-</head>
-<body>
-  <h1>Pyglidein Server</h1>
-  <h2>List of requirements</h2>
-  <div class="reqs">
-    <div><span class="num">Num</span><span>CPUs</span><span>Memory</span><span>Disk</span><span>GPUs</span><span>OS</span></div>""")
-        for row in self.cfg['state']:
-            self.write('<div><span class="num">'+str(row['count'])+'</span><span>'+str(row['cpus'])+'</span><span>'+str(row['memory'])+'</span><span>'+str(row['disk'])+'</span><span>'+str(row['gpus'])+'</span><span>'+str(row['os'])+'</span></div>')
-        self.write("""
-  </div>
-  <h2>Clients</h2>
-  <div class="clients">
-    <div><span>UUID</span><span>Last update</span><span>Stats</span></div>""")
-        for uuid in self.cfg['monitoring']:
-            try:
-                info = self.cfg['monitoring'][uuid]
-                timestamp = datetime.fromtimestamp(info['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
-                stats = '<br>'.join(str(k)+': '+str(info[k]) for k in info if k != 'timestamp')
-                self.write('<div><span class="uuid">'+str(uuid)+'</span><span class="date">'+timestamp+'</span><span class="stats">'+stats+'</span></div>')
-            except Exception:
-                logging.info('error in monitoring display: %r %r',uuid,self.cfg['monitoring'][uuid],exc_info=True)
-                continue
-        self.write("""
-  </div>
-</body>
-</html>""")
+class Server:
+    def __init__(self, config, secrets):
+        self.config = config
+        self.secrets = secrets
 
+    def get(self, status):
+        client_id = self.config['Glidein']['client_id']
+        path = '/api/clients/'+client_id+'/actions/queue'
 
-class server:
-    def __init__(self, cfg):
-        self.cfg = cfg
-        handler_args = {'cfg':self.cfg}
-        self.application = tornado.web.Application([
-            (r"/jsonrpc", JSONRPCHandler, handler_args),
-            (r"/.*", DefaultHandler, handler_args),
-        ])
-    def start(self):
-        self.http_server = HTTPServer(self.application, xheaders=True)
-        self.http_server.listen(self.cfg["options"].port)
-        IOLoop.current().start()
-    def stop(self):
-        self.http_server.stop()
-        IOLoop.current().stop()
+        data = {}
+        for p in status:
+            data[p] = {
+                'resources': {k: self.config[p][k] for k in ('cpus', 'gpus', 'memory', 'disk', 'time')},
+                'num_queued': status[p]['idle'],
+                'num_processing': status[p]['running'],
+            }
 
-def get_condor_version():
-     p = subprocess.Popen("condor_version", shell=True, stdout=subprocess.PIPE)
-     out = p.communicate()[0]
-     return out.decode().split(" ")[1]
-
-@tornado.gen.coroutine
-def condor_q(cfg):
-    """Get the status of the HTCondor queue"""
-    # make sure we're not already running a condor_q
-    if cfg['condor_q'] == True:
-        return
-    cfg['condor_q'] = True
-
-    logger.info('condor_q')
-    cmd = ['condor_q', '-global', '-autoformat:,', 'RequestCPUs', 'RequestMemory',
-           'RequestDisk', 'RequestGPUs', '-format', '"%s"', 'Requirements',
-           '-constraint', '"JobStatus =?= 1"']
-    if cfg['options'].constraint:
-        cmd += ['-constraint', cfg['options'].constraint]
-    if cfg['options'].user:
-        cmd += [cfg['options'].user]
-    if (distutils.version.LooseVersion(get_condor_version()) >=
-         distutils.version.LooseVersion("8.5.2") and
-         not cfg['options'].user):
-        cmd += ["-allusers"]
-
-    state = []
-    try:
-        cmd = ' '.join(cmd)
-        print(cmd)
-        p = Subprocess(cmd, shell=True, stdout=Subprocess.STREAM)
-        output = yield p.stdout.read_until_close()
-        for line in output.decode().splitlines():
-            logger.debug(line)
-            try:
-                cpus, memory, disk, gpus, reqs = line.split(', ',4)
-                cpus = 1 if cpus == 'undefined' else int(cpus)
-                memory = 2000 if memory == 'undefined' else int(memory)
-                disk = 10000 if disk == 'undefined' else int(disk)/1000 # convert to MB
-                gpus = 0 if gpus == 'undefined' else int(gpus)
-                req_os = None
-                if 'OpSysAndVer =?= "SL6"' in reqs:
-                    req_os = 'sl6'
-                state.append((cpus, memory, disk, gpus, req_os))
-            except Exception:
-                logger.info('error parsing line', exc_info=True)
-                continue
-        state = [{'cpus':s[0], 'memory':s[1], 'disk':s[2],
-                  'gpus':s[3], 'os':s[4], 'count': count} 
-                  for s, count in Counter(state).items()]
-    except Exception:
-        logger.warn('error in condor_q', exc_info=True)
-        state = None
-    finally:
-        def cb():
-            # update state only on the main io loop
-            logger.info('state is updated to %r', state)
-            if state is not None:
-                cfg['state'] = state
-            cfg['condor_q'] = False
-            IOLoop.current().call_later(cfg['options'].delay,
-                                         partial(condor_q, cfg))
-        IOLoop.current().add_callback(cb)
-
-
-def main():
-    parser = OptionParser()
-    parser.add_option('-p', '--port', type='int', default=11001,
-                      help='Port to serve from (default: 11001)')
-    parser.add_option('-u', '--user', type='string', default=None,
-                      help='Only track a single user')
-    parser.add_option('--constraint', type='string', default=None,
-                      help='HTCondor constraint expression')
-    parser.add_option('--delay', type='int', default=300,
-                      help='delay between calls to condor_q (default: 300 seconds)')
-    parser.add_option('--debug', action='store_true', default=False,
-                      help='Enable debug logging')
-    parser.add_option('--config', type='string', default='pyglidein_server.config',
-                      help="config file for cluster")
-    parser.add_option('-n','--no-daemon',dest='daemon',default=True,action='store_false',help='do not daemonize')
-    parser.add_option('--logfile',default='log',help='filename for logging (daemon mode)')
-    (options, args) = parser.parse_args()
-
-    config = Config(options.config)
-
-    logformat = '%(asctime)s %(levelname)s %(name)s : %(message)s'
-    kwargs = {
-        'format': logformat,
-        'level': logging.DEBUG if options.debug else logging.INFO,
-    }
-    
-    if options.daemon:
-        kwargs['filename'] = options.logfile
-
-    if options.delay < 0 or options.delay > 1000:
-        raise Exception('delay out of range')
-        
-    if config.get('metrics', {}).get('enable_metrics', False):
-        metrics_sender_client = MetricsSenderClient(config['metrics'])
-    else:
-        metrics_sender_client = None
-
-    cfg = {'options': options, 'config': config, 'condor_q': False, 'state': [], 'monitoring': {},
-           'metrics_sender_client': metrics_sender_client}
-    
-    def starter():
-        logging.basicConfig(**kwargs)
-
-        # load condor_q
-        IOLoop.current().call_later(5, partial(condor_q, cfg))
-
-        # setup server
-        s = server(cfg)
-        s.start()
-
-    if options.daemon:
-        from pyglidein.daemon import Daemon
-        pid = '/tmp/authorlist.pid'
-        d = Daemon(pidfile=pid, chdir=os.getcwd(),
-                   runner=starter)
-        action = args[0] if args else None
-        if (not action) or action == 'start':
-            d.start()
-        elif action == 'stop':
-            d.stop()
-        elif action == 'restart':
-            d.restart()
-        elif action == 'kill':
-            d.kill()
-        else:
-            raise Exception('unknown action')
-    else:
-        starter()
-
-if __name__ == '__main__':
-    main()
+        r = RestClient(self.config['Glidein']['address'],
+                       token=self.secrets.get('token', None))
+        return r.request_seq('POST', path, data)
