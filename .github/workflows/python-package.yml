@@ -23,6 +23,7 @@ jobs:
       id: dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install -r requirements.txt
         pip install -r requirements-dev.txt
     - name: Lint with flake8
       run: |
@@ -30,7 +31,7 @@ jobs:
     - name: Test and Coverage
       if: always() && steps.dependencies.outcome != 'failure'
       run: |
-        coverage run -m pytest tests --log-level=INFO
+        coverage run -m pytest tests --log-level=DEBUG
     - name: Coverage Text Report
       if: always() && steps.dependencies.outcome != 'failure'
       run: |
