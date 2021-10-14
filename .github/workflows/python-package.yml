@@ -35,4 +35,5 @@ jobs:
     - name: Coverage Text Report
       if: always() && steps.dependencies.outcome != 'failure'
       run: |
+        coverage combine >/dev/null
         coverage report -m --fail-under=50
