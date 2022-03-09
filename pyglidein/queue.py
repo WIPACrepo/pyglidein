@@ -8,10 +8,8 @@ import shutil
 import glob
 import uuid
 
-from pyglidein.client_util import get_presigned_put_url, get_presigned_get_url
 
-
-class Submit(object):
+class Submit:
     """
     Base class for the submit classes
     Mostly to provide future expansion for common functions
@@ -26,11 +24,6 @@ class Submit(object):
         """
         self.config = config
         self.secrets = secrets
-        self.startd_cron_scripts = ['clsim_gpu_test.py',
-                                    'cvmfs_test.py',
-                                    'gridftp_test.py',
-                                    'post_cvmfs.sh',
-                                    'pre_cvmfs.sh']
 
     def submit(self):
         raise NotImplementedError()
@@ -56,7 +49,7 @@ class Submit(object):
         # glidein_scripts provided by the python package.
         package_dir = os.path.dirname(os.path.abspath(__file__))
         glidein_script = os.path.join(package_dir, 'glidein_start.sh')
-        
+
         if 'glidein_script' in self.config['Glidein']:
             glidein_script = self.config['Glidein']['glidein_script']
         return glidein_script
@@ -620,221 +613,3 @@ class SubmitSGE(SubmitPBS):
             self.write_option(f, "-e /dev/null")
         if num_jobs > 0:
             self.write_option(f, "-t 1-%d" % num_jobs)
-
-class SubmitCondor(Submit):
-    """Submit an HTCondor job"""
-
-    def make_env_wrapper(self, env_wrapper, cluster_config):
-        """
-        Creating wrapper execute script for
-        HTCondor submit file
-
-        Args:
-            env_wrapper: name of wrapper script
-        """
-        with open(env_wrapper, 'w') as f:
-            self.write_line(f, '#!/bin/sh')
-            self.write_line(f, 'CPUS=$(grep -e "^Cpus" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}")')
-            self.write_line(f, 'MEMORY=$(grep -e "^Memory" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}")')
-            self.write_line(f, 'DISK=$(grep -e "^Disk =" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}")')
-            self.write_line(f, 'GPUS=$(grep -e "^AssignedGPUs" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}"|sed "s/\\"//g")')
-            self.write_line(f, 'if ( [ -z $GPUS ] && [ ! -z $CUDA_VISIBLE_DEVICES ] ); then')
-            self.write_line(f, '  GPUS=$CUDA_VISIBLE_DEVICES')
-            self.write_line(f, 'fi')
-            self.write_line(f, 'GPUS_NO_DIGITS=$(echo $GPUS | sed \'s/[0-9]*//g\')')
-            self.write_line(f, 'if [ "${GPUS_NO_DIGITS}" = "${GPUS}" ]; then')
-            self.write_line(f, '    GPUS=""')
-            self.write_line(f, 'elif [ -z $GPUS_NO_DIGITS ]; then')
-            self.write_line(f, '    GPUS="CUDA${GPUS}"')
-            self.write_line(f, 'fi')
-            self.write_line(f, 'if ( [ -z $GPUS ] || [ "$GPUS" = "10000" ] || [ "$GPUS" = "CUDA10000" ] ); then')
-            self.write_line(f, '  GPUS=0')
-            self.write_line(f, 'fi')
-            if 'site' in self.config['Glidein']:
-                self.write_line(f, 'SITE="%s"' % self.config['Glidein']['site'])
-            if 'resourcename' in self.config['Glidein']:
-                self.write_line(f, 'ResourceName="%s"' % self.config['Glidein']['resourcename'])
-            else:
-                self.write_line(f, 'ResourceName=$(grep -e "^GLIDEIN_ResourceName" $_CONDOR_MACHINE_AD|awk -F "= " "{print \\$2}"|sed "s/\\"//g")')
-            if 'cluster' in self.config['Glidein']:
-                self.write_line(f, 'CLUSTER="%s"' % self.config['Glidein']['cluster'])
-            f.write('exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK '
-                    'PRESIGNED_PUT_URL=$PRESIGNED_PUT_URL PRESIGNED_GET_URL=$PRESIGNED_GET_URL ')
-            if 'site' in self.config['Glidein']:
-                f.write('SITE=$SITE ')
-            if 'resourcename' in self.config['Glidein']:
-                f.write('ResourceName=$ResourceName ')
-            if 'cluster' in self.config['Glidein']:
-                f.write('CLUSTER=$CLUSTER ')
-            # reduce walltime for internal job by 300 sec (5min) to make sure it finished before the outer job hits the walltime
-            walltime = int(cluster_config["walltime_hrs"])*3600-300
-            f.write('WALLTIME=%d '%walltime)
-            if self.config['SubmitFile'].get('cvmfs_job_wrapper', False):
-                f.write('CVMFS_JOB_WRAPPER=1 ')
-            if "CustomEnv" in self.config:
-                for k, v in self.config["CustomEnv"].items():
-                    f.write(k + '=' + v + ' ')
-            if 'executable' in self.config['SubmitFile']:
-                f.write(str(self.config['SubmitFile']['executable']))
-            else:
-                f.write(str(os.path.basename(self.get_glidein_script())))
-
-            mode = os.fstat(f.fileno()).st_mode
-            mode |= 0o111
-            os.fchmod(f.fileno(), mode & 0o7777)
-
-    def make_submit_file(self, filename, env_wrapper, state, group_jobs, cluster_config,
-                         presigned_put_url=None, presigned_get_url=None):
-        """
-        Creating HTCondor submit file
-
-        Args:
-            filename: name of HTCondor submit file
-            env_wrapper: name of wrapper script
-            state: what resource requirements a given glidein has
-        """
-        with open(filename, 'w') as f:
-            if "custom_header" in self.config["SubmitFile"]:
-                self.write_line(f, self.config["SubmitFile"]["custom_header"])
-
-            if ('Mode' in self.config and 'debug' in self.config['Mode']
-               and self.config["Mode"]["debug"]):
-                outdir = os.path.join(os.getcwd(),'out')
-                if not os.path.isdir(outdir):
-                    os.mkdir(outdir)
-                self.write_line(f, "output = %s/$(Cluster).out"%outdir)
-                self.write_line(f, "error = %s/$(Cluster).out"%outdir)
-            else:
-                self.write_line(f, "output = /dev/null")
-                self.write_line(f, "error = /dev/null")
-            if 'log' in self.config['SubmitFile']:
-                self.write_line(f, "log = "+self.config['SubmitFile']['log'])
-            else:
-                self.write_line(f, "log = log")
-            self.write_line(f, "notification = never")
-            self.write_line(f, "should_transfer_files = YES")
-            self.write_line(f, "when_to_transfer_output = ON_EXIT")
-            self.write_line(f, "want_graceful_removal = True")
-            self.write_line(f, "executable = %s" % env_wrapper)
-            self.write_line(f, "+TransferOutput=\"\"")
-
-            # get input files
-            infiles = []
-            glidein_script = self.get_glidein_script()
-            if not os.path.isfile(glidein_script):
-                raise Exception("no glidein_script provided")
-            infiles.append(glidein_script)
-            osarch_script = os.path.join(os.path.dirname(glidein_script),'os_arch.sh')
-            if not os.path.isfile(osarch_script):
-                raise Exception("os_arch.sh not found")
-            infiles.append(osarch_script)
-            log_shipper_script = os.path.join(os.path.dirname(glidein_script),'log_shipper.sh')
-            if not os.path.isfile(log_shipper_script):
-                raise Exception("log_shipper_script.sh not found")
-            infiles.append(log_shipper_script)
-            if "tarball" in self.config["Glidein"]:
-                if not os.path.isfile(self.config["Glidein"]["tarball"]):
-                    raise Exception("provided tarball does not exist")
-                infiles.append(self.config["Glidein"]["tarball"])
-            # Adding StartD Cron Scripts
-            if self.config.get("StartdChecks", {}).get("enable_startd_checks", True):
-                startd_cron_scripts_dir = os.path.join(os.path.dirname(glidein_script),
-                                                       'startd_cron_scripts')
-                if not os.path.isdir(startd_cron_scripts_dir):
-                    raise Exception("StartD cron scripts directory not found: "
-                                    "{}".format(startd_cron_scripts_dir))
-                for script in self.startd_cron_scripts:
-                    script_path = os.path.join(startd_cron_scripts_dir, script)
-                    if not os.path.isfile(script_path):
-                        raise Exception("Stard cron script not found: {}".format(script))
-                    infiles.append(os.path.join(startd_cron_scripts_dir, script))
-            self.write_line(f, "transfer_input_files = %s"%(','.join(infiles)))
-
-            if "custom_middle" in self.config["SubmitFile"]:
-                self.write_line(f, self.config["SubmitFile"]["custom_middle"])
-
-            if cluster_config['whole_node']:
-                num_cpus = int(cluster_config['whole_node_cpus'])
-                mem = int(cluster_config['whole_node_memory'])
-                disk = int(cluster_config['whole_node_disk'])*1000
-                if 'whole_node_gpus' in cluster_config:
-                    num_gpus = int(cluster_config['whole_node_gpus'])
-                else:
-                    num_gpus = 0
-                self.write_line(f, 'request_cpus=%d' % num_cpus)
-                self.write_line(f, 'request_memory=%d' % mem)
-                self.write_line(f, 'request_disk=%d' % disk)
-                if state["gpus"] != 0 and num_gpus:
-                    self.write_line(f, 'request_gpus=%d' % num_gpus)
-            else:
-                if state["cpus"] != 0:
-                    self.write_line(f, 'request_cpus=%d' % state["cpus"])
-                if state["memory"] != 0:
-                    mem_safety_margin = 1.1*self.get_resource_limit_scale("mem_safety_scale")
-                    self.write_line(f, 'request_memory=%d' % int(state["memory"]*mem_safety_margin))
-                if state["disk"] != 0:
-                    self.write_line(f, 'request_disk=%d' % int(state["disk"]*1024*1.1))
-                if state["gpus"] != 0:
-                    self.write_line(f, 'request_gpus=%d' % int(state["gpus"]))
-
-            # Creating environment variables
-            environment_variables = ''
-            if presigned_put_url is not None and presigned_get_url is not None:
-                environment_variables += ('PRESIGNED_PUT_URL={} '
-                                          'PRESIGNED_GET_URL={} ').format(presigned_put_url,
-                                                                          presigned_get_url)
-            if not self.config.get("StartdChecks", {}).get("enable_startd_checks", True):
-                environment_variables += 'DISABLE_STARTD_CHECKS=1'
-            if environment_variables != '':
-                self.write_line(f, 'environment = "%s"' % environment_variables)
-
-            if "custom_footer" in self.config["SubmitFile"]:
-                self.write_line(f, self.config["SubmitFile"]["custom_footer"])
-            if group_jobs:
-                self.write_line(f, 'queue %d' % state["count"])
-            else:
-                self.write_line(f, 'queue')
-
-    def submit(self, state, partition="Cluster"):
-        """
-        Writing submit file and submitting a HTCondor job
-
-        Args:
-            state: what resource requirements a given glidein has
-        """
-        submit_filename = 'submit.condor'
-        if 'filename' in self.config["SubmitFile"]:
-            submit_filename = self.config["SubmitFile"]["filename"]
-        env_filename = 'env_wrapper.sh'
-        if 'env_wrapper_name' in self.config['SubmitFile']:
-            env_filename = self.config["SubmitFile"]["env_wrapper_name"]
-
-        cluster_config = self.config[partition]
-        group_jobs = ("group_jobs" in cluster_config and
-                      cluster_config["group_jobs"] and
-                      "count" in state)
-        self.make_env_wrapper(env_filename, cluster_config)
-        num_submits = 1 if group_jobs else state["count"] if "count" in state else 1
-        for i in range(num_submits):
-            if self.config.get('StartdLogging', {}).get('send_startd_logs', False) is True:
-                startd_logfile_name = '{}_{}.tar.gz'.format(self.config['Glidein']['site'],
-                                                            uuid.uuid4())
-                presigned_put_url = get_presigned_put_url(startd_logfile_name, self.config,
-                                                          self.secrets)
-                presigned_get_url = get_presigned_get_url(startd_logfile_name, self.config,
-                                                          self.secrets)
-                self.make_submit_file(submit_filename,
-                                      env_filename,
-                                      state,
-                                      group_jobs,
-                                      cluster_config,
-                                      presigned_put_url,
-                                      presigned_get_url)
-            else:
-                self.make_submit_file(submit_filename,
-                                      env_filename,
-                                      state,
-                                      group_jobs,
-                                      cluster_config)
-            cmd = cluster_config["submit_command"] + " " + submit_filename
-            subprocess.check_call(cmd, shell=True)

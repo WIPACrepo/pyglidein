@@ -1,0 +1,1 @@
+-e git+https://github.com/WIPACrepo/rest-tools@v1.1.14#egg=rest_tools
