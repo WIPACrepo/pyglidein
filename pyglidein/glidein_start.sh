@@ -35,13 +35,13 @@ fi
 export SUPERVISORD_RESTART_POLICY="unexpected"
 
 # customizations to talk to IceCube pool
-export _condor_CONDOR_HOST="glidein-cm.icecube.wisc.edu"
+export CONDOR_HOST="glidein-cm.icecube.wisc.edu"
 export _condor_CONDOR_ADMIN="admin@icecube.wisc.edu"
 export CCB_RANGE_LOW="9618"
 export CCB_RANGE_HIGH="9618"
 
 # set default container
-export OSG_DEFAULT_CONTAINER_DISTRIBUTION="100%__opensciencegrid/osgvo-el7:latest"
+export OSG_DEFAULT_CONTAINER_DISTRIBUTION="100%__opensciencegrid/osgvo-el7-cuda10:latest"
 
 # specify resources, or let condor auto-detect them
 if [ -z $CPUS ]; then
@@ -53,8 +53,8 @@ fi
 if [ -z $DISK ]; then
     DISK=8000000
 fi
-export _condor_NUM_CPUS="$CPUS"
-export _condor_MEMORY="$MEMORY" # in MB
+export NUM_CPUS="$CPUS"
+#export MEMORY="$MEMORY" # in MB
 export _condor_DISK="$DISK" # in KB
 
 # fix goto blas library threading
@@ -68,4 +68,4 @@ if [ -d /etc/OpenCL/vendors ]; then
     ARGS="$ARGS --bind /etc/OpenCL/vendors"
 fi
 
-$SINGULARITY_BIN run --contain --bind /cvmfs --scratch /pilot $ARGS docker://opensciencegrid/osgvo-docker-pilot:release
+$SINGULARITY_BIN run --contain --bind /cvmfs --scratch /pilot $ARGS docker://opensciencegrid/osgvo-docker-pilot:release /bin/entrypoint.sh /usr/local/sbin/supervisord_startup.sh
