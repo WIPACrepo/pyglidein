@@ -134,6 +134,10 @@ export _condor_NUM_SLOTS_TYPE_1=1
 export _condor_SLOT_TYPE_1_PARTITIONABLE="True"
 #export _condor_SLOT_TYPE_1_CONSUMPTION_POLICY="True"
 #export _condor_SLOT_TYPE_1_CONSUMPTION_GPUs="quantize(ifThenElse(target.RequestGpus =!= undefined,target.RequestGpus,0),{0})";
+if [ $SITE -eq "Anvil" ]; then
+    export _condor_NETWORK_INTERFACE='172.18.*'
+    export _condor_MASTER_DEBUG=D_HOSTNAME:2,D_ALWAYS:2
+fi
 export _condor_SLOT_WEIGHT="Cpus";
 export _condor_SLOT1_STARTD_ATTRS="OASIS_CVMFS_Exists ICECUBE_CVMFS_Exists HAS_CVMFS_icecube_opensciencegrid_org GLIDEIN_Site GLIDEIN_SiteResource GLIDEIN_Max_Walltime GPU_NAMES PRESIGNED_GET_URL PYGLIDEIN_PARROT PYGLIDEIN_TIME_TO_LIVE"
 export _condor_STARTER_JOB_ENVIRONMENT="\"GLIDEIN_Site=${SITE} GLIDEIN_SiteResource=${ResourceName} GLIDEIN_LOCAL_TMP_DIR=${PWD} GOTO_NUM_THREADS=1\"";
