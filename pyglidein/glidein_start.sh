@@ -242,6 +242,17 @@ if [ "$CVMFS" = "false" ]; then
     exit 1
 fi
 
+
+if [ $GPUS != 0 ]; then
+    if /cvmfs/icecube.opensciencegrid.org/distrib/OpenCL_Linux/bin/x86_64/clinfo ; then
+        /cvmfs/icecube.opensciencegrid.org/distrib/OpenCL_Linux/bin/x86_64/clinfo
+	echo "clinfo okay"
+    else
+        echo "clinfo failed"
+        exit 1
+    fi
+fi
+
 export campus_factory_dir=$PWD
 
 export CONDOR_CONFIG=$PWD/glidein_condor_config
