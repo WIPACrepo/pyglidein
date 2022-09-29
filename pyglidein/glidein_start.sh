@@ -70,6 +70,7 @@ if [ $GPUS != 0 ]; then
         else
             if [ $GPUS = 1 ]; then
                 GPU2=$(nvidia-smi --query-gpu=index --format=csv,noheader);
+                GPUS=CUDA$GPU2;
             else
                 GPU2=$(echo "$GPUS"|sed 's/CUDA//g'|sed 's/OCL//g');
 	    fi
