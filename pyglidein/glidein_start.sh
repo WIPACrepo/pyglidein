@@ -76,6 +76,8 @@ if [ $GPUS != 0 ]; then
     fi
 fi
 
+echo "Starting pyglidein with GPUS=$GPUS"
+
 ##
 # Done with config
 ##
