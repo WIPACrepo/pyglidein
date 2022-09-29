@@ -7,8 +7,8 @@
 #SBATCH --gpus-per-node=1
 #SBATCH --time=24:00:00
 #SBATCH --job-name glidein
-#SBATCH --mem=120G
-#SBATCH --cpus-per-task=60
+#SBATCH --mem=119G
+#SBATCH --cpus-per-task=32
 #SBATCH --output=/home/x-briedel/logs/%j.out
 #SBATCH --error=/home/x-briedel/logs/%j.err
 
@@ -20,9 +20,9 @@ echo "-----------------Removing FUSE mounts------------------"
 
 # mount -l -t fuse | grep IceCube | awk -F " " '{print "fusermount -u " $3}' | bash
 
-MEMORY=60000 # 11600
+MEMORY=119000 # 11600
 WALLTIME=86400
-CPUS=60
+CPUS=32
 DISK=81920000000
 if [ "$CUDA_VISIBLE_DEVICES" -eq "$CUDA_VISIBLE_DEVICES" ] 2>/dev/null ; then
   GPUS="CUDA${CUDA_VISIBLE_DEVICES}"
