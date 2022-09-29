@@ -61,22 +61,35 @@ fi
 CVMFS="True"
 
 # GPU type detection
+OLD_GPUS=$GPUS
 GPU_NAMES=""
 if [ $GPUS != 0 ]; then
     if command -v nvidia-smi >/dev/null; then
         if [ "$GPUS" = "all" ]; then
             GPU_NAMES=$(nvidia-smi --query-gpu=name --format=csv,noheader|sed ':a;N;$!ba;s/\n/,/g');
         else
-            GPU2=$(echo "$GPUS"|sed 's/CUDA//g'|sed 's/OCL//g');
+            if [ $GPUS = 1 ]; then
+                GPU2=$(nvidia-smi --query-gpu=index --format=csv,noheader);
+            else
+                GPU2=$(echo "$GPUS"|sed 's/CUDA//g'|sed 's/OCL//g');
+	    fi
             GPU_NAMES=$(nvidia-smi --query-gpu=name --format=csv,noheader --id=$GPU2|sed ':a;N;$!ba;s/\n/,/g');
         fi
     else
         # GPUs might exist but nvidia-smi is not available. re-set $GPUS
         GPUS=0
-    fi
+   fi
 fi
 
-echo "Starting pyglidein with GPUS=$GPUS"
+if [ [ "$GPUS" = 0 ] && [ "$OLD_GPUS" != "$GPUS" ] ]; then
+    echo "Attemping at GPU_NAMES detection has failed"
+    exit 1
+fi
+
+
+if [ "$GPU_NAMES" != "" ]; then
+    echo "Starting pyglidein with GPUS=$GPUS with GPU_NAMES=$GPU_NAMES"
+fi
 
 ##
 # Done with config
@@ -136,7 +149,7 @@ export _condor_NUM_SLOTS_TYPE_1=1
 export _condor_SLOT_TYPE_1_PARTITIONABLE="True"
 #export _condor_SLOT_TYPE_1_CONSUMPTION_POLICY="True"
 #export _condor_SLOT_TYPE_1_CONSUMPTION_GPUs="quantize(ifThenElse(target.RequestGpus =!= undefined,target.RequestGpus,0),{0})";
-if [ $SITE -eq "Anvil" ]; then
+if [ "$SITE" = "Anvil" ]; then
     export _condor_NETWORK_INTERFACE='172.18.*'
     export _condor_MASTER_DEBUG=D_HOSTNAME:2,D_ALWAYS:2
 fi
