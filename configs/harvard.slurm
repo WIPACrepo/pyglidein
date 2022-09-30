@@ -41,10 +41,6 @@ CVMFSEXEC_DIR=/n/home00/briedel/cvmfsexec/
 
 mkdir -p $LOCAL_DIR
 
-# cp -a /n/holyscratch01/arguelles_delgado_lab/Lab/IceCube/cvmfsexec ${LOCAL_DIR}/cvmfsexec
-# cp -a /n/home00/briedel/cvmfsexec ${LOCAL_DIR}/cvmfsexec
-
-
 ls ${LOCAL_DIR}/cvmfsexec
 echo "---"
 
@@ -54,9 +50,6 @@ echo "-------Unmount repo------" | tee /dev/stderr
 
 echo "-------Mount repo------" | tee /dev/stderr
 
-# ${LOCAL_DIR}/cvmfsexec/mountrepo config-osg.opensciencegrid.org
-# ${LOCAL_DIR}/cvmfsexec/mountrepo oasis.opensciencegrid.org
-# ${LOCAL_DIR}/cvmfsexec/mountrepo icecube.opensciencegrid.org
 
 cd $LOCAL_DIR
 echo $PWD
@@ -72,12 +65,12 @@ cp $GLIDEIN_LOC/startd_cron_scripts/pre_cvmfs.sh pre_cvmfs.sh
 
 ls $PWD
 
-# ls ${LOCAL_DIR}/cvmfsexec/dist/cvmfs
-# ls ${LOCAL_DIR}/cvmfsexec/dist/cvmfs/icecube.opensciencegrid.org
 echo '-------------------------------'
 
+echo $SITE
+echo $GPUS
 
-./glidein_start.sh
+exec env -i CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME DISABLE_STARTD_CHECKS=$DISABLE_STARTD_CHECKS SITE=$SITE ResourceName=$SITE ./glidein_start.sh
 
 # SINGULARITYENV_RETIRETIME=12000 SINGULARITYENV_NOCLAIMTIME=12000 
 # SINGULARITYENV_DISK=$DISK SINGULARITYENV_CPUS=$CPUS SINGULARITYENV_GPUS=$GPUS SINGULARITYENV_MEMORY=$MEMORY SINGULARITYENV_WALLTIME=$WALLTIME SINGULARITYENV_DISABLE_STARTD_CHECKS=$DISABLE_STARTD_CHECKS SINGULARITYENV_SITE=$SITE SINGULARITYENV_ResourceName=$SITE singularity exec -B /etc/OpenCL -B $LOCAL_DIR --nv --bind ${LOCAL_DIR}/cvmfsexec/dist/cvmfs:/cvmfs --cleanenv docker://opensciencegrid/osgvo-el7-cuda10 ./glidein_start.sh
