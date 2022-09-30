@@ -63,9 +63,13 @@ CVMFS="True"
 # GPU type detection
 OLD_GPUS=$GPUS
 GPU_NAMES=""
+
+if [ $(echo $GPUS | awk -F'-' '{print $1}')  == "MIG" ]; then
+    echo "Using MIG GPUs... How fancy!";
+fi
 if [ $GPUS != 0 ]; then
     if command -v nvidia-smi >/dev/null; then
-        if [ "$GPUS" = "all" ]; then
+        if [ "$GPUS" = "all" ] || [ $(echo $GPUS | awk -F'-' '{print $1}')  == "MIG"  ]; then
             GPU_NAMES=$(nvidia-smi --query-gpu=name --format=csv,noheader|sed ':a;N;$!ba;s/\n/,/g');
         else
             if [ $GPUS = 1 ]; then
@@ -82,7 +86,7 @@ if [ $GPUS != 0 ]; then
    fi
 fi
 
-if [ [ "$GPUS" = 0 ] && [ "$OLD_GPUS" != "$GPUS" ] ]; then
+if [ "$GPUS" = 0 ] && [ "$OLD_GPUS" != "$GPUS" ] ; then
     echo "Attemping at GPU_NAMES detection has failed"
     exit 1
 fi
