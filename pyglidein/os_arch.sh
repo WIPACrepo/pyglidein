@@ -17,7 +17,7 @@ ARCH=`uname -m`
 
 # Map binary compatible operating systems and versions onto one another
 case $DISTRIB in
-    "redhatenterpriseclient" | "redhatenterpriseserver" | "rhel" | "scientificsl" | "scientific" | "centos" | "scientificfermi" | "scientificcernslc")
+    "redhatenterpriseclient" | "redhatenterpriseserver" | "rhel" | "scientificsl" | "scientific" | "centos" | "scientificfermi" | "scientificcernslc" | "almalinux" | "rocky")
         DISTRIB="RHEL"
         VERSION=`echo "${VERSION}" | cut -d '.' -f 1`
         ;;
