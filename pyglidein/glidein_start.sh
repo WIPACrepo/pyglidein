@@ -8,7 +8,7 @@ if [ "x$TOKEN" = "x" ]; then
 fi
 
 if [ "x$SINGULARITY_BIN" = "x" ]; then
-    SINGULARITY_BIN="singularity"
+    SINGULARITY_BIN="apptainer"
 fi
 
 # Set this so that the accouting knows where the jobs ran
