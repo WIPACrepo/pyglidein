@@ -11,6 +11,10 @@ if [ "x$SINGULARITY_BIN" = "x" ]; then
     SINGULARITY_BIN="apptainer"
 fi
 
+if [ "x$SCRATCH_DIR" = "x"]; then
+    SCRATCH_DIR=$PWD
+fi
+
 # Set this so that the accouting knows where the jobs ran
 if [ "x$GLIDEIN_Site" = "x" ]; then
     export GLIDEIN_Site="IceCube"
@@ -68,4 +72,8 @@ if [ -d /etc/OpenCL/vendors ]; then
     ARGS="$ARGS --bind /etc/OpenCL/vendors"
 fi
 
-$SINGULARITY_BIN run --contain --bind /cvmfs --scratch /pilot $ARGS docker://opensciencegrid/osgvo-docker-pilot:release /bin/entrypoint.sh /usr/local/sbin/supervisord_startup.sh
+if [ "x$CVMFS_BASE_DIR" = "x" ]; then
+    $SINGULARITY_BIN run --contain --bind /cvmfs -v $SCRATCH_DIR:/pilot $ARGS docker://hub.opensciencegrid.org/opensciencegrid/osgvo-docker-pilot:release /bin/entrypoint.sh /usr/local/sbin/supervisord_startup.sh
+else
+    $SINGULARITY_BIN run --contain -v $CVMFS_BASE_DIR:/cvmfs -v $SCRATCH_DIR:/pilot $ARGS docker://hub.opensciencegrid.org/opensciencegrid/osgvo-docker-pilot:release /bin/entrypoint.sh /usr/local/sbin/supervisord_startup.sh
+fi
