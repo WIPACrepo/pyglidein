@@ -97,6 +97,8 @@ if [ -f /etc/OpenCL/vendors/*.icd ]; then
    echo "ICD file present"
    ARGS_MOUNT="$ARGS_MOUNT -B /etc/OpenCL/vendors"
    export GLIDEIN_SINGULARITY_BINDPATH="/etc/OpenCL/vendors"
+   export GLIDEIN_SINGULARITY_EXTRA_ARGUMENTS="--nv"
+   export CONTAINER_PILOT_USE_JOB_HOOK=""
 else
    echo "No ICD file present. Will not run with GPU support."
    export _condor_GPUS=0
