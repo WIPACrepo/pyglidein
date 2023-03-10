@@ -3,7 +3,7 @@ set -e
 
 # check for condor auth
 if [ "x$TOKEN" = "x" ]; then
-    echo "Condor $TOKEN is required" 1>&2
+    echo "Condor IDTOKEN (\$TOKEN) is not set. Required for this! Performing seppuku!" 1>&2
     exit 1
 fi
 
@@ -65,6 +65,11 @@ fi
 export NUM_CPUS="$CPUS"
 #export MEMORY="$MEMORY" # in MB
 export _condor_DISK="$DISK" # in KB
+
+if [ "$GLIDEIN_Site" = "Anvil" ]; then
+    export _condor_NETWORK_INTERFACE='172.18.*'
+    export _condor_MASTER_DEBUG=D_HOSTNAME:2,D_ALWAYS:2
+fi
 
 # fix goto blas library threading
 export GOTO_NUM_THREADS=1
