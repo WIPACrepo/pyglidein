@@ -62,8 +62,11 @@ fi
 if [ -z $DISK ]; then
     DISK=8000000
 fi
+if [ -z $GPUS ]; then
+   GPUS=0
+fi 
 export NUM_CPUS="$CPUS"
-#export MEMORY="$MEMORY" # in MB
+export _condor_MEMORY="$MEMORY" # in MB
 export _condor_DISK="$DISK" # in KB
 
 if [ "$GLIDEIN_Site" = "Anvil" ]; then
@@ -81,7 +84,7 @@ ARGS="--contain"
 # DONT USE THIS WITHOUT CGROUPS v2, so RHEL9...maybe?
 # ARGS="$ARGS --cpus $CPUS --memory ${MEMORY}M"
 
-# Add --nv for GPU jobs
+# Add --nv for nvidia GPU jobs
 if [ "x$CUDA_VISIBLE_DEVICES" != "x" ]; then
     ARGS="$ARGS --nv"
 fi
@@ -89,8 +92,14 @@ fi
 # Need /dev/fuse to make sure we can singularity/apptainer works
 # inside the container
 ARGS_MOUNT="-B $SCRATCH_DIR:/pilot -B /dev/fuse"
-if [ -d /etc/OpenCL/vendors ]; then
+if [ -f /etc/OpenCL/vendors/*.icd ]; then
+   ls -l /etc/OpenCL/vendors
+   echo "ICD file present"
    ARGS_MOUNT="$ARGS_MOUNT -B /etc/OpenCL/vendors"
+   export GLIDEIN_SINGULARITY_BINDPATH="/etc/OpenCL/vendors"
+else
+   echo "No ICD file present. Will not run with GPU support."
+   export _condor_GPUS=0
 fi
 
 # Adding all the env vars
