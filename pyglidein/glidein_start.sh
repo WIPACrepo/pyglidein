@@ -11,18 +11,19 @@ if [ "x$SINGULARITY_BIN" = "x" ]; then
     SINGULARITY_BIN="apptainer"
 fi
 
-if [ "x$SCRATCH_DIR" = "x"]; then
+if [ "x$SCRATCH_DIR" = "x" ]; then
     SCRATCH_DIR=$PWD
 fi
 
 if [ "x$CVMFS_BASE_DIR" = "x" ]; then
-  CVMFS_BASE_DIR="/cvmfs"
+    CVMFS_BASE_DIR="/cvmfs"
 fi
 
 # Set this so that the accouting knows where the jobs ran
 if [ "x$GLIDEIN_Site" = "x" ]; then
     export GLIDEIN_Site="IceCube"
 fi
+
 if [ "x$GLIDEIN_ResourceName" = "x" ]; then
     export GLIDEIN_ResourceName=$GLIDEIN_Site
 fi
@@ -68,12 +69,53 @@ export _condor_DISK="$DISK" # in KB
 # fix goto blas library threading
 export GOTO_NUM_THREADS=1
 
-ARGS=""
+
+# start the args with contain
+ARGS="--contain"
+
+# DONT USE THIS WITHOUT CGROUPS v2, so RHEL9...maybe?
+# ARGS="$ARGS --cpus $CPUS --memory ${MEMORY}M"
+
+# Add --nv for GPU jobs
 if [ "x$CUDA_VISIBLE_DEVICES" != "x" ]; then
     ARGS="$ARGS --nv"
 fi
+
+# Need /dev/fuse to make sure we can singularity/apptainer works
+# inside the container
+ARGS_MOUNT="-B $SCRATCH_DIR:/pilot -B /dev/fuse"
 if [ -d /etc/OpenCL/vendors ]; then
-    ARGS="$ARGS --bind /etc/OpenCL/vendors"
+   ARGS_MOUNT="$ARGS_MOUNT -B /etc/OpenCL/vendors"
 fi
 
-$SINGULARITY_BIN run --contain -v $CVMFS_BASE_DIR:/cvmfs -v $SCRATCH_DIR:/pilot $ARGS docker://hub.opensciencegrid.org/opensciencegrid/osgvo-docker-pilot:release /bin/entrypoint.sh /usr/local/sbin/supervisord_startup.sh
+# Adding all the env vars
+
+# DONT USE THIS WITHOUT CGROUPS v2, so RHEL9...maybe?
+# ARGS="$ARGS --cpus $CPUS --memory ${MEMORY}M"
+ARGS_ENV=""
+if [ "x$SPECIAL_ENV" != "x"  ]; then
+    ARGS_ENV="--env $SPECIAL_ENV"
+fi
+if [ "x$USE_CVMFSEXEC" != "x" ]; then
+    ARGS_ENV="$ARGS_ENV,CVMFSEXEC_REPOS=oasis.opensciencegrid.org\ssingularity.opensciencegrid.org\sicecube.opensciencegrid.org"
+else
+    ARGS_MOUNT="$ARGS_MOUNT -B $CVMFS_BASE_DIR:/cvmfs"
+fi
+
+if [ "x$SPECIAL_ARGS" != "x" ]; then
+    ARGS="$ARGS $SPECAL_ARGS"
+fi
+
+echo $ARGS_MOUNT
+echo $ARGS_ENV
+
+ARGS="$ARGS $ARGS_MOUNT $ARGS_ENV"
+
+BASE_IMAGE=""
+if [ "x$BASE_IMAGE" = "x" ]; then
+    BASE_IMAGE=$PWD/osgvo-pilot.sif
+fi
+
+echo $ARGS
+echo "$SINGULARITY_BIN run $ARGS $BASE_IMAGE /bin/entrypoint.sh /usr/local/sbin/supervisord_startup.sh"
+$SINGULARITY_BIN run $ARGS $BASE_IMAGE /bin/entrypoint.sh /usr/local/sbin/supervisord_startup.sh
