@@ -66,8 +66,8 @@ if [ -z $GPUS ]; then
    GPUS=0
 fi 
 export NUM_CPUS="$CPUS"
-export _condor_MEMORY="$MEMORY" # in MB
-export _condor_DISK="$DISK" # in KB
+export MEMORY="$MEMORY" # in MB
+export DISK="$DISK" # in KB
 
 if [ "$GLIDEIN_Site" = "Anvil" ]; then
     export _condor_NETWORK_INTERFACE='172.18.*'
@@ -91,14 +91,11 @@ fi
 
 # Need /dev/fuse to make sure we can singularity/apptainer works
 # inside the container
-ARGS_MOUNT="-B $SCRATCH_DIR:/pilot -B /dev/fuse"
+ARGS_MOUNT="-B $SCRATCH_DIR:/pilot -B /dev/fuse -B $TMPDIR:$TMPDIR"
 if [ -f /etc/OpenCL/vendors/*.icd ]; then
    ls -l /etc/OpenCL/vendors
    echo "ICD file present"
    ARGS_MOUNT="$ARGS_MOUNT -B /etc/OpenCL/vendors"
-   export GLIDEIN_SINGULARITY_BINDPATH="/etc/OpenCL/vendors"
-   export GLIDEIN_SINGULARITY_EXTRA_ARGUMENTS="--nv"
-   export CONTAINER_PILOT_USE_JOB_HOOK=""
 else
    echo "No ICD file present. Will not run with GPU support."
    export _condor_GPUS=0
@@ -124,14 +121,31 @@ fi
 
 echo $ARGS_MOUNT
 echo $ARGS_ENV
-
+echo "JOB HOOK $CONTAINER_PILOT_USE_JOB_HOOK"
 ARGS="$ARGS $ARGS_MOUNT $ARGS_ENV"
 
-BASE_IMAGE=""
 if [ "x$BASE_IMAGE" = "x" ]; then
+    echo "Grapping default image: $PWD/osgvo-pilot.sif"
     BASE_IMAGE=$PWD/osgvo-pilot.sif
+else
+    echo "Using $BASE_IAGE"
 fi
 
+# export GLIDEIN_DEBUG_OUTPUT="DEBUG"
+# export DEBUG_STARTUP=true
+
+echo $TMPDIR 
 echo $ARGS
 echo "$SINGULARITY_BIN run $ARGS $BASE_IMAGE /bin/entrypoint.sh /usr/local/sbin/supervisord_startup.sh"
+
+# The DISK and MEMORY variable dont get properly propagated right now so setting it by force  
+export APPTAINERENV_MEMORY=$MEMORY
+export APPTAINERENV_DISK=$DISK
+
+# Allow CPU jobs to run in GPU slots 
+export APPTAINERENV_ALLOW_CPUJOB_ON_GPUSLOT=true
+
+# Getting environment in order for debugging
+env -0 | sort -z | tr '\0' '\n'
+
 $SINGULARITY_BIN run $ARGS $BASE_IMAGE /bin/entrypoint.sh /usr/local/sbin/supervisord_startup.sh
