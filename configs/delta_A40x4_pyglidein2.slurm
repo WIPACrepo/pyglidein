@@ -10,8 +10,8 @@
 #SBATCH --gpus-per-node=1
 #SBATCH --tasks=1
 #SBATCH --mem=56G
-#SBATCH -o /u/riedel1/logs/%j.out  # File to which STDOUT will be written, %j inserts jobid
-#SBATCH -e /u/riedel1/logs/%j.err  # File to which STDERR will be written, %j inserts jobid
+#SBATCH -o /scratch/bbfw/riedel1/logs/%j.out  # File to which STDOUT will be written, %j inserts jobid
+#SBATCH -e /scratch/bbfw/riedel1/logs/%j.err  # File to which STDERR will be written, %j inserts jobid
 
 
 
