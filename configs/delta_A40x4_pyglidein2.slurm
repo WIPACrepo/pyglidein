@@ -65,4 +65,4 @@ export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/singularity/bin/sing
 export BASE_IMAGE=/projects/bbfw/riedel1/osgvo-docker-pilot.sif
 
 echo "Invoke the cvmfsexec env"
-/tmp/cvmfsexec/cvmfsexec oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ./glidein_start.sh
+/tmp/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ./glidein_start.sh
