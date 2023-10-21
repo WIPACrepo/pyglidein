@@ -35,13 +35,13 @@ export GLIDEIN_Site="Delta"
 
 GLIDEIN_LOC=/u/riedel1/pyglidein2/pyglidein
 
-LOCAL_DIR=/tmp/
+LOCAL_DIR=/tmp/${SLURM_JOBID}
 CVMFSEXEC_DIR=/u/riedel1/cvmfsexec/
 
 
 mkdir -p ${LOCAL_DIR}
 cd $LOCAL_DIR
-cp -a /u/riedel1/cvmfsexec . 
+cp -a /u/riedel1/cvmfsexec .
 
 ls ${LOCAL_DIR}/cvmfsexec
 echo "---"
@@ -57,12 +57,14 @@ cp $GLIDEIN_LOC/glidein_start.sh .
 export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6ImI4NjRmOTY5ZGRjN2ZkMjU1MDk2YWU0ZTZjZGE0YWNjIiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX01BU1RFUiIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.Qra4o3BSQ_Mx0hZavOrP6vHDnXntX0N2WcLgrKKaV0M
 export ResourceName=$SITE
 
-# Using Apptainer from CVMFS because it is more up-to-date 
-export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/singularity/bin/singularity
+# Using Apptainer from CVMFS because it is more up-to-date
+export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.2.4/x86_64/bin/apptainer
 
-# Image below comes from docker://hub.opensciencegrid.org/opensciencegrid/osgvo-docker-pilot:3.6-release 
+# Image below comes from docker://hub.opensciencegrid.org/opensciencegrid/osgvo-docker-pilot:3.6-release
 # Not auto pulling cause OSG tends to make changes that break or change beahvior in unexpcted way
-export BASE_IMAGE=/projects/bbfw/riedel1/osgvo-docker-pilot.sif
+export BASE_IMAGE=/scratch/bbfw/riedel1/osgvo-docker-pilot_apptainer_nvidia_nvvm.sif
+# /u/riedel1/osgvo-docker-pilot_gpu.sif
+# /projects/bbfw/riedel1/osgvo-docker-pilot.sif
 
 echo "Invoke the cvmfsexec env"
-/tmp/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ./glidein_start.sh
+${LOCAL_DIR}/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ./glidein_start.sh
