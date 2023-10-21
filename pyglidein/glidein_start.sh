@@ -50,7 +50,14 @@ export CCB_RANGE_LOW="9618"
 export CCB_RANGE_HIGH="9618"
 
 # set default container
-export OSG_DEFAULT_CONTAINER_DISTRIBUTION="100%__opensciencegrid/osgvo-el7-cuda10:latest"
+# export OSG_DEFAULT_CONTAINER_DISTRIBUTION="100%__opensciencegrid/osgvo-el7-cuda10:latest"
+export OSG_DEFAULT_CONTAINER_DISTRIBUTION="100%__htc/rocky:8-cuda-11.0.3"
+export APPTAINERENV_OSG_DEFAULT_CONTAINER_DISTRIBUTION=$OSG_DEFAULT_CONTAINER_DISTRIBUTION
+
+export OSG_DEFAULT_CONTAINER_DISTRIBUTION_GPU="100%__wipac/pyglidein_el8_cuda11"
+export APPTAINERENV_OSG_DEFAULT_CONTAINER_DISTRIBUTION_OSG=$OSG_DEFAULT_CONTAINER_DISTRIBUTION_GPU
+
+
 
 # specify resources, or let condor auto-detect them
 if [ -z $CPUS ]; then
@@ -74,9 +81,7 @@ if [ "$GLIDEIN_Site" = "Anvil" ]; then
     export _condor_MASTER_DEBUG=D_HOSTNAME:2,D_ALWAYS:2
 fi
 
-# fix goto blas library threading
 export GOTO_NUM_THREADS=1
-
 
 # start the args with contain
 ARGS="--contain"
@@ -96,6 +101,8 @@ if [ -f /etc/OpenCL/vendors/*.icd ]; then
    ls -l /etc/OpenCL/vendors
    echo "ICD file present"
    ARGS_MOUNT="$ARGS_MOUNT -B /etc/OpenCL/vendors"
+   # ARGS_MOUNT="$ARGS_MOUNT -B /usr/lib64/libnvidia-nvvm.so.535.104.12:/.singularity.d/libs/libnvidia-nvvm.so.535.104.12 -B /usr/lib64/libnvidia-nvvm.so.535.10
+   # 4.12:/.singularity.d/libs/libnvidia-nvvm.so.4"
 else
    echo "No ICD file present. Will not run with GPU support."
    export _condor_GPUS=0
@@ -131,8 +138,6 @@ else
     echo "Using $BASE_IAGE"
 fi
 
-# export GLIDEIN_DEBUG_OUTPUT="DEBUG"
-# export DEBUG_STARTUP=true
 
 echo $TMPDIR 
 echo $ARGS
@@ -142,8 +147,8 @@ echo "$SINGULARITY_BIN run $ARGS $BASE_IMAGE /bin/entrypoint.sh /usr/local/sbin/
 export APPTAINERENV_MEMORY=$MEMORY
 export APPTAINERENV_DISK=$DISK
 
-# Allow CPU jobs to run in GPU slots 
-export APPTAINERENV_ALLOW_CPUJOB_ON_GPUSLOT=true
+export APPTAINERENV_GLIDEIN_RANDOMIZE_NAME=true
+export APPTAINERENV_OSG_PROJECT_NAME=IceCube
 
 # Getting environment in order for debugging
 env -0 | sort -z | tr '\0' '\n'
