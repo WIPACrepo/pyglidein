@@ -28,25 +28,19 @@ SITE="Bridges-2"
 CLEANUP=1
 LOCAL_DIR=$LOCAL/$SLURM_JOBID
 
+GLIDEIN_LOC=/jet/home/briedel/pyglidein2/pyglidein
 
 cd $LOCAL_DIR
-cp /jet/home/briedel/pyglidein/pyglidein/glidein_start.sh glidein_start.sh
-cp /jet/home/briedel/pyglidein/pyglidein/os_arch.sh os_arch.sh
-cp /jet/home/briedel/pyglidein/pyglidein/log_shipper.sh log_shipper.sh
-cp /jet/home/briedel/pyglidein/pyglidein/startd_cron_scripts/clsim_gpu_test.py clsim_gpu_test.py
-cp /jet/home/briedel/pyglidein/pyglidein/startd_cron_scripts/cvmfs_test.py cvmfs_test.py
-cp /jet/home/briedel/pyglidein/pyglidein/startd_cron_scripts/gridftp_test.py gridftp_test.py
-cp /jet/home/briedel/pyglidein/pyglidein/startd_cron_scripts/post_cvmfs.sh post_cvmfs.sh
-cp /jet/home/briedel/pyglidein/pyglidein/startd_cron_scripts/pre_cvmfs.sh pre_cvmfs.sh
 
-echo $PWD
-SINGULARITYENV_RETIRETIME=12000 SINGULARITYENV_DISK=$DISK SINGULARITYENV_CPUS=$CPUS SINGULARITYENV_GPUS=$GPUS SINGULARITYENV_MEMORY=$MEMORY SINGULARITYENV_WALLTIME=$WALLTIME SINGULARITYENV_DISABLE_STARTD_CHECKS=$DISABLE_STARTD_CHECKS SINGULARITYENV_SITE=$SITE SINGULARITYENV_ResourceName=$SITE singularity exec --nv --bind /cvmfs/icecube.opensciencegrid.org --bind $LOCAL_DIR --bind /etc/OpenCL --cleanenv docker://opensciencegrid/osgvo-el7-cuda10 ./glidein_start.sh
+cp $GLIDEIN_LOC/glidein_start.sh .
 
+export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6ImI4NjRmOTY5ZGRjN2ZkMjU1MDk2YWU0ZTZjZGE0YWNjIiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX01BU1RFUiIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.Qra4o3BSQ_Mx0hZavOrP6vHDnXntX0N2WcLgrKKaV0M
+export ResourceName=$SITE
 
-if [ $CLEANUP -eq 1 ]; then
-  rm -rf $LOCAL_DIR
-fi
-  rm -rf ${LOCAL_TMP_DIR}
+# Using Apptainer from CVMFS because it is more up-to-date
+export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.2.4/x86_64/bin/apptainer
 
-echo `date`
+export BASE_IMAGE=/jet/home/briedel/osgvo-docker-pilot_apptainer_nvidia_nvvm.sif
+
+./glidein_start.sh
 
