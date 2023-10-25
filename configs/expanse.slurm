@@ -39,6 +39,6 @@ export ResourceName=$SITE
 # Using Apptainer from CVMFS because it is more up-to-date
 export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.2.4/x86_64/bin/apptainer
 
-export BASE_IMAGE=/jet/home/briedel/osgvo-docker-pilot_apptainer_nvidia_nvvm.sif
+export BASE_IMAGE=/home/briedel/osgvo-docker-pilot_apptainer_nvidia_nvvm.sif
 
 ./glidein_start.sh
