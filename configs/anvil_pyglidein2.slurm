@@ -59,4 +59,7 @@ export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlz
 export BASE_IMAGE=$PROJECT/osgvo-docker-pilot_apptainer_nvidia_nvvm.sif
 # osgvo-pilot.sif
 
+export _condor_NETWORK_INTERFACE='172.18.*'
+export _condor_MASTER_DEBUG=D_HOSTNAME:2,D_ALWAYS:2
+
 ${JOB_DIR}/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ./glidein_start.sh 
