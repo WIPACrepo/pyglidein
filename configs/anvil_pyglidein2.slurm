@@ -12,7 +12,7 @@
 #SBATCH --output=/home/x-briedel/logs/%j.out
 #SBATCH --error=/home/x-briedel/logs/%j.err
 
-module purge
+module --force purge
 
 echo `date`
 echo $HOSTNAME
@@ -30,11 +30,12 @@ else
   GPUS=$CUDA_VISIBLE_DEVICES
 fi
 export GPUS=$GPUS
-export GLIDEIN_Site="Anvil"
-
-
+export GLIDEIN_Site="Purdue Anvil"
+export OSG_PROJECT_NAME=IceCube
 
 JOB_DIR=/anvil/scratch/x-briedel/pyglidein/${SLURM_JOB_ID}
+# /tmp/${SLURM_JOB_ID}
+# /anvil/scratch/x-briedel/pyglidein/${SLURM_JOB_ID}
 
 GLIDEIN_LOC=/home/x-briedel/pyglidein2/
 
@@ -50,10 +51,12 @@ cp -r $PROJECT/cvmfsexec .
 
 cp $GLIDEIN_LOC/pyglidein/glidein_start.sh glidein_start.sh
 
-export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/bin/apptainer
+export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.2.4/bin/apptainer
+# /cvmfs/oasis.opensciencegrid.org/mis/apptainer/bin/apptainer
 export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6ImI4NjRmOTY5ZGRjN2ZkMjU1MDk2YWU0ZTZjZGE0YWNjIiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX01BU1RFUiIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.Qra4o3BSQ_Mx0hZavOrP6vHDnXntX0N2WcLgrKKaV0M
 # ls ${JOB_DIR}/cvmfsexec/dist/cvmfs/icecube.opensciencegrid.org/
 
-export BASE_IMAGE=$PROJECT/osgvo-pilot.sif
+export BASE_IMAGE=$PROJECT/osgvo-docker-pilot_apptainer_nvidia_nvvm.sif
+# osgvo-pilot.sif
 
 ${JOB_DIR}/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ./glidein_start.sh 
