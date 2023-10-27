@@ -77,7 +77,7 @@ export NUM_CPUS="$CPUS"
 export MEMORY="$MEMORY" # in MB
 export DISK="$DISK" # in KB
 
-if [ "$GLIDEIN_Site" = "Anvil" ]; then
+if [ "$GLIDEIN_Site" = "Purdue Anvil" ]; then
     export _condor_NETWORK_INTERFACE='172.18.*'
     export _condor_MASTER_DEBUG=D_HOSTNAME:2,D_ALWAYS:2
 fi
