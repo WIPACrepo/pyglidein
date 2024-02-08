@@ -142,7 +142,7 @@ fi
 
 echo $TMPDIR 
 echo $ARGS
-echo "$SINGULARITY_BIN run $ARGS $BASE_IMAGE /bin/entrypoint.sh /usr/local/sbin/supervisord_startup.sh"
+echo "$SINGULARITY_BIN run $ARGS $BASE_IMAGE /usr/local/sbin/supervisord_startup.sh"
 
 # The DISK and MEMORY variable dont get properly propagated right now so setting it by force  
 export APPTAINERENV_MEMORY=$MEMORY
@@ -154,4 +154,4 @@ export APPTAINERENV_OSG_PROJECT_NAME=IceCube
 # Getting environment in order for debugging
 env -0 | sort -z | tr '\0' '\n'
 
-$SINGULARITY_BIN run $ARGS $BASE_IMAGE /bin/entrypoint.sh /usr/local/sbin/supervisord_startup.sh
+$SINGULARITY_BIN run $ARGS $BASE_IMAGE /usr/local/sbin/supervisord_startup.sh
