@@ -33,7 +33,7 @@ export GPU=$GPU
 export GPU2=$(nvidia-smi --query-gpu=index --format=csv,noheader);
 echo "GPU2=$GPU2"
 echo "GPU=$GPUS"
-export SITE="Harvard"
+export GLIDEIN_Site="Harvard"
 
 
 GLIDEIN_LOC=/n/home00/briedel/pyglidein2/pyglidein
