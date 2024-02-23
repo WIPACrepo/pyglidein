@@ -20,12 +20,19 @@ printenv
 echo "-----------------------------------------------------"
 export CUDA_VISIBLE_DEVICES=$(nvidia-smi --query-gpu=memory.free,index --format=csv,nounits,noheader | sort -nr | head -1 | awk '{print $NF }')
 
+echo $CUDA_VISIBLE_DEVICES
 
-export LOCAL_DIR=/tmp/icecube/${SLURM_JOBID}
+export LOCAL_CVMFS_DIR=/tmp/icecube/${SLURM_JOBID}
+
+mkdir -p ${LOCAL_CVMFS_DIR}
+
+cp -a /home1/04799/tg840985/cvmfsexec ${LOCAL_CVMFS_DIR}/cvmfsexec
+
+export LOCAL_DIR=/scratch/04799/tg840985/${SLURM_JOBID}
 
 mkdir -p ${LOCAL_DIR}
 
-cp -a /home1/04799/tg840985/cvmfsexec ${LOCAL_DIR}/cvmfsexec
+cd ${LOCAL_DIR}
 
 export MEMORY=64000
 export WALLTIME=86400
@@ -51,5 +58,7 @@ export BASE_IMAGE=/work/04799/tg840985/ls6/osgvo-docker-pilot_23-cuda_11_8_0-rel
 # /u/riedel1/osgvo-docker-pilot_gpu.sif
 # /projects/bbfw/riedel1/osgvo-docker-pilot.sif
 
+APPTAINERENV_CVMFS_QUOTA_LIMIT=120000
+
 echo "Invoke the cvmfsexec env"
-${LOCAL_DIR}/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ./glidein_start.sh
+${LOCAL_CVMFS_DIR}/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ./glidein_start.sh
