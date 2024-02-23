@@ -90,29 +90,41 @@ ARGS="--contain"
 # DONT USE THIS WITHOUT CGROUPS v2, so RHEL9...maybe?
 # ARGS="$ARGS --cpus $CPUS --memory ${MEMORY}M"
 
-# Add --nv for nvidia GPU jobs
-if [ "x$CUDA_VISIBLE_DEVICES" != "x" ]; then
-    ARGS="$ARGS --nv"
+echo "------glidein_start------"
+echo "Trying to find GPUs"
+if [ $(ls -l /etc/OpenCL/vendors/*.icd | wc -l) -gt 0 ]; then
+    echo "ICD files present"
+    ls -l /etc/OpenCL/vendors/*.icd
 fi
 
-# Need /dev/fuse to make sure we can singularity/apptainer works
+# Add --nv for nvidia GPU jobs
+if [ "x$CUDA_VISIBLE_DEVICES" != "x" ] || [ -z $CUDA_VISIBLE_DEVICES ]; then
+    echo "CUDA_VISIBLE_DEVICES set to $CUDA_VISIBLE_DEVICES"
+    ARGS="$ARGS --nv"
+    if [ $(ls -l /etc/OpenCL/vendors/nvidia.icd | wc -l) == 0 ]; then
+        echo "No NVIDIA ICD file present"
+    fi
+fi
+
 # inside the container
 ARGS_MOUNT="-B $SCRATCH_DIR:/pilot -B /dev/fuse -B $TMPDIR:$TMPDIR"
-if [ -f /etc/OpenCL/vendors/*.icd ]; then
-   ls -l /etc/OpenCL/vendors
-   echo "ICD file present"
-   ARGS_MOUNT="$ARGS_MOUNT -B /etc/OpenCL/vendors"
-   # ARGS_MOUNT="$ARGS_MOUNT -B /usr/lib64/libnvidia-nvvm.so.535.104.12:/.singularity.d/libs/libnvidia-nvvm.so.535.104.12 -B /usr/lib64/libnvidia-nvvm.so.535.10
-   # 4.12:/.singularity.d/libs/libnvidia-nvvm.so.4"
+if [ $(ls -l /etc/OpenCL/vendors/*.icd | wc -l) -gt 0 ]; then
+  echo "/etc/OpenCL/vendors/*.icd contains files (or does not exist)"
+  ARGS_MOUNT="$ARGS_MOUNT -B /etc/OpenCL/vendors"
 else
    echo "No ICD file present. Will not run with GPU support."
    export _condor_GPUS=0
-fi
+   if [ "x$CUDA_VISIBLE_DEVICES" != "x" ] || [ -z $CUDA_VISIBLE_DEVICES ]; then
+       echo "CUDA_VISIBLE_DEVICES is set, but no ICD file"
+   fi
+fi 
+
 
 # Adding all the env vars
 
 # DONT USE THIS WITHOUT CGROUPS v2, so RHEL9...maybe?
 # ARGS="$ARGS --cpus $CPUS --memory ${MEMORY}M"
+
 ARGS_ENV=""
 if [ "x$SPECIAL_ENV" != "x"  ]; then
     ARGS_ENV="--env $SPECIAL_ENV"
