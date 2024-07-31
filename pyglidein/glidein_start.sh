@@ -166,4 +166,8 @@ export APPTAINERENV_OSG_PROJECT_NAME=IceCube
 # Getting environment in order for debugging
 env -0 | sort -z | tr '\0' '\n'
 
+ulimit -n 5000
+
+ulimit -n
+
 $SINGULARITY_BIN run $ARGS $BASE_IMAGE /usr/local/sbin/supervisord_startup.sh
