@@ -25,11 +25,11 @@ echo "-----------------------------------------------------"
 
 # export CUDA_VISIBLE_DEVICES=$(nvidia-smi --query-gpu=memory.free,index --format=csv,nounits,noheader | sort -nr | head -1 | awk '{print $NF }')
 
-export LOCAL_CVMFS_DIR=/scratch/local/$USER/$SLURM_JOB_ID
+# export LOCAL_CVMFS_DIR=/scratch/local/$USER/$SLURM_JOB_ID
 
-mkdir $LOCAL_CVMFS_DIR
+# mkdir $LOCAL_CVMFS_DIR
 
-cp -r /uufs/chpc.utah.edu/common/home/u6058313/cvmfsexec $LOCAL_CVMFS_DIR/cvmfsexec
+# cp -r /uufs/chpc.utah.edu/common/home/u6058313/cvmfsexec $LOCAL_CVMFS_DIR/cvmfsexec
 
 export LOCAL_DIR=/scratch/general/vast/$USER/$SLURM_JOB_ID
 
@@ -42,7 +42,7 @@ export WALLTIME=86400
 export CPUS=8
 export DISK=147456000000
 export GPUS="CUDA${CUDA_VISIBLE_DEVICES}"
-export GLIDEIN_Site="UofU Notchpeak"
+export GLIDEIN_Site="UofU Kingspeak"
 
 echo $PWD
 
@@ -55,4 +55,6 @@ export SINGULARITY_BIN=/uufs/chpc.utah.edu/sys/installdir/apptainer/1.2.5/bin/ap
 
 export BASE_IMAGE=/uufs/chpc.utah.edu/common/home/u6058313/osgvo-docker-pilot_3.6-cuda_11_8_0-release.sif
 
-${LOCAL_CVMFS_DIR}/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ./glidein_start.sh
+./glidein_start.sh
+
+# ${LOCAL_CVMFS_DIR}/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ./glidein_start.sh
