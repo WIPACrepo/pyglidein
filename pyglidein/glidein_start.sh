@@ -1,6 +1,15 @@
 #!/bin/sh
 set -e
 
+# If running inside Condor, copy machine and job classads to environment
+if [ -f "$_CONDOR_MACHINE_AD" ]; then
+    eval $(cat "$_CONDOR_MACHINE_AD" | awk 'tolower($1) ~ /^(cpus|gpus|memory|disk)$/ {printf "export %s=%s\n", toupper($1), $3}')
+fi
+if [ -f "$_CONDOR_JOB_AD" ]; then
+    eval $(cat "$_CONDOR_JOB_AD" | awk 'tolower($1) ~ /^glidein_/ {printf "export %s=%s\n", $1, $3}')
+fi
+
+
 # check for condor auth
 if [ "x$TOKEN" = "x" ]; then
     echo "Condor IDTOKEN (\$TOKEN) is not set. Required for this! Performing seppuku!" 1>&2
@@ -148,7 +157,7 @@ if [ "x$BASE_IMAGE" = "x" ]; then
     echo "Grapping default image: $PWD/osgvo-pilot.sif"
     BASE_IMAGE=$PWD/osgvo-pilot.sif
 else
-    echo "Using $BASE_IAGE"
+    echo "Using $BASE_IMAGE"
 fi
 
 
