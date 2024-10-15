@@ -165,9 +165,12 @@ echo $TMPDIR
 echo $ARGS
 echo "$SINGULARITY_BIN run $ARGS $BASE_IMAGE /usr/local/sbin/supervisord_startup.sh"
 
-# The DISK and MEMORY variable dont get properly propagated right now so setting it by force  
-export APPTAINERENV_MEMORY=$MEMORY
-export APPTAINERENV_DISK=$DISK
+# Explicitly override any environment variables where a default was specified in the container
+for var in $($SINGULARITY_BIN inspect -e $BASE_IMAGE | awk '/^export/ {split($2,a,"="); if (a[1] != "PATH") {print a[1]}}'); do
+if [ "x${!var}" != "x" ]; then
+    export APPTAINERENV_$var=${!var}
+fi
+done
 
 export APPTAINERENV_GLIDEIN_RANDOMIZE_NAME=true
 export APPTAINERENV_OSG_PROJECT_NAME=IceCube
