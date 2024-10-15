@@ -1,4 +1,3 @@
-#!/bin/bash
 
 universe = vanilla
 
@@ -6,21 +5,11 @@ log    = /home/iceprod/logs/$(Cluster).log
 output = /home/iceprod/logs/$(Cluster).out
 error  = /home/iceprod/logs/$(Cluster).err
 
-request_cpus   = 1
-request_memory = 4G
-request_gpus   = 1
-#request_disk   = 1G
-
-#run_as_owner          = False
-#should_transfer_files = Yes
-#transfer_input_files  = /home/iceprod/osgvo-docker-pilot_23-release.sif
-
 +GLIDEIN_Site = DESY
 +GLIDEIN_ResourceName = DESY
 +FileSystemDomain = lalaland
 
-environment    = TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6ImI4NjRmOTY5ZGRjN2ZkMjU1MDk2YWU0ZTZjZGE0YWNjIiwic2NvcGUiOiJjb29kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX01BU1RFUiIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.Qra4o3BSQ_Mx0hZavOrP6vHDnXntX0N2WcLgrKKaV0M;SINGULARITY_BIN=apptainer;BASE_IMAGE=/lustre/fs24/group/icecube/iceprod/osgvo-docker-pilot_23-release.sif
+environment    = TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6ImI4NjRmOTY5ZGRjN2ZkMjU1MDk2YWU0ZTZjZGE0YWNjIiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX01BU1RFUiIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.Qra4o3BSQ_Mx0hZavOrP6vHDnXntX0N2WcLgrKKaV0M;SINGULARITY_BIN=apptainer;BASE_IMAGE=/lustre/fs24/group/icecube/iceprod/osgvo-docker-pilot_23-release.sif
 
 executable = /home/iceprod/pyglidein2/pyglidein/glidein_start.sh
 
-queue 1
