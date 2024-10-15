@@ -4,16 +4,26 @@
 
 set -eo pipefail
 
-submit_file=${1:-$DIR/../desy.condor}
 DIR=$( dirname -- "${BASH_SOURCE[0]}" )
+submit_file=${1:-$DIR/../desy.condor}
 
 jq -r "$(cat <<"EOF"
 # pass on groups with more members than queued jobs
-map((.submit=(.count - ($jobs[.label] // 0))| select(.submit>0)))[]
+map(.submit=(.count - ($jobs[.label] // 0)))
+| map(
+  .total_cpus=.cpus
+| .total_memory=.memory
+| .total_gpus=.gpus
+| .gpus=1
+| .cpus=.gpus*8
+| .memory=((.memory/.total_cpus)|floor)*.cpus
+| .disk=((.disk/.total_cpus)|floor)*.cpus
+)
+| map(select(.submit>0))[]
 # construct condor_submit options
 | "-a request_cpus=\(.cpus) -a request_memory=\(.memory) -a request_disk=\(.disk) -a request_gpus=\(.gpus) -a +pyglidein_partition=\\\"\(.label)\\\" -queue \(.submit)"
 EOF
 )" <($DIR/groups.sh) \
---argjson jobs "$(./configs/jobs.sh)" \
+--argjson jobs "$($DIR/jobs.sh)" \
 | xargs --no-run-if-empty --verbose -L1 condor_submit $submit_file
 
