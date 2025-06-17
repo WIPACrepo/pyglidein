@@ -8,6 +8,7 @@
 #SBATCH --error=/home/u.br48903/logs/%j.err
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
+#SBATCH --array=1-100
 
 
 echo `date`
@@ -23,7 +24,7 @@ export CUDA_VISIBLE_DEVICES=$(nvidia-smi --query-gpu=memory.free,index --format=
 
 echo $CUDA_VISIBLE_DEVICES
 
-export LOCAL_DIR=/scratch/user/u.br48903/${SLURM_JOBID}
+export LOCAL_DIR=/scratch/user/u.br48903/${SLURM_JOBID}/${SLURM_ARRAY_TASK_ID}
 
 
 mkdir -p ${LOCAL_DIR}
@@ -47,7 +48,7 @@ export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlz
 
 
 echo "Start Glidein"
-export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.2.5/x86_64/bin/apptainer
+export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.4.0/x86_64/bin/apptainer
 
 export BASE_IMAGE=/scratch/user/u.br48903/osgvo-docker-pilot_3.6-cuda_11_8_0-release.sif
 # /scratch/bbfw/riedel1/osgvo-docker-pilot_apptainer_nvidia_nvvm.sif
