@@ -10,8 +10,9 @@
 #SBATCH --gpus-per-node=1
 #SBATCH --tasks=1
 #SBATCH --mem=56G
-#SBATCH -o /scratch/bbfw/riedel1/logs/%j.out  # File to which STDOUT will be written, %j inserts jobid
-#SBATCH -e /scratch/bbfw/riedel1/logs/%j.err  # File to which STDERR will be written, %j inserts jobid
+#SBATCH --array=1-7500
+#SBATCH -o /scratch/bbfw/riedel1/logs/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
+#SBATCH -e /scratch/bbfw/riedel1/logs/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
 
 
 module purge
@@ -32,11 +33,11 @@ else
   GPUS=$CUDA_VISIBLE_DEVICES
 fi
 export GPUS=$GPUS
-export GLIDEIN_Site="Delta"
+export GLIDEIN_Site="NCSA Delta"
 
 GLIDEIN_LOC=/u/riedel1/pyglidein2/pyglidein
 
-LOCAL_DIR=/tmp/${SLURM_JOBID}
+LOCAL_DIR=/tmp/${SLURM_JOBID}/${SLURM_ARRAY_TASK_ID}
 CVMFSEXEC_DIR=/u/riedel1/cvmfsexec/
 
 
@@ -59,13 +60,16 @@ export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlz
 export ResourceName=$SITE
 
 # Using Apptainer from CVMFS because it is more up-to-date 
-export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.2.4/x86_64/bin/apptainer
+export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.2.5/x86_64/bin/apptainer
 
 # Image below comes from docker://hub.opensciencegrid.org/opensciencegrid/osgvo-docker-pilot:3.6-release 
 # Not auto pulling cause OSG tends to make changes that break or change beahvior in unexpcted way
-export BASE_IMAGE=/scratch/bbfw/riedel1/osgvo-docker-pilot_apptainer_nvidia_nvvm.sif
+export BASE_IMAGE=/u/riedel1/osgvo-docker-pilot_23-cuda_11_8_0-release.sif
+# /scratch/bbfw/riedel1/osgvo-docker-pilot_apptainer_nvidia_nvvm.sif
 # /u/riedel1/osgvo-docker-pilot_gpu.sif
 # /projects/bbfw/riedel1/osgvo-docker-pilot.sif
+
+export APPTAINERENV_CVMFS_QUOTA_LIMIT=120000
 
 echo "Invoke the cvmfsexec env"
 ${LOCAL_DIR}/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ./glidein_start.sh

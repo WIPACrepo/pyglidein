@@ -1,0 +1,21 @@
+#!/bin/bash
+
+universe = vanilla
+
+log    = /home/briedel/logs/$(Cluster).log
+output = /home/briedel/logs/$(Cluster).out
+error  = /home/briedel/logs/$(Cluster).err
+
+request_cpus   = 1
+request_memory = 5G
+request_disk   = 100G
+
+run_as_owner          = False
+should_transfer_files = Yes
+transfer_input_files  = /home/briedel/osgvo-docker-pilot_23-release.sif
+
+environment    = CPUS=1;MEMORY=5000;DISK=100000;GPUS=0;Glidein_SITE="TFIR";Glidein_RESOURCENAME="TFIR";ACCEPT_JOBS_FOR_HOURS=2400;TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6ImI4NjRmOTY5ZGRjN2ZkMjU1MDk2YWU0ZTZjZGE0YWNjIiwic2NvcGUiOiJjb29kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX01BU1RFUiIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.Qra4o3BSQ_Mx0hZavOrP6vHDnXntX0N2WcLgrKKaV0M;SINGULARITY_BIN=apptainer;BASE_IMAGE=./osgvo-docker-pilot_23-release.sif
+
+executable = /home/briedel/pyglidein2/pyglidein/glidein_start.sh
+
+queue 1

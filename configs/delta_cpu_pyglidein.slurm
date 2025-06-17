@@ -34,7 +34,7 @@ else
   GPUS=$CUDA_VISIBLE_DEVICES
 fi
 export GPUS=$GPUS
-export GLIDEIN_Site="Delta"
+export GLIDEIN_Site="NCSA Delta"
 
 GLIDEIN_LOC=/u/riedel1/pyglidein2/pyglidein
 

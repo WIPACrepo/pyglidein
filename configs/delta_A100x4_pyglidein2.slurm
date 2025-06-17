@@ -31,7 +31,7 @@ else
   GPUS=$CUDA_VISIBLE_DEVICES
 fi
 export GPUS=$GPUS
-export GLIDEIN_Site="Delta"
+export GLIDEIN_Site="NCSA Delta"
 
 GLIDEIN_LOC=/u/riedel1/pyglidein2/pyglidein
 
@@ -58,11 +58,12 @@ export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlz
 export ResourceName=$SITE
 
 # Using Apptainer from CVMFS because it is more up-to-date
-export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.2.4/x86_64/bin/apptainer
+export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.2.5/x86_64/bin/apptainer
 
 # Image below comes from docker://hub.opensciencegrid.org/opensciencegrid/osgvo-docker-pilot:3.6-release
 # Not auto pulling cause OSG tends to make changes that break or change beahvior in unexpcted way
-export BASE_IMAGE=/scratch/bbfw/riedel1/osgvo-docker-pilot_apptainer_nvidia_nvvm.sif
+export BASE_IMAGE=/u/riedel1/osgvo-docker-pilot_23-cuda_11_8_0-release.sif
+# /scratch/bbfw/riedel1/osgvo-docker-pilot_apptainer_nvidia_nvvm.sif
 # /u/riedel1/osgvo-docker-pilot_gpu.sif
 # /projects/bbfw/riedel1/osgvo-docker-pilot.sif
 
