@@ -10,8 +10,9 @@
 #SBATCH --gpus-per-node=1
 #SBATCH --tasks=1
 #SBATCH --mem=56G
-#SBATCH -o /scratch/bbfw/riedel1/logs/%j.out  # File to which STDOUT will be written, %j inserts jobid
-#SBATCH -e /scratch/bbfw/riedel1/logs/%j.err  # File to which STDERR will be written, %j inserts jobid
+#SBATCH --array=1-7500
+#SBATCH -o /scratch/bbfw/riedel1/logs/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
+#SBATCH -e /scratch/bbfw/riedel1/logs/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
 
 
 module purge
@@ -36,7 +37,7 @@ export GLIDEIN_Site="NCSA Delta"
 
 GLIDEIN_LOC=/u/riedel1/pyglidein2/pyglidein
 
-LOCAL_DIR=/tmp/${SLURM_JOBID}
+LOCAL_DIR=/tmp/${SLURM_JOBID}/${SLURM_ARRAY_TASK_ID}
 CVMFSEXEC_DIR=/u/riedel1/cvmfsexec/
 
 
@@ -67,6 +68,8 @@ export BASE_IMAGE=/u/riedel1/osgvo-docker-pilot_23-cuda_11_8_0-release.sif
 # /scratch/bbfw/riedel1/osgvo-docker-pilot_apptainer_nvidia_nvvm.sif
 # /u/riedel1/osgvo-docker-pilot_gpu.sif
 # /projects/bbfw/riedel1/osgvo-docker-pilot.sif
+
+export APPTAINERENV_CVMFS_QUOTA_LIMIT=120000
 
 echo "Invoke the cvmfsexec env"
 ${LOCAL_DIR}/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ./glidein_start.sh
