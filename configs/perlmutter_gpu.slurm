@@ -9,8 +9,9 @@
 #SBATCH -c 32
 #SBATCH --gpus-per-task=1
 #SBATCH --gpu-bind=none
-#SBATCH --output=/global/homes/b/briedel/out/%j.out
-#SBATCH --error=/global/homes/b/briedel/out/%j.err
+#SBATCH --array=0-1000
+#SBATCH --output=/global/homes/b/briedel/out/%A.%a.out
+#SBATCH --error=/global/homes/b/briedel/out/%A.%a.err
 
 export MEMORY=256000
 export ACCEPT_JOBS_FOR_HOURS=24
@@ -20,7 +21,7 @@ export DISK=819200000
 export GPUS=CUDA0,CUDA1,CUDA2,CUDA3
 export GLIDEIN_Site="NERSC"
 CLEANUP=0
-LOCAL_DIR=/pscratch/sd/b/briedel/icecube/iceprod/$SLURM_JOB_ID
+LOCAL_DIR=/pscratch/sd/b/briedel/icecube/iceprod/$SLURM_JOB_ID/$SLURM_ARRAY_TASK_ID/
 
 
 export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6ImI4NjRmOTY5ZGRjN2ZkMjU1MDk2YWU0ZTZjZGE0YWNjIiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX01BU1RFUiIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.Qra4o3BSQ_Mx0hZavOrP6vHDnXntX0N2WcLgrKKaV0M
