@@ -4,7 +4,7 @@
 #SBATCH --cpus-per-task=1    # <- match to OMP_NUM_THREADS
 #SBATCH --account=rpp-nahee
 #SBATCH --job-name=glidein
-#SBATCH --time=12:00:00      # hh:mm:ss for the job
+#SBATCH --time=24:00:00      # hh:mm:ss for the job
 #SBATCH --cpus-per-task=2
 #SBATCH --gpus=h100:1 # nvidia_h100_80gb_hbm3_1g.10gb:1
 #SBATCH --tasks=1
