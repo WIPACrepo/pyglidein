@@ -5,23 +5,23 @@
 #SBATCH --account=rpp-nahee
 #SBATCH --job-name=glidein
 #SBATCH --time=12:00:00      # hh:mm:ss for the job
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=2
 #SBATCH --gpus=h100:1 # nvidia_h100_80gb_hbm3_1g.10gb:1
 #SBATCH --tasks=1
 #SBATCH --mem=5G
-# #SBATCH --array=1-2
+#SBATCH --array=1-100
 #SBATCH -o /scratch/briedel/logs/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e /scratch/briedel/logs/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
 
-module purge
+module --force  purge
 
 echo `date`
 echo $HOSTNAME
 
-export MEMORY=5000 # 11600
-# export WALLTIME=86400
+
+export MEMORY=$SLURM_MEM_PER_NODE # 11600
+export CPUS=$SLURM_CPUS_PER_TASK
 export ACCEPT_JOBS_FOR_HOURS=24
-export CPUS=8
 export DISK=81920000000
 if [ "$CUDA_VISIBLE_DEVICES" -eq "$CUDA_VISIBLE_DEVICES" ] 2>/dev/null ; then
   GPUS="CUDA${CUDA_VISIBLE_DEVICES}"
@@ -35,7 +35,7 @@ export GLIDEIN_Site="Fir"
 
 GLIDEIN_LOC=$HOME/pyglidein2/pyglidein
 
-LOCAL_DIR=/scratch/briedel/jobs/${SLURM_JOBID}/${SLURM_ARRAY_TASK_ID}/
+LOCAL_DIR=${SLURM_TMPDIR}/
 
 mkdir -p ${LOCAL_DIR}
 cd $LOCAL_DIR
