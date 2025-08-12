@@ -70,9 +70,9 @@ fi
 if [ -z $DISK ]; then
     DISK=8000000
 fi
-if [ -z $GPUS ]; then
+if [ "x$GPUS" == "x" ]; then
    GPUS=0
-fi 
+fi
 export NUM_CPUS="$CPUS"
 export MEMORY="$MEMORY" # in MB
 export DISK="$DISK" # in KB
@@ -87,38 +87,42 @@ export GOTO_NUM_THREADS=1
 # start the args with contain
 ARGS="--contain"
 
+# Mount args
+ARGS_MOUNT="-B $SCRATCH_DIR:/pilot -B /dev/fuse -B $TMPDIR:$TMPDIR"
 # DONT USE THIS WITHOUT CGROUPS v2, so RHEL9...maybe?
 # ARGS="$ARGS --cpus $CPUS --memory ${MEMORY}M"
 
 echo "------glidein_start------"
-echo "Trying to find GPUs"
-if [ $(ls -l /etc/OpenCL/vendors/*.icd | wc -l) -gt 0 ]; then
-    echo "ICD files present"
-    ls -l /etc/OpenCL/vendors/*.icd
-fi
-
-# Add --nv for nvidia GPU jobs
-if [ "x$CUDA_VISIBLE_DEVICES" != "x" ] || [ -z $CUDA_VISIBLE_DEVICES ]; then
-    echo "CUDA_VISIBLE_DEVICES set to $CUDA_VISIBLE_DEVICES"
-    ARGS="$ARGS --nv"
-    if [ $(ls -l /etc/OpenCL/vendors/nvidia.icd | wc -l) == 0 ]; then
-        echo "No NVIDIA ICD file present"
+if [ "x$GPUS" != "x0" ]; then
+    echo "Trying to find OpenCL GPUs"
+    if [ $(ls -l /etc/OpenCL/vendors/*.icd | wc -l) -gt 0 ]; then
+        echo "ICD files present"
+	ls -l /etc/OpenCL/vendors/*.icd
+        ARGS_MOUNT="$ARGS_MOUNT -B /etc/OpenCL/vendors"
+    else
+	echo "No ICD file present. Will not run with GPU support."
+	export _condor_GPUS=0
+	break
     fi
-fi
-
-# inside the container
-ARGS_MOUNT="-B $SCRATCH_DIR:/pilot -B /dev/fuse -B $TMPDIR:$TMPDIR"
-if [ $(ls -l /etc/OpenCL/vendors/*.icd | wc -l) -gt 0 ]; then
-  echo "/etc/OpenCL/vendors/*.icd contains files (or does not exist)"
-  ARGS_MOUNT="$ARGS_MOUNT -B /etc/OpenCL/vendors"
-else
-   echo "No ICD file present. Will not run with GPU support."
-   export _condor_GPUS=0
-   if [ "x$CUDA_VISIBLE_DEVICES" != "x" ] || [ -z $CUDA_VISIBLE_DEVICES ]; then
-       echo "CUDA_VISIBLE_DEVICES is set, but no ICD file"
-   fi
+    # Add --nv for nvidia GPU jobs
+    if [ "x$CUDA_VISIBLE_DEVICES" != "x" ] || [ ! -z $CUDA_VISIBLE_DEVICES ]; then
+        echo "CUDA_VISIBLE_DEVICES set to $CUDA_VISIBLE_DEVICES"
+        ARGS="$ARGS --nv"
+        if [ $(ls -l /etc/OpenCL/vendors/nvidia.icd | wc -l) == 0 ]; then
+            echo "No NVIDIA ICD file present"
+        fi
+    # AMD GPUs
+    elif [ $(ls -l /etc/OpenCL/vendors/amdocl64*.icd | wc -l) -gt 0 ]; then
+        echo "AMD GPU, you say?"
+	# removing the --contain from args
+	# --rocm is kinda borked because the AMD depend on system libraries
+	# so if you use a different OS than the base OS things can get 
+	# wonky
+        ARGS=""
+    else
+	echo "There are ICD files but not they are not NVIDIA or AMD. You in danger!" 
+    fi
 fi 
-
 
 # Adding all the env vars
 
