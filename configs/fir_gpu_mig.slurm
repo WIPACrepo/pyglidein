@@ -34,7 +34,7 @@ fi
 export GPUS=$GPUS
 export GLIDEIN_Site="Fir"
 
-GLIDEIN_LOC=$HOME/pyglidein2/pyglidein
+GLIDEIN_LOC=$HOME/pyglidein2/
 
 LOCAL_DIR=${SLURM_TMPDIR}/
 #/scratch/briedel/jobs/${SLURM_JOBID}/${SLURM_ARRAY_TASK_ID}/
@@ -48,11 +48,11 @@ touch ${LOCAL_DIR}/help
 mkdir glidein
 cd glidein
 echo $PWD
-cp $GLIDEIN_LOC/glidein_start.sh .
+cp $GLIDEIN_LOC/pyglidein/glidein_start.sh .
 
 
 export NEED_CONDOR_EXTRA_ATTR=true
-cp $GLIDEIN_LOC/extra-attributes.cfg .
+cp $GLIDEIN_LOC/configs/fir_extra-attributes.cfg ./extra-attributes.cfg
 
 export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6ImI4NjRmOTY5ZGRjN2ZkMjU1MDk2YWU0ZTZjZGE0YWNjIiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX01BU1RFUiIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.Qra4o3BSQ_Mx0hZavOrP6vHDnXntX0N2WcLgrKKaV0M
 export ResourceName=$SITE
