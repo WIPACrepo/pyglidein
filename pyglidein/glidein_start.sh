@@ -91,6 +91,14 @@ ARGS="--contain"
 ARGS_MOUNT="-B $SCRATCH_DIR:/pilot -B /dev/fuse -B $TMPDIR:$TMPDIR"
 # DONT USE THIS WITHOUT CGROUPS v2, so RHEL9...maybe?
 # ARGS="$ARGS --cpus $CPUS --memory ${MEMORY}M"
+#
+#
+#
+
+
+if [ "xNEED_CONDOR_EXTRA_ATTR" != "x" ]; then
+    ARGS_MOUNT="$ARGS_MOUNT -B $SCRATCH_DIR/extra-attributes.cfg:/etc/osg/extra-attributes.cfg"
+fi
 
 echo "------glidein_start------"
 if [ "x$GPUS" != "x0" ]; then
@@ -111,6 +119,9 @@ if [ "x$GPUS" != "x0" ]; then
         if [ $(ls -l /etc/OpenCL/vendors/nvidia.icd | wc -l) == 0 ]; then
             echo "No NVIDIA ICD file present"
         fi
+	if [ "$GLIDEIN_Site" = "Fir" ]; then
+	    ARGS_MOUNT="$ARGS_MOUNT -B /usr/lib64/libnvidia-ml.so.1"
+	fi
     # AMD GPUs
     elif [ $(ls -l /etc/OpenCL/vendors/amdocl64*.icd | wc -l) -gt 0 ]; then
         echo "AMD GPU, you say?"
@@ -163,7 +174,6 @@ echo "$SINGULARITY_BIN run $ARGS $BASE_IMAGE /usr/local/sbin/supervisord_startup
 # The DISK and MEMORY variable dont get properly propagated right now so setting it by force  
 export APPTAINERENV_MEMORY=$MEMORY
 export APPTAINERENV_DISK=$DISK
-
 export APPTAINERENV_GLIDEIN_RANDOMIZE_NAME=true
 export APPTAINERENV_OSG_PROJECT_NAME=IceCube
 
