@@ -51,6 +51,9 @@ echo $PWD
 cp $GLIDEIN_LOC/glidein_start.sh .
 
 
+export NEED_CONDOR_EXTRA_ATTR=true
+cp $GLIDEIN_LOC/extra-attributes.cfg .
+
 export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6ImI4NjRmOTY5ZGRjN2ZkMjU1MDk2YWU0ZTZjZGE0YWNjIiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX01BU1RFUiIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.Qra4o3BSQ_Mx0hZavOrP6vHDnXntX0N2WcLgrKKaV0M
 export ResourceName=$SITE
 
@@ -61,6 +64,8 @@ export SINGULARITY_BIN=/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-
 # Image below comes from docker://hub.opensciencegrid.org/opensciencegrid/osgvo-docker-pilot:3.6-release
 # Not auto pulling cause OSG tends to make changes that break or change beahvior in unexpcted way
 export BASE_IMAGE=/scratch/briedel/osgvo-docker-pilot_23-cuda_11_8_0-release.sif
+
+nvidia-smi dmon > $SCRATCH/test-nvidia-smi.${SLURM_ARRAY_JOB_ID}.${SLURM_ARRAY_TASK_ID}.log &
 
 # ${LOCAL_DIR}/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- 
 ./glidein_start.sh
