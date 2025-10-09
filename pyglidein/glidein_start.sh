@@ -41,6 +41,7 @@ fi
 if [ "x$ACCEPT_IDLE_MINUTES" = "x" ]; then
     export ACCEPT_IDLE_MINUTES="20"
 fi
+
 export SUPERVISORD_RESTART_POLICY="unexpected"
 
 # customizations to talk to IceCube pool
@@ -95,8 +96,7 @@ ARGS_MOUNT="-B $SCRATCH_DIR:/pilot -B /dev/fuse -B $TMPDIR:$TMPDIR"
 #
 #
 
-
-if [ "xNEED_CONDOR_EXTRA_ATTR" != "x" ]; then
+if [ "x$NEED_CONDOR_EXTRA_ATTR" != "x" ]; then
     ARGS_MOUNT="$ARGS_MOUNT -B $SCRATCH_DIR/extra-attributes.cfg:/etc/osg/extra-attributes.cfg"
 fi
 
