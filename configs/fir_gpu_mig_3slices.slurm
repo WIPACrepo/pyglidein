@@ -3,10 +3,10 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1    # <- match to OMP_NUM_THREADS
 #SBATCH --account=rpp-nahee
-#SBATCH --job-name=glidein-mig-1slice
+#SBATCH --job-name=glidein-mig-3slice
 #SBATCH --time=24:00:00      # hh:mm:ss for the job
 #SBATCH --cpus-per-task=2
-#SBATCH --gpus=nvidia_h100_80gb_hbm3_1g.10gb:1
+#SBATCH --gpus=nvidia_h100_80gb_hbm3_3g.40gb:1
 #SBATCH --tasks=1
 #SBATCH --mem=8G
 #SBATCH --array=1-7500
