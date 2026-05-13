@@ -176,6 +176,7 @@ export APPTAINERENV_MEMORY=$MEMORY
 export APPTAINERENV_DISK=$DISK
 export APPTAINERENV_GLIDEIN_RANDOMIZE_NAME=true
 export APPTAINERENV_OSG_PROJECT_NAME=IceCube
+export APPTAINERENV_GLIDEIN_Start_Extra=$GLIDEIN_Start_Extra
 
 # Getting environment in order for debugging
 env -0 | sort -z | tr '\0' '\n'
