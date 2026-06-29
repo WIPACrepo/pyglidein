@@ -133,7 +133,16 @@ if [ "x$GPUS" != "x0" ]; then
     else
 	echo "There are ICD files but not they are not NVIDIA or AMD. You in danger!" 
     fi
-fi 
+fi
+
+if [ "$GLIDEIN_Site" = "Harvard" ]; then
+    pyglidein_tmp_dir=$(mktemp -d -t $USER-XXXXXXXXXX)
+else
+    pyglidein_tmp_dir=$TMPDIR
+fi
+
+# inside the container
+ARGS_MOUNT="-B $SCRATCH_DIR:/pilot -B /dev/fuse -B $pyglidein_tmp_dir:$TMPDIR"
 
 # Adding all the env vars
 
@@ -172,6 +181,8 @@ echo $ARGS
 echo "$SINGULARITY_BIN run $ARGS $BASE_IMAGE /usr/local/sbin/supervisord_startup.sh"
 
 # The DISK and MEMORY variable dont get properly propagated right now so setting it by force  
+export APPTAINERENV_CPUS=$CPUS
+export APPTAINERENV_NUM_CPUS=$NUM_CPUS
 export APPTAINERENV_MEMORY=$MEMORY
 export APPTAINERENV_DISK=$DISK
 export APPTAINERENV_GLIDEIN_RANDOMIZE_NAME=true
