@@ -9,8 +9,9 @@
 #SBATCH --job-name glidein
 #SBATCH --mem=119G
 #SBATCH --cpus-per-task=32
-#SBATCH --output=/home/x-briedel/logs/%j.out
-#SBATCH --error=/home/x-briedel/logs/%j.err
+#SBATCH --array=1-32
+#SBATCH --output=/home/x-briedel/logs/%A.%a.out
+#SBATCH --error=/home/x-briedel/logs/%A.%a.err
 
 module --force purge
 
@@ -33,7 +34,7 @@ export GPUS=$GPUS
 export GLIDEIN_Site="Purdue Anvil"
 export OSG_PROJECT_NAME=IceCube
 
-JOB_DIR=/anvil/scratch/x-briedel/pyglidein/${SLURM_JOB_ID}
+JOB_DIR=/anvil/scratch/x-briedel/pyglidein/${SLURM_JOB_ID}/${SLURM_ARRAY_TASK_ID}
 # /tmp/${SLURM_JOB_ID}
 # /anvil/scratch/x-briedel/pyglidein/${SLURM_JOB_ID}
 
@@ -51,12 +52,16 @@ cp -r $PROJECT/cvmfsexec .
 
 cp $GLIDEIN_LOC/pyglidein/glidein_start.sh glidein_start.sh
 
-export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.2.5/bin/apptainer
+export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.4.4/bin/apptainer
 # /cvmfs/oasis.opensciencegrid.org/mis/apptainer/bin/apptainer
-export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6ImI4NjRmOTY5ZGRjN2ZkMjU1MDk2YWU0ZTZjZGE0YWNjIiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX01BU1RFUiIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.Qra4o3BSQ_Mx0hZavOrP6vHDnXntX0N2WcLgrKKaV0M
+export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE3NjIzNzkzNjMsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6IjBiM2IzOGI5MzlkMGY0ZDM0ZDIwMDdjNWNlNjc1Mjk3Iiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0RBRU1PTiBjb25kb3I6XC9BRFZFUlRJU0VfU1RBUlREIGNvbmRvcjpcL0FEVkVSVElTRV9NQVNURVIiLCJzdWIiOiJweWdsaWRlaW5AaWNlY3ViZS53aXNjLmVkdSJ9.lM0ED5dEEWCEg1s5d4toNHk9vkbLapwgm6yx--OBcAE
+# eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE3NjIzNzU0NzEsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6IjRlZTM0NzI3OTM2Y2M1YmY0YTBjM2NhZDJhZDk3NjA4Iiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0RBRU1PTiBjb25kb3I6XC9BRFZFUlRJU0VfU1RBUlREIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQiLCJzdWIiOiJweWdsaWRlaW5AaWNlY3ViZS53aXNjLmVkdSJ9.5jl9AmBq_YV-UUbEacpZOcQFHhM7yULT90l2Pk_Y1sU
+# eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE3NjIzNzExNjYsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6IjI4MTQxNjdlOWMwZTUzNTgyNmVhNDZjYTBkM2UzMjJmIiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX1NUQVJURCIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.1P-IP9fadk2SqL7QOcVduMVY7WPkOCrQCNUhDM76gi0
+# eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6ImI4NjRmOTY5ZGRjN2ZkMjU1MDk2YWU0ZTZjZGE0YWNjIiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX01BU1RFUiIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.Qra4o3BSQ_Mx0hZavOrP6vHDnXntX0N2WcLgrKKaV0M
 # ls ${JOB_DIR}/cvmfsexec/dist/cvmfs/icecube.opensciencegrid.org/
 
-export BASE_IMAGE=$PROJECT/osgvo-docker-pilot_23-cuda_11_8_0-release.sif
+export BASE_IMAGE=$PROJECT/ospool-ep_25-cuda_11_8_0-release.sif
+# osgvo-docker-pilot_23-cuda_11_8_0-release.sif
 # osgvo-pilot.sif
 
 export _condor_NETWORK_INTERFACE='172.18.*'
