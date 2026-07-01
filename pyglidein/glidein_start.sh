@@ -108,8 +108,8 @@ if [ "x$GPUS" != "x0" ]; then
 	ls -l /etc/OpenCL/vendors/*.icd
         ARGS_MOUNT="$ARGS_MOUNT -B /etc/OpenCL/vendors"
     else
-	echo "No ICD file present. Will not run with GPU support."
-	export _condor_GPUS=0
+        echo "No ICD file present. Will not run with GPU support."
+        export _condor_GPUS=0
 	break
     fi
     # Add --nv for nvidia GPU jobs
@@ -131,7 +131,7 @@ if [ "x$GPUS" != "x0" ]; then
 	# wonky
         ARGS=""
     else
-	echo "There are ICD files but not they are not NVIDIA or AMD. You in danger!" 
+        echo "There are ICD files but not they are not NVIDIA or AMD. You in danger!" 
     fi
 fi
 
