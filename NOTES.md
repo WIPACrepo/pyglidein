@@ -16,12 +16,14 @@ For those sites that don't have CVMFS installed.
 
 As of July 1, an incomplete list:
 
+```
 NCSA Delta
 Purdue Anvil
 TACC Lonestar6
 TACC Stampede3
 TACC Vista - ARM - Grace-Hopper
 TACC Horizon - ARM - Vera-Rubin
+```
 
 1. Check out cvmfsexec to a location that is accessible to the worker node. Ideally on the home dir cause the many small files will affect 
 
