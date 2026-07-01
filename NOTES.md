@@ -1,4 +1,4 @@
-# A file for notes for using pyglidein2
+# Notes on pyglidein2
 
 ## Container
 
