@@ -154,7 +154,12 @@ if [ "x$SPECIAL_ENV" != "x"  ]; then
     ARGS_ENV="--env $SPECIAL_ENV"
 fi
 if [ "x$USE_CVMFSEXEC" != "x" ]; then
-    ARGS_ENV="$ARGS_ENV,CVMFSEXEC_REPOS=oasis.opensciencegrid.org\ssingularity.opensciencegrid.org\sicecube.opensciencegrid.org"
+    if [ "x$ARGS_ENV" != "x" ]; then
+        ARGS_ENV="$ARGS_ENV,CVMFSEXEC_REPOS=oasis.opensciencegrid.org\ssingularity.opensciencegrid.org\sicecube.opensciencegrid.org\sara.opensciencegrid.org"
+    else
+        ARGS_ENV="--env CVMFSEXEC_REPOS=oasis.opensciencegrid.org\ssingularity.opensciencegrid.org\sicecube.opensciencegrid.org\sara.opensciencegrid.org"
+    fi
+    ARGS_MOUNT="$ARGS_MOUNT -B $SCRATCH_DIR/cvmfsexec:/cvmfsexec"
 else
     ARGS_MOUNT="$ARGS_MOUNT -B $CVMFS_BASE_DIR:/cvmfs"
 fi
