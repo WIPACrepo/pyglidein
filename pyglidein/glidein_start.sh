@@ -95,7 +95,7 @@ ARGS="--contain"
 #
 
 if [ "x$TMPDIR" == "x" ]; then
-    TMODIR=/tmp
+    TMPDIR=/tmp
 fi
 
 if [ "$GLIDEIN_Site" = "Harvard" ]; then
@@ -151,16 +151,23 @@ fi
 # DONT USE THIS WITHOUT CGROUPS v2, so RHEL9...maybe?
 # ARGS="$ARGS --cpus $CPUS --memory ${MEMORY}M"
 
-ARGS_ENV=""
+ARGS_ENV="--env GLIDEIN_RANDOMIZE_NAME=true,OSG_PROJECT_NAME=IceCube,CPUS=$CPUS,NUM_CPUS=$NUM_CPUS,MEMORY=$MEMORY,DISK=$DISK"
+
+# if [ "x$GLIDEIN_Start_Extra" != "x" ]; then
+#     ARGS_ENV="$ARGS_ENV,GLIDEIN_Start_Extra=\"$GLIDEIN_Start_Extra\""
+# fi
+
 if [ "x$SPECIAL_ENV" != "x"  ]; then
-    ARGS_ENV="--env $SPECIAL_ENV"
+    ARGS_ENV="$ARGS_ENV,$SPECIAL_ENV"
 fi
+
 if [ "x$USE_CVMFSEXEC" != "x" ]; then
     if [ "x$ARGS_ENV" != "x" ]; then
         ARGS_ENV="$ARGS_ENV,CVMFSEXEC_REPOS=oasis.opensciencegrid.org\ssingularity.opensciencegrid.org\sicecube.opensciencegrid.org\sara.opensciencegrid.org"
     else
-        ARGS_ENV="--env CVMFSEXEC_REPOS=oasis.opensciencegrid.org\ssingularity.opensciencegrid.org\sicecube.opensciencegrid.org\sara.opensciencegrid.org"
+        ARGS_ENV="$ARGS_ENV,CVMFSEXEC_REPOS=oasis.opensciencegrid.org\ssingularity.opensciencegrid.org\sicecube.opensciencegrid.org\sara.opensciencegrid.org"
     fi
+    # /cvfmsexec has to writeable, so bindmound a directory
     ARGS_MOUNT="$ARGS_MOUNT -B $SCRATCH_DIR/cvmfsexec:/cvmfsexec"
 else
     ARGS_MOUNT="$ARGS_MOUNT -B $CVMFS_BASE_DIR:/cvmfs"
@@ -183,19 +190,13 @@ else
     echo "Using $BASE_IAGE"
 fi
 
-
 echo $TMPDIR 
 echo $ARGS
 echo "$SINGULARITY_BIN run $ARGS $BASE_IMAGE /usr/local/sbin/supervisord_startup.sh"
 
-# The DISK and MEMORY variable dont get properly propagated right now so setting it by force  
-export APPTAINERENV_CPUS=$CPUS
-export APPTAINERENV_NUM_CPUS=$NUM_CPUS
-export APPTAINERENV_MEMORY=$MEMORY
-export APPTAINERENV_DISK=$DISK
-export APPTAINERENV_GLIDEIN_RANDOMIZE_NAME=true
-export APPTAINERENV_OSG_PROJECT_NAME=IceCube
+# --env doesn't work well here because of all the "". This works
 export APPTAINERENV_GLIDEIN_Start_Extra=$GLIDEIN_Start_Extra
+
 
 # Getting environment in order for debugging
 env -0 | sort -z | tr '\0' '\n'
