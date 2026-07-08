@@ -12,6 +12,7 @@ export CUDA_VISIBLE_DEVICES=0
 export CPUS=16
 export MEMORY=60000
 export GPUS=CUDA0
+export GLIDEIN_Start_Extra="IceProdSite =?= \"long\""
 # export USE_CVMFSEXEC=True
 
 counter=1
