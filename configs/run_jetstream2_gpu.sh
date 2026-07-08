@@ -15,6 +15,7 @@ export GPUS=CUDA0
 export GLIDEIN_Start_Extra="IceProdSite =?= \"long\""
 # export USE_CVMFSEXEC=True
 export ACCEPT_IDLE_MINUTES=60
+export ACCEPT_JOBS_FOR_HOURS=336
 
 
 counter=1
