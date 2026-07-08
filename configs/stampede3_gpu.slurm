@@ -41,8 +41,6 @@ CVMFSEXEC_DIR=/home1/04799/tg840985/cvmfsexec/
 mkdir -p ${LOCAL_DIR}
 cd $LOCAL_DIR
 cp -a /home1/04799/tg840985/cvmfsexec .
-
-ls ${LOCAL_DIR}/cvmfsexec
 echo "---"
 
 
@@ -67,5 +65,6 @@ export BASE_IMAGE=/home1/04799/tg840985/ospool-ep_25-cuda_11_8_0-release.sif
 # /projects/bbfw/riedel1/osgvo-docker-pilot.sif
 
 export APPTAINERENV_CVMFS_QUOTA_LIMIT=120000
+
 
 ${LOCAL_DIR}/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ./glidein_start.sh
