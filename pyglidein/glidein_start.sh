@@ -88,13 +88,25 @@ export GOTO_NUM_THREADS=1
 # start the args with contain
 ARGS="--contain"
 
-# Mount args
-ARGS_MOUNT="-B $SCRATCH_DIR:/pilot -B /dev/fuse -B $TMPDIR:$TMPDIR"
 # DONT USE THIS WITHOUT CGROUPS v2, so RHEL9...maybe?
 # ARGS="$ARGS --cpus $CPUS --memory ${MEMORY}M"
 #
 #
 #
+
+if [ "x$TMPDIR" == "x" ]; then
+    TMODIR=/tmp
+fi
+
+if [ "$GLIDEIN_Site" = "Harvard" ]; then
+    pyglidein_tmp_dir=$(mktemp -d -t $USER-XXXXXXXXXX)
+else
+    pyglidein_tmp_dir=$TMPDIR
+fi
+
+# inside the container
+ARGS_MOUNT="-B $SCRATCH_DIR:/pilot -B /dev/fuse -B $pyglidein_tmp_dir:$TMPDIR"
+
 
 if [ "x$NEED_CONDOR_EXTRA_ATTR" != "x" ]; then
     ARGS_MOUNT="$ARGS_MOUNT -B $SCRATCH_DIR/extra-attributes.cfg:/etc/osg/extra-attributes.cfg"
@@ -134,16 +146,6 @@ if [ "x$GPUS" != "x0" ]; then
         echo "There are ICD files but not they are not NVIDIA or AMD. You in danger!" 
     fi
 fi
-
-if [ "$GLIDEIN_Site" = "Harvard" ]; then
-    pyglidein_tmp_dir=$(mktemp -d -t $USER-XXXXXXXXXX)
-else
-    pyglidein_tmp_dir=$TMPDIR
-fi
-
-# inside the container
-ARGS_MOUNT="-B $SCRATCH_DIR:/pilot -B /dev/fuse -B $pyglidein_tmp_dir:$TMPDIR"
-
 # Adding all the env vars
 
 # DONT USE THIS WITHOUT CGROUPS v2, so RHEL9...maybe?
@@ -168,6 +170,7 @@ if [ "x$SPECIAL_ARGS" != "x" ]; then
     ARGS="$ARGS $SPECAL_ARGS"
 fi
 
+echo $ARGS
 echo $ARGS_MOUNT
 echo $ARGS_ENV
 echo "JOB HOOK $CONTAINER_PILOT_USE_JOB_HOOK"
