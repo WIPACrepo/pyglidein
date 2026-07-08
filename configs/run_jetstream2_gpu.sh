@@ -21,7 +21,8 @@ while [ $counter -le 5 ]
 do 
     export SCRATCHDIR=$(mktemp -d)
     cd $SCRATCHDIR
-    $HOME/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ~/pyglidein2/pyglidein/glidein_start.sh 1> $HOME/glidein.out 2> $HOME/glidein.err
+    $HOME/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ~/pyglidein/pyglidein/glidein_start.sh #  1> $HOME/glidein.out 2> $HOME/glidein.err
+    ((counter++))
 done
 # while true; do 
 #     ~/pyglidein2/pyglidein/glidein_start.sh
