@@ -52,10 +52,12 @@ export CCB_RANGE_HIGH="9618"
 
 # set default container
 # export OSG_DEFAULT_CONTAINER_DISTRIBUTION="100%__opensciencegrid/osgvo-el7-cuda10:latest"
-export OSG_DEFAULT_CONTAINER_DISTRIBUTION="100%__htc/rocky:8-cuda-11.0.3"
+export OSG_DEFAULT_CONTAINER_DISTRIBUTION="100%__htc/rocky:9-cuda-12.6.0"
+# "100%__htc/rocky:8-cuda-11.0.3"
 export APPTAINERENV_OSG_DEFAULT_CONTAINER_DISTRIBUTION=$OSG_DEFAULT_CONTAINER_DISTRIBUTION
 
-export OSG_DEFAULT_CONTAINER_DISTRIBUTION_GPU="100%__opensciencegrid/osgvo-el7-cuda10:latest"
+export OSG_DEFAULT_CONTAINER_DISTRIBUTION_GPU="100%__htc/rocky:9-cuda-12.6.0"
+# "100%__opensciencegrid/osgvo-el7-cuda10:latest"
 # "100%__wipac/pyglidein_el8_cuda11"
 export APPTAINERENV_OSG_DEFAULT_CONTAINER_DISTRIBUTION_OSG=$OSG_DEFAULT_CONTAINER_DISTRIBUTION_GPU
 
