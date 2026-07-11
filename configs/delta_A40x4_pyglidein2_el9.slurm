@@ -37,6 +37,8 @@ export GLIDEIN_Site="NCSA Delta"
 
 GLIDEIN_LOC=/u/riedel1/pyglidein2/pyglidein
 
+
+# local disk is big enough
 LOCAL_DIR=/tmp/${SLURM_JOBID}/${SLURM_ARRAY_TASK_ID}
 CVMFSEXEC_DIR=/u/riedel1/cvmfsexec_el9/
 
@@ -66,7 +68,8 @@ export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.2.5/x86_
 
 # Image below comes from docker://hub.opensciencegrid.org/opensciencegrid/osgvo-docker-pilot:3.6-release 
 # Not auto pulling cause OSG tends to make changes that break or change beahvior in unexpcted way
-export BASE_IMAGE=/projects/bbfw/riedel1/osgvo-docker-pilot_25_cuda_11.8
+export BASE_IMAGE=/projects/bbfw/riedel1/ospool-ep:25-cuda_11_8_0-release
+# /projects/bbfw/riedel1/osgvo-docker-pilot_25_cuda_11.8
 # /u/riedel1/osgvo-docker-pilot_23-cuda_11_8_0-release.sif
 # /scratch/bbfw/riedel1/osgvo-docker-pilot_apptainer_nvidia_nvvm.sif
 # /u/riedel1/osgvo-docker-pilot_gpu.sif
