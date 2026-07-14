@@ -30,10 +30,10 @@ elif [ "x$CUDA_VISIBLE_DEVICES" = "x" ] ; then
 else
   GPUS=$CUDA_VISIBLE_DEVICES
 fi
-export GPU=$GPU
+export GPUS=$GPUS
 export GPU2=$(nvidia-smi --query-gpu=index --format=csv,noheader);
 echo "GPU2=$GPU2"
-echo "GPU=$GPUS"
+echo "GPUS=$GPUS"
 export GLIDEIN_Site="Harvard"
 
 
