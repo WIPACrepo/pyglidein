@@ -116,6 +116,14 @@ fi
 
 echo "------glidein_start------"
 if [ "x$GPUS" != "x0" ]; then
+    echo "------GPUS are requested------"
+    if command -v nvidia-smi >/dev/null 2>&1; then
+        echo "------NVIDIA GPUS------"
+	nvidia-smi
+    elif command -v rocm-smi >/dev/null 2>&1; then
+        echo "------AMD GPUS------"
+	rocm-smi
+    fi
     echo "Trying to find OpenCL GPUs"
     if [ $(ls -l /etc/OpenCL/vendors/*.icd | wc -l) -gt 0 ]; then
         echo "ICD files present"
@@ -127,7 +135,7 @@ if [ "x$GPUS" != "x0" ]; then
 	break
     fi
     # Add --nv for nvidia GPU jobs
-    if [ "x$CUDA_VISIBLE_DEVICES" != "x" ] || [ ! -z $CUDA_VISIBLE_DEVICES ]; then
+    if [ "x$CUDA_VISIBLE_DEVICES" != "x" ] || [ ! -z "$CUDA_VISIBLE_DEVICES" ] || command -v nvidia-smi >/dev/null 2>&1; then
         echo "CUDA_VISIBLE_DEVICES set to $CUDA_VISIBLE_DEVICES"
         ARGS="$ARGS --nv"
         if [ $(ls -l /etc/OpenCL/vendors/nvidia.icd | wc -l) == 0 ]; then
