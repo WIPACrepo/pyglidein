@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH -c 8
+#SBATCH -c 4
 #SBATCH -N 1                # Ensure that all cores are on one Node (-N)
 #SBATCH -t 1-00:00          # Runtime in D-HH:MM, minimum of 10 minutes
 #SBATCH -p serial_requeue   # Partition to submit to
-#SBATCH --mem=32000           # Memory pool for all cores (see also --mem-per-cpu)
+#SBATCH --mem=16000           # Memory pool for all cores (see also --mem-per-cpu)
 #SBATCH --array=1-1000
 #SBATCH -o /n/home00/briedel/out/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e /n/home00/briedel/out/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
@@ -16,11 +16,11 @@ echo "-----------------Removing FUSE mounts------------------"
 
 # mount -l -t fuse | grep IceCube | awk -F " " '{print "fusermount -u " $3}' | bash
 
-export MEMORY=32000
+export MEMORY=16000
 # WALLTIME=86400
 export ACCEPT_JOBS_FOR_HOURS=24
 export ACCEPT_IDLE_MINUTES=60
-export CPUS=8
+export CPUS=4
 export DISK=81920000000
 # if [ "$CUDA_VISIBLE_DEVICES" -eq "$CUDA_VISIBLE_DEVICES" ] 2>/dev/null ; then
 #   GPUS="CUDA${CUDA_VISIBLE_DEVICES}"
