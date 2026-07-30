@@ -12,10 +12,10 @@ export CUDA_VISIBLE_DEVICES=0
 export CPUS=16
 export MEMORY=60000
 export GPUS=CUDA0
-export GLIDEIN_Start_Extra="IceProdSite =?= \"long\""
+export GLIDEIN_Start_Extra="(TARGET.IceProdSite =?= \"long\" || TARGET.Owner =?= \"ice3simusr\" && regexp(\"Long\",TARGET.JobDurationCategory))"
 # export USE_CVMFSEXEC=True
-export ACCEPT_IDLE_MINUTES=60
-export ACCEPT_JOBS_FOR_HOURS=336
+export ACCEPT_IDLE_MINUTES=600
+export ACCEPT_JOBS_FOR_HOURS=3360
 
 
 counter=1
