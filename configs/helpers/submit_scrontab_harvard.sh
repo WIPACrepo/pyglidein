@@ -1,4 +1,6 @@
 #!/bin/bash
+#SBATCH --time=00:05:00
+#SBATCH --mem=512MB
 
 find /n/netscratch/arguelles_delgado_lab/Lab/glidein_prod/ -maxdepth 1 -type d -ctime +2 | xargs -P 8 rm -rf &
 find /n/home13/ehobert/out/  -type f -ctime +2 | xargs -P 8 rm -rf &
