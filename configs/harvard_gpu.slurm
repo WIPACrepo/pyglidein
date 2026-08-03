@@ -41,7 +41,7 @@ GLIDEIN_LOC=/n/home13/ehobert/pyglidein2/
 # LOCAL_DIR=/n/holyscratch01/arguelles_delgado_lab/Lab/IceCube/iceprod/$SLURM_JOB_ID/
 
 # LOCAL_DIR=/scratch/$SLURM_JOB_ID
-LOCAL_DIR=/n/netscratch/arguelles_delgado_lab/Lab/IceCube/prod/$SLURM_JOB_ID/$SLURM_ARRAY_TASK_ID
+LOCAL_DIR=/n/netscratch/arguelles_delgado_lab/Lab/glidein_prod/$SLURM_JOB_ID/$SLURM_ARRAY_TASK_ID
 # CVMFSEXEC_DIR=/n/holyscratch01/arguelles_delgado_lab/Lab/IceCube/cvmfsexec/
 # CVMFSEXEC_DIR=/n/home00/briedel/cvmfsexec/
 
