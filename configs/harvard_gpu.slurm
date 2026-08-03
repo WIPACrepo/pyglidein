@@ -6,8 +6,8 @@
 #SBATCH --mem=32000           # Memory pool for all cores (see also --mem-per-cpu)
 #SBATCH --gres=gpu:1
 #SBATCH --array=1-1000
-#SBATCH -o /n/home00/briedel/out/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
-#SBATCH -e /n/home00/briedel/out/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
+#SBATCH -o /n/home13/ehobert/out/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
+#SBATCH -e /n/home13/ehobert/out/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
 
 module purge
 
@@ -37,7 +37,7 @@ echo "GPUS=$GPUS"
 export GLIDEIN_Site="Harvard"
 
 
-GLIDEIN_LOC=/n/home00/briedel/pyglidein2/
+GLIDEIN_LOC=/n/home13/ehobert/pyglidein2/
 # LOCAL_DIR=/n/holyscratch01/arguelles_delgado_lab/Lab/IceCube/iceprod/$SLURM_JOB_ID/
 
 # LOCAL_DIR=/scratch/$SLURM_JOB_ID
