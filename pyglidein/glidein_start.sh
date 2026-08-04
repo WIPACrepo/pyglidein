@@ -61,6 +61,9 @@ export OSG_DEFAULT_CONTAINER_DISTRIBUTION_GPU="100%__htc/rocky:9-cuda-12.6.0"
 # "100%__wipac/pyglidein_el8_cuda11"
 export APPTAINERENV_OSG_DEFAULT_CONTAINER_DISTRIBUTION_OSG=$OSG_DEFAULT_CONTAINER_DISTRIBUTION_GPU
 
+# ensure we grab the image from CVMFS instead of a pelican transfer
+export APPTAINERENV_OSG_DEFAULT_CONTAINER_CVMFS=1
+
 
 
 # specify resources, or let condor auto-detect them
