@@ -38,10 +38,8 @@ export GLIDEIN_Site="Harvard"
 
 
 GLIDEIN_LOC=/n/home13/ehobert/pyglidein2/
-# LOCAL_DIR=/n/holyscratch01/arguelles_delgado_lab/Lab/IceCube/iceprod/$SLURM_JOB_ID/
-
 # LOCAL_DIR=/scratch/$SLURM_JOB_ID
-LOCAL_DIR=/n/netscratch/arguelles_delgado_lab/Lab/glidein_prod/$SLURM_JOB_ID/$SLURM_ARRAY_TASK_ID
+LOCAL_DIR=/n/netscratch/arguelles_delgado_lab/Lab/glidein_prod/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID
 # CVMFSEXEC_DIR=/n/holyscratch01/arguelles_delgado_lab/Lab/IceCube/cvmfsexec/
 # CVMFSEXEC_DIR=/n/home00/briedel/cvmfsexec/
 
@@ -82,6 +80,7 @@ export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.4.2/x86_
 # singularity
 # /cvmfs/oasis.opensciencegrid.org/mis/singularity/bin/singularity
 
+export APPTAINERENV_OSG_DEFAULT_CONTAINER_CVMFS=1
 
 export BASE_IMAGE=/n/holylabs/arguelles_delgado_lab/Lab/ospool-ep_25-cuda_11_8_0-release.sif
 # /n/holylabs/arguelles_delgado_lab/Lab/osgvo-docker-pilot_23-cuda_11_8_0-release.sif
