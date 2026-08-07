@@ -189,7 +189,7 @@ else
 fi
 
 if [ "x$SPECIAL_ARGS" != "x" ]; then
-    ARGS="$ARGS $SPECAL_ARGS"
+    ARGS="$ARGS $SPECIAL_ARGS"
 fi
 
 echo $ARGS
@@ -202,7 +202,7 @@ if [ "x$BASE_IMAGE" = "x" ]; then
     echo "Grapping default image: $PWD/osgvo-pilot.sif"
     BASE_IMAGE=$PWD/osgvo-pilot.sif
 else
-    echo "Using $BASE_IAGE"
+    echo "Using $BASE_IMAGE"
 fi
 
 echo $TMPDIR 
