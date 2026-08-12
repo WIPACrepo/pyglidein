@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -A m1093_g
 #SBATCH -C gpu
-# we may wanna consider using the preempt queue here. it charges only 25%. 
+# we may wanna consider using the preempt queue here. it charges only 25% after the first 2 hours. 
 # not sure what level of churn we should expect, but worth trying perhaps
 #SBATCH -q regular
 # #SBATCH -q debug
@@ -15,7 +15,6 @@
 #SBATCH --output=/global/homes/i/icecubed/glideins/out/%A.%a.out
 #SBATCH --error=/global/homes/i/icecubed/glideins/out/%A.%a.err
 #SBATCH --module=cvmfs
-#SBATCH -L cvmfs
 
 module purge
 
@@ -26,7 +25,7 @@ export CPUS=64
 export DISK=819200000
 export GPUS=CUDA0,CUDA1,CUDA2,CUDA3
 export GLIDEIN_Site="NERSC"
-CLEANUP=0
+
 LOCAL_DIR=/pscratch/sd/i/icecubed/glideins/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID/
 
 export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6ImI4NjRmOTY5ZGRjN2ZkMjU1MDk2YWU0ZTZjZGE0YWNjIiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX01BU1RFUiIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.Qra4o3BSQ_Mx0hZavOrP6vHDnXntX0N2WcLgrKKaV0M
@@ -43,7 +42,7 @@ mkdir -p $LOCAL_DIR
 
 cd $LOCAL_DIR
 
-cp $HOME/pyglidein2/pyglidein/glidein_start.sh .
+cp $HOME/glideins/pyglidein2/pyglidein/glidein_start.sh .
 
 
 echo "SLURM_JOB_GPUS=$SLURM_JOB_GPUS"
