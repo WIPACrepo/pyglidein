@@ -3,13 +3,13 @@
 #SBATCH -C gpu
 # we may wanna consider using the preempt queue here. it charges only 25% after the first 2 hours. 
 # not sure what level of churn we should expect, but worth trying perhaps
-#SBATCH -q regular
+#SBATCH -q shared
 # #SBATCH -q debug
 #SBATCH -t 24:00:00
 #SBATCH -n 1
 #SBATCH --ntasks-per-node=1
-#SBATCH -c 128
-#SBATCH --gpus-per-node=4
+#SBATCH -c 32
+#SBATCH --gpus-per-node=1
 #SBATCH --gpu-bind=none
 # small array for now, don't have a ton of budget so wanna use it wisely
 #SBATCH --array=0-10
@@ -19,13 +19,14 @@
 
 module purge
 
-export MEMORY=256000
+export MEMORY=64000
+export CPUS=16
+export GPUS=CUDA0
+
 export ACCEPT_JOBS_FOR_HOURS=24
 # keeping this small cause we don't have a ton of budget on this cluster
 export ACCEPT_IDLE_MINUTES=20
-export CPUS=64
 export DISK=819200000
-export GPUS=CUDA0,CUDA1,CUDA2,CUDA3
 export GLIDEIN_Site="NERSC"
 
 LOCAL_DIR=/pscratch/sd/i/icecubed/glideins/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID/
