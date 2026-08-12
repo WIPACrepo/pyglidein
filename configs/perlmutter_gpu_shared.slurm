@@ -1,10 +1,7 @@
 #!/bin/bash
 #SBATCH -A m1093_g
 #SBATCH -C gpu
-# we may wanna consider using the preempt queue here. it charges only 25% after the first 2 hours. 
-# not sure what level of churn we should expect, but worth trying perhaps
 #SBATCH -q shared
-# #SBATCH -q debug
 #SBATCH -t 24:00:00
 #SBATCH -n 1
 #SBATCH --ntasks-per-node=1
@@ -12,14 +9,15 @@
 #SBATCH --gpus-per-node=1
 #SBATCH --gpu-bind=none
 # small array for now, don't have a ton of budget so wanna use it wisely
-#SBATCH --array=0-10
+#SBATCH --array=0-100%4
 #SBATCH --output=/global/homes/i/icecubed/glideins/out/%A.%a.out
 #SBATCH --error=/global/homes/i/icecubed/glideins/out/%A.%a.err
 #SBATCH --module=cvmfs
 
 module purge
 
-export MEMORY=64000
+# slurm seems to allocate mem=57472M in reality, as opposed to the nominal 64GB
+export MEMORY=57000
 export CPUS=16
 export GPUS=CUDA0
 
@@ -38,9 +36,6 @@ export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.3.3/x86_
 export BASE_IMAGE=/global/homes/i/icecubed/glideins/ospool-ep_25-cuda_11_8_0-release.sif
 export APPTAINERENV_OSG_DEFAULT_CONTAINER_CVMFS=1
 
-# /u/riedel1/osgvo-docker-pilot_23-cuda_11_8_0-release.sif
-# /cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.2.5/x86_64/bin/apptainer
-
 mkdir -p $LOCAL_DIR
 
 cd $LOCAL_DIR
@@ -53,9 +48,3 @@ echo "nproc=$(nproc)"
 nvidia-smi -L
 
 ./glidein_start.sh
-
-
-# podman-hpc run --gpu --cvmfs --net -v $LOCAL_DIR:/pilot -e MEMORY=256000 -e WALLTIME=86100 -e CPUS=64 -e DISK=819200000 -e GPUS=CUDA0,CUDA1,CUDA2,CUDA3 -e GLIDEIN_Site="NERSC"  
-# opensciencegrid/osgvo-docker-pilot:23-cuda_11_8_0-release 
-
-# shifter --image=docker:registry.services.nersc.gov/briedel/osgvo-el7-cuda11-opencl --module=gpu,cvmfs env CPUS=$CPUS GPUS=$GPUS MEMORY=$MEMORY DISK=$DISK WALLTIME=$WALLTIME DISABLE_STARTD_CHECKS=$DISABLE_STARTD_CHECKS SITE=$SITE ResourceName=ResourceName GLIDEIN_DIR=$HOME/icecube/pyglidein/pyglidein ./glidein_start.sh
