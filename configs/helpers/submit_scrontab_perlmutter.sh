@@ -6,7 +6,7 @@
 # #SCRON -C cron
 # #SCRON -A m1093
 # #SCRON -t 00:30:00
-# #SCRON -o $HOME/glideins/glideins/scron-%j.out
+# #SCRON -o $HOME/glideins/scron-%j.out
 # #SCRON --open-mode=append
 # 0 9 * * * $HOME/glideins/pyglidein2/configs/helpers/submit_scrontab_perlmutter.sh
 
