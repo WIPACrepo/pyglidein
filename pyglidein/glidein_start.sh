@@ -61,6 +61,11 @@ export OSG_DEFAULT_CONTAINER_DISTRIBUTION_GPU="100%__htc/rocky:9-cuda-12.6.0"
 # "100%__wipac/pyglidein_el8_cuda11"
 export APPTAINERENV_OSG_DEFAULT_CONTAINER_DISTRIBUTION_OSG=$OSG_DEFAULT_CONTAINER_DISTRIBUTION_GPU
 
+# set APPTAINERENV_OSG_DEFAULT_CONTAINER_CVMFS=1 in the site's slurm to grab the image from CVMFS instead of a pelican transfer
+if [ "x$APPTAINERENV_OSG_DEFAULT_CONTAINER_CVMFS" = "x1" ]; then
+    export APPTAINERENV_OSG_DEFAULT_CONTAINER_CVMFS=1
+fi
+
 
 
 # specify resources, or let condor auto-detect them
@@ -184,7 +189,7 @@ else
 fi
 
 if [ "x$SPECIAL_ARGS" != "x" ]; then
-    ARGS="$ARGS $SPECAL_ARGS"
+    ARGS="$ARGS $SPECIAL_ARGS"
 fi
 
 echo $ARGS
@@ -197,7 +202,7 @@ if [ "x$BASE_IMAGE" = "x" ]; then
     echo "Grapping default image: $PWD/osgvo-pilot.sif"
     BASE_IMAGE=$PWD/osgvo-pilot.sif
 else
-    echo "Using $BASE_IAGE"
+    echo "Using $BASE_IMAGE"
 fi
 
 echo $TMPDIR 
