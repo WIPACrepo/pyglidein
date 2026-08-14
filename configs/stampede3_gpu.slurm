@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --nodes=1
-# #SBATCH --partition=h100
-#SBATCH --partition=skx
+#SBATCH --partition=h100
 #SBATCH --job-name=glidein
 #SBATCH --time=48:00:00      # hh:mm:ss for the job
 # #SBATCH --array=1-100
@@ -15,25 +14,17 @@ echo `date`
 echo $HOSTNAME
 
 # for testing on ...
-export MEMORY=180000
-export CPUS=48
+export MEMORY=1000000 # 1tb ram :o
+export CPUS=96
+export DISK=3000000000
 
-# nvidia-smi
-# echo $CUDA_VISIBLE_DEVICES
-# export CUDA_VISIBLE_DEVICES=0,1,2,3
-# 
-# export MEMORY=
-# export CPUS=
-# if [ "$CUDA_VISIBLE_DEVICES" -eq "$CUDA_VISIBLE_DEVICES" ] 2>/dev/null ; then
-#   GPUS="CUDA${CUDA_VISIBLE_DEVICES}"
-# elif [ "x$CUDA_VISIBLE_DEVICES" = "x" ] ; then
-#   GPUS=1
-# else
-#   GPUS=$CUDA_VISIBLE_DEVICES
-# fi
-# export GPUS=$GPUS
+nvidia-smi
+echo $CUDA_VISIBLE_DEVICES
 
-export DISK=80000000
+export CUDA_VISIBLE_DEVICES=0,1,2,3
+export GPUS=CUDA0,CUDA1,CUDA2,CUDA3
+echo $CUDA_VISIBLE_DEVICES
+echo $GPUS
 
 export ACCEPT_JOBS_FOR_HOURS=48
 export ACCEPT_IDLE_MINUTES=20
