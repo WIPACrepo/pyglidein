@@ -1,11 +1,12 @@
 #!/bin/bash
 #SBATCH --nodes=1
-#SBATCH --partition=h100
+# #SBATCH --partition=h100
+#SBATCH --partition=skx
 #SBATCH --job-name=glidein
 #SBATCH --time=48:00:00      # hh:mm:ss for the job
 # #SBATCH --array=1-100
-#SBATCH -o /scratch/04799/tg840985/logs/%A.%a.out
-#SBATCH -e /scratch/04799/tg840985/logs/%A.%a.err
+#SBATCH -o /scratch/11739/ehobert/logs/%A.%a.out
+#SBATCH -e /scratch/11739/ehobert/logs/%A.%a.err
 
 
 module purge
@@ -13,58 +14,51 @@ module purge
 echo `date`
 echo $HOSTNAME
 
-nvidia-smi
-echo $CUDA_VISIBLE_DEVICES
-export CUDA_VISIBLE_DEVICES=0,1,2,3
+# for testing on ...
+export MEMORY=180000
+export CPUS=48
 
-export MEMORY=96000 # 11600
-# export WALLTIME=86400
+# nvidia-smi
+# echo $CUDA_VISIBLE_DEVICES
+# export CUDA_VISIBLE_DEVICES=0,1,2,3
+# 
+# export MEMORY=
+# export CPUS=
+# if [ "$CUDA_VISIBLE_DEVICES" -eq "$CUDA_VISIBLE_DEVICES" ] 2>/dev/null ; then
+#   GPUS="CUDA${CUDA_VISIBLE_DEVICES}"
+# elif [ "x$CUDA_VISIBLE_DEVICES" = "x" ] ; then
+#   GPUS=1
+# else
+#   GPUS=$CUDA_VISIBLE_DEVICES
+# fi
+# export GPUS=$GPUS
+
+export DISK=80000000
+
 export ACCEPT_JOBS_FOR_HOURS=48
-export CPUS=96
-export DISK=819200000000
-if [ "$CUDA_VISIBLE_DEVICES" -eq "$CUDA_VISIBLE_DEVICES" ] 2>/dev/null ; then
-  GPUS="CUDA${CUDA_VISIBLE_DEVICES}"
-elif [ "x$CUDA_VISIBLE_DEVICES" = "x" ] ; then
-  GPUS=1
-else
-  GPUS=$CUDA_VISIBLE_DEVICES
-fi
-export GPUS=$GPUS
+export ACCEPT_IDLE_MINUTES=20
 export GLIDEIN_Site="TACC Stampede3"
 
-GLIDEIN_LOC=/home1/04799/tg840985/pyglidein2/pyglidein
+export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6ImI4NjRmOTY5ZGRjN2ZkMjU1MDk2YWU0ZTZjZGE0YWNjIiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX01BU1RFUiIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.Qra4o3BSQ_Mx0hZavOrP6vHDnXntX0N2WcLgrKKaV0M
 
 LOCAL_DIR=/tmp/${SLURM_JOBID}/${SLURM_ARRAY_TASK_ID}
 
-CVMFSEXEC_DIR=/home1/04799/tg840985/cvmfsexec/
+export SINGULARITY_BIN=/opt/apps/tacc-apptainer/1.4.1/bin/apptainer
+export BASE_IMAGE=$HOME/glideins/ospool-ep_25-cuda_11_8_0-release.sif
+export APPTAINERENV_OSG_DEFAULT_CONTAINER_CVMFS=1
+
+# todo: what's this?
+export APPTAINERENV_CVMFS_QUOTA_LIMIT=120000
 
 mkdir -p ${LOCAL_DIR}
 cd $LOCAL_DIR
-cp -a /home1/04799/tg840985/cvmfsexec .
+cp -a $HOME/cvmfsexec/ .
 echo "---"
-
 
 mkdir glidein
 cd glidein
 echo $PWD
-cp $GLIDEIN_LOC/glidein_start.sh .
-
-
-export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE2NzgzODIwOTIsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6ImI4NjRmOTY5ZGRjN2ZkMjU1MDk2YWU0ZTZjZGE0YWNjIiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0FEVkVSVElTRV9TVEFSVEQgY29uZG9yOlwvQURWRVJUSVNFX01BU1RFUiIsInN1YiI6InB5Z2xpZGVpbkBpY2VjdWJlLndpc2MuZWR1In0.Qra4o3BSQ_Mx0hZavOrP6vHDnXntX0N2WcLgrKKaV0M
-export ResourceName=$SITE
-
-
-# Using Apptainer from CVMFS because it is more up-to-date
-export SINGULARITY_BIN=/opt/apps/tacc-apptainer/1.4.1/bin/apptainer
-# /cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.5.0/x86_64/bin/apptainer
-
-export BASE_IMAGE=/home1/04799/tg840985/ospool-ep_25-cuda_11_8_0-release.sif
-# osgvo-docker-pilot_25_cuda_11.8
-# /scratch/bbfw/riedel1/osgvo-docker-pilot_apptainer_nvidia_nvvm.sif
-# /u/riedel1/osgvo-docker-pilot_gpu.sif
-# /projects/bbfw/riedel1/osgvo-docker-pilot.sif
-
-export APPTAINERENV_CVMFS_QUOTA_LIMIT=120000
+cp $HOME/glideins/pyglidein2/pyglidein/glidein_start.sh .
 
 
 ${LOCAL_DIR}/cvmfsexec/cvmfsexec config-osg.opensciencegrid.org oasis.opensciencegrid.org singularity.opensciencegrid.org icecube.opensciencegrid.org -- ./glidein_start.sh
