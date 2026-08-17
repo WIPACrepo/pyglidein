@@ -13,7 +13,6 @@ module purge
 echo `date`
 echo $HOSTNAME
 
-# for testing on ...
 export MEMORY=1000000 # 1tb ram :o
 export CPUS=96
 export DISK=3000000000
