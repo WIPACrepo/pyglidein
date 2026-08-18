@@ -110,3 +110,6 @@ pyglidein.tar.gz
 root.tar.gz
 log
 secrets
+
+# vscode config
+.vscode/
