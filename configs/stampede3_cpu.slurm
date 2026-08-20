@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --nodes=1
-#SBATCH --partition=skx
+#SBATCH --partition=icx
 #SBATCH --job-name=glidein
 #SBATCH --time=48:00:00      # hh:mm:ss for the job
-# 40 tasks at most 4 in parallel; elements count toward the 40 job/user skx cap
-#SBATCH --array=1-40%4
+# 12 tasks at most 4 in parallel; elements count toward the 12 job/user icx cap
+#SBATCH --array=1-12%4
 #SBATCH -o /scratch/11739/ehobert/logs/%A.%a.out
 #SBATCH -e /scratch/11739/ehobert/logs/%A.%a.err
 
@@ -14,10 +14,10 @@ module purge
 echo `date`
 echo $HOSTNAME
 
-export MEMORY=180000 # skx: 192 GB/node, leaves headroom for os
-export CPUS=48
-# unlike the gpu nodes storage in /tmp is pretty limited for skx, only 90 gb
-# so we're putting it in scratch instead so we can advertise enough storage
+export MEMORY=250000 # icx: 256 GB/node, leaves headroom for os
+export CPUS=80
+# unlike the gpu nodes node-local storage is limited (200 gb /tmp on icx)
+# so the pilot sandbox lives on scratch to advertise enough storage
 export DISK=1000000000 # 1tb
 
 export ACCEPT_JOBS_FOR_HOURS=48
