@@ -5,8 +5,9 @@
 #SBATCH -p serial_requeue   # Partition to submit to
 #SBATCH --mem=16000           # Memory pool for all cores (see also --mem-per-cpu)
 #SBATCH --array=1-1000
-#SBATCH -o /n/home00/briedel/out/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
-#SBATCH -e /n/home00/briedel/out/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
+#SBATCH -o /n/home13/ehobert/out/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
+#SBATCH -e /n/home13/ehobert/out/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
+#SBATCH --open-mode=append                 # keep prior attempts' logs across requeues
 
 module purge
 
@@ -36,11 +37,10 @@ export DISK=81920000000
 export GLIDEIN_Site="Harvard"
 
 
-GLIDEIN_LOC=/n/home00/briedel/pyglidein2/pyglidein
-# LOCAL_DIR=/n/holyscratch01/arguelles_delgado_lab/Lab/IceCube/iceprod/$SLURM_JOB_ID/
-
+GLIDEIN_LOC=/n/home13/ehobert/pyglidein2/
 # LOCAL_DIR=/scratch/$SLURM_JOB_ID
-LOCAL_DIR=/n/netscratch/arguelles_delgado_lab/Lab/IceCube/prod/$SLURM_JOB_ID/$SLURM_ARRAY_TASK_ID
+# using SLURM_ARRAY_JOB_ID here so we get one parent folder per array, not per task
+LOCAL_DIR=/n/netscratch/arguelles_delgado_lab/Lab/glidein_prod/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID
 # CVMFSEXEC_DIR=/n/holyscratch01/arguelles_delgado_lab/Lab/IceCube/cvmfsexec/
 # CVMFSEXEC_DIR=/n/home00/briedel/cvmfsexec/
 
@@ -50,7 +50,7 @@ test -d $LOCAL_DIR || exit 1
 
 cd $LOCAL_DIR
 
-cp $GLIDEIN_LOC/glidein_start.sh glidein_start.sh
+cp $GLIDEIN_LOC/pyglidein/glidein_start.sh glidein_start.sh
 
 ls $PWD
 
@@ -74,6 +74,7 @@ export SINGULARITY_BIN=/cvmfs/oasis.opensciencegrid.org/mis/apptainer/1.4.2/x86_
 # singularity
 # /cvmfs/oasis.opensciencegrid.org/mis/singularity/bin/singularity
 
+export APPTAINERENV_OSG_DEFAULT_CONTAINER_CVMFS=1
 
 export BASE_IMAGE=/n/holylabs/arguelles_delgado_lab/Lab/ospool-ep_25-cuda_11_8_0-release.sif
 # /n/holylabs/arguelles_delgado_lab/Lab/osgvo-docker-pilot_23-cuda_11_8_0-release.sif
