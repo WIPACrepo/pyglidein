@@ -7,6 +7,7 @@
 #SBATCH --array=1-1000
 #SBATCH -o /n/home13/ehobert/out/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e /n/home13/ehobert/out/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
+#SBATCH --open-mode=append                 # keep prior attempts' logs across requeues
 
 module purge
 
@@ -36,7 +37,7 @@ export DISK=81920000000
 export GLIDEIN_Site="Harvard"
 
 
-GLIDEIN_LOC=/n/home13/ehobert/pyglidein2/pyglidein
+GLIDEIN_LOC=/n/home13/ehobert/pyglidein2/
 # LOCAL_DIR=/scratch/$SLURM_JOB_ID
 # using SLURM_ARRAY_JOB_ID here so we get one parent folder per array, not per task
 LOCAL_DIR=/n/netscratch/arguelles_delgado_lab/Lab/glidein_prod/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID
@@ -49,7 +50,7 @@ test -d $LOCAL_DIR || exit 1
 
 cd $LOCAL_DIR
 
-cp $GLIDEIN_LOC/glidein_start.sh glidein_start.sh
+cp $GLIDEIN_LOC/pyglidein/glidein_start.sh glidein_start.sh
 
 ls $PWD
 

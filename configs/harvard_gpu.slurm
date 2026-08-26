@@ -8,6 +8,7 @@
 #SBATCH --array=1-1000
 #SBATCH -o /n/home13/ehobert/out/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e /n/home13/ehobert/out/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
+#SBATCH --open-mode=append                 # keep prior attempts' logs across requeues
 
 module purge
 
