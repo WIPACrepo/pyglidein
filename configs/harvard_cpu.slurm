@@ -4,7 +4,7 @@
 #SBATCH -t 2-00:00          # Runtime in D-HH:MM, minimum of 10 minutes
 #SBATCH -p serial_requeue   # Partition to submit to
 #SBATCH --mem=20000           # Memory pool for all cores (see also --mem-per-cpu)
-#SBATCH --array=1-1000
+#SBATCH --array=1-1000%100
 #SBATCH -o /n/home13/ehobert/out/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e /n/home13/ehobert/out/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --open-mode=append                 # keep prior attempts' logs across requeues
