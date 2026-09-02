@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH -c 8
 #SBATCH -N 1                # Ensure that all cores are on one Node (-N)
-#SBATCH -t 1-00:00          # Runtime in D-HH:MM, minimum of 10 minutes
+#SBATCH -t 2-00:00          # Runtime in D-HH:MM, minimum of 10 minutes
 #SBATCH -p gpu_requeue   # Partition to submit to
-#SBATCH --mem=32000           # Memory pool for all cores (see also --mem-per-cpu)
+#SBATCH --mem=64000           # Memory pool for all cores (see also --mem-per-cpu)
 #SBATCH --gres=gpu:1
 #SBATCH --array=1-1000
 #SBATCH -o /n/home13/ehobert/out/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
@@ -18,9 +18,8 @@ echo "-----------------Removing FUSE mounts------------------"
 
 # mount -l -t fuse | grep IceCube | awk -F " " '{print "fusermount -u " $3}' | bash
 
-export MEMORY=32000
-# WALLTIME=86400
-export ACCEPT_JOBS_FOR_HOURS=24
+export MEMORY=64000
+export ACCEPT_JOBS_FOR_HOURS=48
 export ACCEPT_IDLE_MINUTES=60
 export CPUS=8
 export DISK=81920000000
