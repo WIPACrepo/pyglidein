@@ -12,8 +12,11 @@ set -u
 # scrontab sets various SLURM_* vars that may break child sbatch
 unset ${!SLURM_@}
 
-find /n/netscratch/arguelles_delgado_lab/Lab/glidein_prod/ -mindepth 1 -maxdepth 2 -type d -ctime +2 | xargs -P 8 rm -rf &
-find /n/home13/ehobert/out/  -type f -ctime +2 | xargs -P 8 rm -rf &
+mkdir -p /n/netscratch/arguelles_delgado_lab/Lab/glideins/out
+mkdir -p /n/netscratch/arguelles_delgado_lab/Lab/glideins/pilot
+
+find /n/netscratch/arguelles_delgado_lab/Lab/glideins/pilot/ -mindepth 1 -maxdepth 2 -type d -mmin +1440 | xargs -P 8 rm -rf &
+find /n/netscratch/arguelles_delgado_lab/Lab/glideins/out/ -type f -mmin +1440 | xargs -P 8 rm -rf &
 
 # Have at least 2 jobs arrays in the queue at all times
 

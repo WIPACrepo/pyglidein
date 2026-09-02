@@ -4,9 +4,9 @@
 #SBATCH -t 2-00:00          # Runtime in D-HH:MM, minimum of 10 minutes
 #SBATCH -p serial_requeue   # Partition to submit to
 #SBATCH --mem=20000           # Memory pool for all cores (see also --mem-per-cpu)
-#SBATCH -o /n/home13/ehobert/out/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
-#SBATCH -e /n/home13/ehobert/out/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --array=1-1000%100
+#SBATCH -o /n/netscratch/arguelles_delgado_lab/Lab/glideins/out/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
+#SBATCH -e /n/netscratch/arguelles_delgado_lab/Lab/glideins/out/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
 #SBATCH --open-mode=append                 # keep prior attempts' logs across requeues
 
 module purge
@@ -39,7 +39,7 @@ export GLIDEIN_Site="Harvard"
 GLIDEIN_LOC=/n/home13/ehobert/pyglidein2/
 # LOCAL_DIR=/scratch/$SLURM_JOB_ID
 # using SLURM_ARRAY_JOB_ID here so we get one parent folder per array, not per task
-LOCAL_DIR=/n/netscratch/arguelles_delgado_lab/Lab/glidein_prod/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID
+LOCAL_DIR=/n/netscratch/arguelles_delgado_lab/Lab/glideins/pilot/$SLURM_ARRAY_JOB_ID/$SLURM_ARRAY_TASK_ID
 # CVMFSEXEC_DIR=/n/holyscratch01/arguelles_delgado_lab/Lab/IceCube/cvmfsexec/
 # CVMFSEXEC_DIR=/n/home00/briedel/cvmfsexec/
 
