@@ -18,6 +18,10 @@ mkdir -p /n/netscratch/arguelles_delgado_lab/Lab/glideins/pilot
 find /n/netscratch/arguelles_delgado_lab/Lab/glideins/pilot/ -mindepth 1 -maxdepth 2 -type d -mmin +1440 | xargs -P 8 rm -rf &
 find /n/netscratch/arguelles_delgado_lab/Lab/glideins/out/ -type f -mmin +1440 | xargs -P 8 rm -rf &
 
+# temp: clear out the old folders
+find /n/netscratch/arguelles_delgado_lab/Lab/IceCube/prod -mindepth 1 -maxdepth 1 -type d -ctime +2 | xargs -P 8 rm -rf &
+find /n/netscratch/arguelles_delgado_lab/Lab/glidein_prod -mindepth 1 -maxdepth 1 -type d -ctime +2 | xargs -P 8 rm -rf &
+
 # Have at least 2 jobs arrays in the queue at all times
 
 if [ $(squeue --me -t PENDING | grep "gpu_reque" | wc -l) -le 2 ]; then
