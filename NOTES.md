@@ -54,7 +54,7 @@ On Delta, we modified `<CVMFSEXEC_LOCATION>/dist/etc/cvmfs/default.local`
 ```
 CVMFS_HTTP_PROXY="dt-login01.delta.ncsa.illinois.edu:3128;dt-login03.delta.ncsa.illinois.edu:3128;DIRECT"
 CVMFS_PAC_URLS="http://grid-wpad/wpad.dat;http://wpad/wpad.dat;http://cernvm-wpad.fnal.gov/wpad.dat;http://cernvm-wpad.cern.ch/wpad.dat"
-CVMFS_ALIEN_CACHE=/projects/bbfw/riedel1/cvmfs
+CVMFS_ALIEN_CACHE=/projects/bbfw/ehobert/cvmfs
 CVMFS_QUOTA_LIMIT=-1
 CVMFS_SHARED_CACHE=no 
 ```
