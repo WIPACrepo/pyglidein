@@ -43,7 +43,7 @@ mkdir -p ${LOCAL_DIR}
 ls ${LOCAL_DIR}
 cd ${LOCAL_DIR}
 
-cp -r $PROJECT/cvmfsexec .
+cp -r $HOME/glideins/cvmfsexec .
 
 
 cp $GLIDEIN_LOC/pyglidein/glidein_start.sh glidein_start.sh
