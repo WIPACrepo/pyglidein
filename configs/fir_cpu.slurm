@@ -21,15 +21,9 @@ export MEMORY=$SLURM_MEM_PER_NODE # 11600
 export ACCEPT_JOBS_FOR_HOURS=24
 export CPUS=$SLURM_CPUS_PER_TASK
 export DISK=81920000000
-if [ "$CUDA_VISIBLE_DEVICES" -eq "$CUDA_VISIBLE_DEVICES" ] 2>/dev/null ; then
-  GPUS="CUDA${CUDA_VISIBLE_DEVICES}"
-elif [ "x$CUDA_VISIBLE_DEVICES" = "x" ] ; then
-  GPUS=1
-else
-  GPUS=$CUDA_VISIBLE_DEVICES
-fi
+# cpu slots carry no gpu
+export GPUS=0
 
-export GPUS=$GPUS
 export GLIDEIN_Site="Fir"
 
 GLIDEIN_LOC=$HOME/pyglidein/
