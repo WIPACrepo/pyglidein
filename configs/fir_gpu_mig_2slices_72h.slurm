@@ -2,11 +2,12 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --account=rpp-nahee
-#SBATCH --job-name=glidein
-#SBATCH --time=24:00:00      # hh:mm:ss for the job
-#SBATCH --cpus-per-task=2
+#SBATCH --job-name=glidein-mig-2slice_72h
+#SBATCH --time=72:00:00      # hh:mm:ss for the job
+#SBATCH --cpus-per-task=3
+#SBATCH --gpus=nvidia_h100_80gb_hbm3_2g.20gb:1
 #SBATCH --tasks=1
-#SBATCH --mem=8G
+#SBATCH --mem=70G
 #SBATCH --array=1-7500
 #SBATCH -o /scratch/ehobert/logs/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e /scratch/ehobert/logs/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
@@ -17,12 +18,18 @@ echo `date`
 echo $HOSTNAME
 
 export MEMORY=$SLURM_MEM_PER_NODE
-export ACCEPT_JOBS_FOR_HOURS=24
+export ACCEPT_JOBS_FOR_HOURS=72
 export CPUS=$SLURM_CPUS_PER_TASK
 export DISK=81920000000
-# cpu slots carry no gpu
-export GPUS=0
+if [ "$CUDA_VISIBLE_DEVICES" -eq "$CUDA_VISIBLE_DEVICES" ] 2>/dev/null ; then
+  GPUS="CUDA${CUDA_VISIBLE_DEVICES}"
+elif [ "x$CUDA_VISIBLE_DEVICES" = "x" ] ; then
+  GPUS=1
+else
+  GPUS=$CUDA_VISIBLE_DEVICES
+fi
 
+export GPUS=$GPUS
 export GLIDEIN_Site="Fir"
 
 GLIDEIN_LOC=$HOME/pyglidein/
@@ -39,6 +46,9 @@ mkdir glidein
 cd glidein
 echo $PWD
 cp $GLIDEIN_LOC/pyglidein/glidein_start.sh .
+
+export NEED_CONDOR_EXTRA_ATTR=true
+cp $GLIDEIN_LOC/configs/fir_extra-attributes.cfg ./extra-attributes.cfg
 
 export TOKEN=eyJhbGciOiJIUzI1NiIsImtpZCI6IlBPT0wifQ.eyJpYXQiOjE3NjIzNzkzNjMsImlzcyI6ImdsaWRlaW4tY20uaWNlY3ViZS53aXNjLmVkdSIsImp0aSI6IjBiM2IzOGI5MzlkMGY0ZDM0ZDIwMDdjNWNlNjc1Mjk3Iiwic2NvcGUiOiJjb25kb3I6XC9SRUFEIGNvbmRvcjpcL1dSSVRFIGNvbmRvcjpcL0RBRU1PTiBjb25kb3I6XC9BRFZFUlRJU0VfU1RBUlREIGNvbmRvcjpcL0FEVkVSVElTRV9NQVNURVIiLCJzdWIiOiJweWdsaWRlaW5AaWNlY3ViZS53aXNjLmVkdSJ9.lM0ED5dEEWCEg1s5d4toNHk9vkbLapwgm6yx--OBcAE
 

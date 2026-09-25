@@ -1,25 +1,32 @@
 #!/bin/bash
 
+# keep the fir glidein fleets alive. intended crontab entry:
+# 0 */4 * * * $HOME/pyglidein/configs/helpers/submit_fir.sh >> /scratch/ehobert/logs/cron.log 2>&1
+
 # Getting the slurm executables into PATH
 export PATH=$PATH:/opt/software/slurm/bin/
 
-if [ $(squeue -u briedel -t PENDING -p gpubase_bygpu_b3 -n glidein-mig-1slice | wc -l) -le 2 ]; then 
-    echo "Submit 1 slice"
-    sbatch /home/briedel/pyglidein2/configs/fir_gpu_mig.slurm
+# exit on unset vars
+set -u
+
+# keep up to max_pending pending jobs per glidein type; bump it to queue more sets
+max_pending=1
+
+# 1slice kept handy for sneaking into gaps; lower priority than 2slice/cpu
+# pending=$(squeue -u "$USER" -h -t PENDING -n glidein-mig-1slice_72h | wc -l)
+# if [ "$pending" -lt "$max_pending" ]; then
+#     echo "SUBMIT 1 slice"
+#     sbatch "$HOME/pyglidein/configs/fir_gpu_mig_72h.slurm"
+# fi
+
+pending=$(squeue -u "$USER" -h -t PENDING -n glidein-mig-2slice_72h | wc -l)
+if [ "$pending" -lt "$max_pending" ]; then
+    echo "SUBMIT 2 slice"
+    sbatch "$HOME/pyglidein/configs/fir_gpu_mig_2slices_72h.slurm"
 fi
 
-if [ $(squeue -u briedel -t PENDING -p gpubase_bygpu_b3 -n glidein-mig-2slice | wc -l) -le 2 ]; then
-    echo "Submit 2 slice"
-    sbatch /home/briedel/pyglidein2/configs/fir_gpu_mig_2slices.slurm 
-fi
-
-if [ $(squeue -u briedel -t PENDING -p gpubase_bygpu_b3 -n glidein-mig-3slice | wc -l) -le 2 ]; then
-    echo "Submit 3 Slice"
-    sbatch /home/briedel/pyglidein2/configs/fir_gpu_mig_3slices.slurm
-fi
-
-
-if [ $(squeue -u briedel -t PENDING -p cpubase_bycore_b3 | wc -l) -le 2 ]; then
-    echo "Submit CPU"
-    sbatch /home/briedel/pyglidein2/configs/fir_cpu.slurm 
+pending=$(squeue -u "$USER" -h -t PENDING -n glidein_72h | wc -l)
+if [ "$pending" -lt "$max_pending" ]; then
+    echo "SUBMIT CPU"
+    sbatch "$HOME/pyglidein/configs/fir_cpu_72h.slurm"
 fi

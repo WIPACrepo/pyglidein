@@ -2,11 +2,11 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --account=rpp-nahee
-#SBATCH --job-name=glidein
-#SBATCH --time=24:00:00      # hh:mm:ss for the job
-#SBATCH --cpus-per-task=2
+#SBATCH --job-name=glidein_72h
+#SBATCH --time=72:00:00      # hh:mm:ss for the job
+#SBATCH --cpus-per-task=4
 #SBATCH --tasks=1
-#SBATCH --mem=8G
+#SBATCH --mem=16G
 #SBATCH --array=1-7500
 #SBATCH -o /scratch/ehobert/logs/%A.%a.out  # File to which STDOUT will be written, %j inserts jobid
 #SBATCH -e /scratch/ehobert/logs/%A.%a.err  # File to which STDERR will be written, %j inserts jobid
@@ -16,8 +16,8 @@ module --force purge
 echo `date`
 echo $HOSTNAME
 
-export MEMORY=$SLURM_MEM_PER_NODE
-export ACCEPT_JOBS_FOR_HOURS=24
+export MEMORY=$SLURM_MEM_PER_NODE 
+export ACCEPT_JOBS_FOR_HOURS=72
 export CPUS=$SLURM_CPUS_PER_TASK
 export DISK=81920000000
 # cpu slots carry no gpu
