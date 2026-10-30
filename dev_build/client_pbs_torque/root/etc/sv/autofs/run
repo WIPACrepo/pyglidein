@@ -1,3 +1,0 @@
-#!/bin/bash
-
-BROWSE_MODE="no" /usr/sbin/automount -t 0 -f /etc/auto.master
