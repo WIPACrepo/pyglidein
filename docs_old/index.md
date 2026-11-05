@@ -1,3 +1,7 @@
+> **frozen snapshot.** these are the 1.x docs, kept for historical reference. they
+> describe software that no longer exists in this repo. for the current system see
+> [../README.md](../README.md).
+
 pyglidein
 =========
 
