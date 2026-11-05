@@ -9,7 +9,7 @@
 #SBATCH --gpus-per-node=4
 #SBATCH --gpu-bind=none
 # small array for now, don't have a ton of budget so wanna use it wisely
-#SBATCH --array=0-10
+#SBATCH --array=0-100%4
 #SBATCH --output=/global/homes/i/icecubed/glideins/out/%A.%a.out
 #SBATCH --error=/global/homes/i/icecubed/glideins/out/%A.%a.err
 #SBATCH --module=cvmfs
