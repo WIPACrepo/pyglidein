@@ -1,14 +1,14 @@
 #!/bin/bash
 # keep the perlmutter shared-gpu glidein fleet alive + tidy scratch.
-# intended scrontab entry on the login pool (daily, times are UTC):
-# 
+#
+# intended scrontab entry:
 # #SCRON -q cron
 # #SCRON -C cron
 # #SCRON -A m1093
 # #SCRON -t 00:30:00
 # #SCRON -o $HOME/glideins/scron-%j.out
 # #SCRON --open-mode=append
-# 0 9 * * * $HOME/glideins/pyglidein2/configs/helpers/submit_scrontab_perlmutter.sh
+# 0 9 * * * $HOME/glideins/pyglidein2/helpers/submit_perlmutter.sh
 
 # no accidental disk wipes
 set -u

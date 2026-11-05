@@ -1,8 +1,9 @@
 #!/bin/bash
 
+# stampede3 uses regular crontab, not scrontab. and it's per login node, so always gotta log in to the same one
+#
 # intended crontab entry:
-# (note: stampede3 has regular crontab, not scrontab. and it's per login node, so always gotta log in to the same one)
-# 0 */4 * * * $HOME/glideins/pyglidein2/configs/helpers/submit_stampede3.sh >> /scratch/11739/ehobert/logs/cron.log 2>&1
+# 0 */4 * * * $HOME/glideins/pyglidein2/helpers/submit_stampede3.sh >> /scratch/11739/ehobert/logs/cron.log 2>&1
 
 echo "== $(date '+%F %T') stampede3 top-up =="
 

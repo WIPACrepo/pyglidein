@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# keep the fir glidein fleets alive. intended crontab entry:
-# 0 */4 * * * $HOME/pyglidein/configs/helpers/submit_fir.sh >> /scratch/ehobert/logs/cron.log 2>&1
+# no (s)crontab on fir (it's present but doesn't seem to work). 
+# in theory we should be able to connect to their robot node remotely to trigger this script.
+# as of writing this, we manually run this every so often.
+#
+# intended crontab entry:
+# 0 */4 * * * $HOME/pyglidein/helpers/submit_fir.sh >> /scratch/ehobert/logs/cron.log 2>&1
 
 # Getting the slurm executables into PATH
 export PATH=$PATH:/opt/software/slurm/bin/

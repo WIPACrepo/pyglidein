@@ -1,8 +1,11 @@
 #!/bin/bash
 
-# no on-site cron/scrontab on anvil (verified in rcac docs), so this helper is
-# meant to be triggered from an off-cluster machine via ssh. intended crontab entry:
-# 0 */4 * * * ssh x-ehobert@anvil.rcac.purdue.edu "bash -lc '$HOME/glideins/pyglidein2/configs/helpers/submit_anvil.sh'" >> ~/pyglidein-anvil-cron.log 2>&1
+# no (s)crontab on anvil (verified in rcac docs), 
+# so this helper is meant to be triggered from an off-cluster machine via ssh, but that's not set up.
+# as of writing this, we manually run this every so often.
+#
+# intended remote crontab entry:
+# 0 */4 * * * ssh x-ehobert@anvil.rcac.purdue.edu "bash -lc '$HOME/glideins/pyglidein2/helpers/submit_anvil.sh'" >> ~/pyglidein-anvil-cron.log 2>&1
 
 set -u
 

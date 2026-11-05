@@ -1,11 +1,11 @@
 #!/bin/bash
 # keep the harvard cpu + gpu glidein fleets alive + tidy scratch.
-# intended scrontab entry (times are cluster-local; tune cadence as needed):
 #
+# intended scrontab entry:
 # #SCRON -t 01:00:00
 # #SCRON -o /n/home13/ehobert/out/scron-%j.log
 # #SCRON --open-mode=append
-# 0 2 * * * /n/home13/ehobert/pyglidein2/configs/helpers/submit_scrontab_harvard.sh
+# 0 2 * * * /n/home13/ehobert/pyglidein2/helpers/submit_harvard.sh
 
 # no accidental disk wipes
 set -u
