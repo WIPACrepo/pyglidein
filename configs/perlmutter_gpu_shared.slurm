@@ -3,6 +3,7 @@
 #SBATCH -C gpu
 #SBATCH -q shared
 #SBATCH -t 24:00:00
+#SBATCH -J perlmutter_gpu_shared
 #SBATCH -n 1
 #SBATCH --ntasks-per-node=1
 #SBATCH -c 32
