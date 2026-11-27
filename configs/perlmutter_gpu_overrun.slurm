@@ -4,7 +4,7 @@
 #SBATCH -q shared_overrun
 #SBATCH -t 24:00:00
 # overrun requires --time-min, and slurm may grant less than -t if that lets us backfill
-#SBATCH --time-min=08:00:00
+#SBATCH --time-min=12:00:00
 # preempt mode is REQUEUE, so without this a preempted task is cancelled instead of re-queued
 #SBATCH --requeue
 # keep earlier attempts' logs across requeues
@@ -28,11 +28,10 @@ export MEMORY=57000
 export CPUS=16
 export GPUS=CUDA0
 
-# --time-min lets slurm grant less than -t, so derive the horizon from the allocation we
-# actually got. the pilot exits on anything that is not a positive integer.
-export ACCEPT_JOBS_FOR_HOURS=$(( (${SLURM_JOB_END_TIME:-0} - $(date +%s)) / 3600 ))
-[ "$ACCEPT_JOBS_FOR_HOURS" -ge 2 ] || export ACCEPT_JOBS_FOR_HOURS=2
-echo "accept_jobs end=${SLURM_JOB_END_TIME:-unset} ACCEPT_JOBS_FOR_HOURS=$ACCEPT_JOBS_FOR_HOURS"
+# for some reason SLURM_JOB_END_TIME seems to reflect the minimum rather than the actually granted time
+# so for now we're just defaulting to that until i find a way to grab the full scheduled time
+export ACCEPT_JOBS_FOR_HOURS=12
+echo "accept_jobs start=${SLURM_JOB_START_TIME:-unset} end=${SLURM_JOB_END_TIME:-unset} ACCEPT_JOBS_FOR_HOURS=$ACCEPT_JOBS_FOR_HOURS"
 
 # idle costs nothing here, so keep the slot warm to catch demand spikes
 export ACCEPT_IDLE_MINUTES=60
