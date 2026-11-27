@@ -61,7 +61,9 @@ docs: <https://docs.nersc.gov>
 login: `perlmutter.nersc.gov` (password + otp once, then a 24h sshproxy cert)
 
 - for nersc we use the shared `icecubed` account rather than personal accounts. it also uses `sshproxy` to generate temporary certs for logging in over ssh. 
-- the allocation is small, so the array is small and rate limited on purpose to make sure we don't blow through it all at once.
+- the allocation is small, so the array is small and rate limited on purpose to make sure we don't blow through it all at once. gpu and cpu are separate allocations and separate queues.
+- we also run two unthrottled arrays on the `overrun` qos, one gpu and one cpu. it only admits a project once its allocation is spent, so these are free and lowest priority. any capacity we get from them is a bonus.
+- overrun jobs must pass `--time-min`, and slurm may grant less than `-t` to make a job fit sooner. the configs derive `ACCEPT_JOBS_FOR_HOURS` from `SLURM_JOB_END_TIME` and log the inputs they used.
 
 ### TACC Stampede3
 
